@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/deis/workflow-manager/types"
 	"github.com/gorilla/mux"
 )
 
@@ -64,7 +65,7 @@ func TestPostClusters(t *testing.T) {
 	}
 }
 
-func parseJSONClusters(r *http.Response) map[string]Cluster {
+func parseJSONClusters(r *http.Response) map[string]types.Cluster {
 	rawJSON, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		log.Print(err)
@@ -74,9 +75,9 @@ func parseJSONClusters(r *http.Response) map[string]Cluster {
 	if err != nil {
 		log.Print(err)
 	}
-	clusters := make(map[string]Cluster)
+	clusters := make(map[string]types.Cluster)
 	for id := range rawJSONMap {
-		var clusterObj Cluster
+		var clusterObj types.Cluster
 		err = json.Unmarshal(*rawJSONMap[id], &clusterObj)
 		if err != nil {
 			log.Print(err)

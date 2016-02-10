@@ -5,6 +5,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/deis/workflow-manager/types"
 	"github.com/gorilla/mux"
 )
 
@@ -74,7 +75,7 @@ func versionsPostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	mu.Lock()
-	componentVersions := []ComponentVersion{}
+	componentVersions := []types.ComponentVersion{}
 	err := json.NewDecoder(r.Body).Decode(&componentVersions)
 	if err != nil {
 		log.Print(err)
