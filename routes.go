@@ -9,7 +9,7 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func getRoutes() *mux.Router {
+func GetRoutes() *mux.Router {
 	r := mux.NewRouter()
 	// Routes consist of a path and a handler function.
 	r.HandleFunc("/clusters", defaultHandler)

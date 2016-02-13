@@ -37,7 +37,7 @@ func TestGetClusters(t *testing.T) {
 
 func TestPostClusters(t *testing.T) {
 	id := "123"
-	jsonData := `{"Components": [{"Name": "component-a", "Version": "1.0"}]}`
+	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
 	server := newServer()
 	defer server.Close()
 	resp, err := httpPost(server.URL+"/clusters/"+id, jsonData)
@@ -56,7 +56,7 @@ func TestPostClusters(t *testing.T) {
 		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
 	}
 	json := parseJSONClusters(resp)
-	if json[id].Components[0].Name != "component-a" {
+	if json[id].Components[0].Component.Name != "component-a" {
 		t.Error("unexpected component name from JSON response")
 	}
 	//TODO Why do we have to dereference "Version" twice?

@@ -19,7 +19,7 @@ var mu sync.Mutex
 
 // Main opens up a TLS listening port
 func main() {
-	r := getRoutes()
+	r := GetRoutes()
 	// Bind to a port and pass our router in
 	err := http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r)
 	if err != nil {
@@ -74,6 +74,6 @@ func setCluster(id string, c types.Cluster) types.Cluster {
 
 // component version record set'er
 func setLatestVersion(cV types.ComponentVersion) types.Version {
-	latestVersions[cV.Name] = cV.Version
-	return latestVersions[cV.Name]
+	latestVersions[cV.Component.Name] = cV.Version
+	return latestVersions[cV.Component.Name]
 }
