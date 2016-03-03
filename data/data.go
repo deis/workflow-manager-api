@@ -70,10 +70,10 @@ type Cluster interface {
 	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
 }
 
-// ClusterFromDB fulfills the record interface
+// ClusterFromDB fulfills the Cluster interface
 type ClusterFromDB struct{}
 
-// Get method for ClusterFromDB
+// Get method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 	row := getDBRecord(db, clustersTableName, clustersTableIDKey, id)
 	rowResult := ClustersTable{}
@@ -90,7 +90,7 @@ func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 	return cluster, nil
 }
 
-// Set method for ClusterFromDB
+// Set method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	var ret types.Cluster // return variable
 	mu.Lock()
@@ -119,9 +119,73 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	if affected == 0 {
 		log.Println("no records updated")
 	} else if affected == 1 {
-		ret, err = GetCluster(id, RDSDB{}, ClusterFromDB{})
+		ret, err = c.Get(db, id)
 		if err != nil {
 			return types.Cluster{}, err
+		}
+	} else if affected > 1 {
+		log.Println("updated more than one record with same ID value!")
+	}
+	mu.Unlock()
+	return ret, nil
+}
+
+// Version is an interface for managing a persistent cluster record
+type Version interface {
+	Get(*sql.DB, string) (types.ComponentVersion, error)
+	Set(*sql.DB, string, types.ComponentVersion) (types.ComponentVersion, error)
+}
+
+// VersionFromDB fulfills the Version interface
+type VersionFromDB struct{}
+
+// Get method for VersionFromDB, the actual database/sql.DB implementation
+func (c VersionFromDB) Get(db *sql.DB, component string) (types.ComponentVersion, error) {
+	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
+	rowResult := VersionsTable{}
+	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
+		return types.ComponentVersion{}, err
+	}
+	componentVersion, err := components.ParseJSONComponent(rowResult.data)
+	if err != nil {
+		log.Println("error parsing component version")
+		return types.ComponentVersion{}, err
+	}
+	return componentVersion, nil
+}
+
+// Set method for VersionFromDB, the actual database/sql.DB implementation
+func (c VersionFromDB) Set(db *sql.DB, component string, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+	var ret types.ComponentVersion // return variable
+	mu.Lock()
+	js, err := json.Marshal(componentVersion)
+	if err != nil {
+		fmt.Println("error marshaling data")
+	}
+	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
+	var result sql.Result
+	rowResult := VersionsTable{}
+	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
+		result, err = newVersionDBRecord(db, component, js)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		result, err = updateVersionDBRecord(db, component, js)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		log.Println("failed to get affected row count")
+	}
+	if affected == 0 {
+		log.Println("no records updated")
+	} else if affected == 1 {
+		ret, err = c.Get(db, component)
+		if err != nil {
+			return types.ComponentVersion{}, err
 		}
 	} else if affected > 1 {
 		log.Println("updated more than one record with same ID value!")
@@ -230,68 +294,30 @@ func SetCluster(id string, cluster types.Cluster, d DB, c Cluster) (types.Cluste
 	return ret, nil
 }
 
-// GetVersion is a high level interface for retrieving a component version record
-func GetVersion(component string) (types.ComponentVersion, bool) {
-	db, err := getRDSDB()
+// GetVersion is a high level interface for retrieving a version data record
+func GetVersion(component string, d DB, v Version) (types.ComponentVersion, error) {
+	db, err := d.Get()
 	if err != nil {
-		log.Fatal("couldn't get a db connection!")
+		return types.ComponentVersion{}, err
 	}
-	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
-	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
-		return types.ComponentVersion{}, false
-	}
-	componentVersion, err := components.ParseJSONComponent(rowResult.data)
+	componentVersion, err := v.Get(db, component)
 	if err != nil {
-		log.Println("error parsing component version")
-		return types.ComponentVersion{}, false
+		return types.ComponentVersion{}, err
 	}
-	return componentVersion, true
+	return componentVersion, nil
 }
 
 // SetVersion is a high level interface for updating a component version record
-func SetVersion(component string, c types.ComponentVersion) types.ComponentVersion {
-	var componentVersion types.ComponentVersion // return variable
-	mu.Lock()
-	js, err := json.Marshal(c)
+func SetVersion(component string, componentVersion types.ComponentVersion, d DB, v Version) (types.ComponentVersion, error) {
+	db, err := d.Get()
 	if err != nil {
-		fmt.Println("error marshaling data")
+		return types.ComponentVersion{}, err
 	}
-	db, err := getRDSDB()
+	ret, err := v.Set(db, component, componentVersion)
 	if err != nil {
-		log.Fatal("couldn't get a db connection!")
+		return types.ComponentVersion{}, err
 	}
-	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
-	var result sql.Result
-	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
-		result, err = newVersionDBRecord(db, component, js)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		result, err = updateVersionDBRecord(db, component, js)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		log.Println("failed to get affected row count")
-	}
-	var ok bool
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		componentVersion, ok = GetVersion(component)
-		if !ok {
-			log.Println("couldn't get component version after update")
-		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
-	}
-	mu.Unlock()
-	return componentVersion
+	return ret, nil
 }
 
 func getRDSSession() *rds.RDS {

@@ -34,8 +34,8 @@ func main() {
 
 func getRoutes() *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/versions/{component}", handlers.VersionsGetHandler).Methods("GET")
-	r.HandleFunc("/versions/{component}", handlers.VersionsPostHandler).Methods("POST")
+	r.HandleFunc("/versions/{component}", handlers.VersionsGetHandler(data.RDSDB{}, data.VersionFromDB{})).Methods("GET")
+	r.HandleFunc("/versions/{component}", handlers.VersionsPostHandler(data.RDSDB{}, data.VersionFromDB{})).Methods("POST")
 	r.HandleFunc("/clusters", handlers.ClustersHandler(data.RDSDB{}, data.ClusterCount{})).Methods("GET")
 	r.HandleFunc("/clusters/{id}", handlers.ClustersGetHandler(data.RDSDB{}, data.ClusterFromDB{})).Methods("GET")
 	r.HandleFunc("/clusters/{id}", handlers.ClustersPostHandler(data.RDSDB{}, data.ClusterFromDB{})).Methods("POST")

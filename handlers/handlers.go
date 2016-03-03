@@ -70,41 +70,49 @@ func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *h
 	}
 }
 
-// VersionsGetHandler handles GET requests to "/versions/{component}"
-func VersionsGetHandler(w http.ResponseWriter, r *http.Request) {
-	component := mux.Vars(r)["component"]
-	componentVersion, ok := data.GetVersion(component)
-	if !ok {
-		http.NotFound(w, r)
-		return
+// VersionsGetHandler route handler
+func VersionsGetHandler(d data.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		component := mux.Vars(r)["component"]
+		componentVersion, err := data.GetVersion(component, d, v)
+		if err != nil {
+			http.NotFound(w, r)
+			return
+		}
+		js, err := json.Marshal(componentVersion)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		writeJSON(js, w)
 	}
-	js, err := json.Marshal(componentVersion)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-	writeJSON(js, w)
 }
 
-// VersionsPostHandler handles POST requests to /versions/{component}
-func VersionsPostHandler(w http.ResponseWriter, r *http.Request) {
-	if r.Header.Get("Content-Type") != "application/json" {
-		http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
-		return
+// VersionsPostHandler route handler
+func VersionsPostHandler(d data.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Content-Type") != "application/json" {
+			http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
+			return
+		}
+		component := mux.Vars(r)["component"]
+		componentVersion := types.ComponentVersion{}
+		err := json.NewDecoder(r.Body).Decode(&componentVersion)
+		if err != nil {
+			log.Print(err)
+			return
+		}
+		result, err := data.SetVersion(component, componentVersion, d, v)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		data, err := json.MarshalIndent(result, "", "  ")
+		if err != nil {
+			log.Fatalf("JSON marshaling failed: %s", err)
+		}
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte(data))
 	}
-	component := mux.Vars(r)["component"]
-	componentVersion := types.ComponentVersion{}
-	err := json.NewDecoder(r.Body).Decode(&componentVersion)
-	if err != nil {
-		log.Print(err)
-		return
-	}
-	data, err := json.MarshalIndent(data.SetVersion(component, componentVersion), "", "  ")
-	if err != nil {
-		log.Fatalf("JSON marshaling failed: %s", err)
-	}
-	w.Header().Set("Content-Type", "text/plain")
-	w.Write([]byte(data))
 }
 
 // writeJSON is a helper function for writing HTTP JSON data
