@@ -21,19 +21,24 @@ import (
 )
 
 const (
-	rDSRegionKey                  = "WORKFLOW_MANAGER_API_RDS_REGION"
-	dBNameKey                     = "WORKFLOW_MANAGER_API_DBNAME"
-	dBUserKey                     = "WORKFLOW_MANAGER_API_DBUSER"
-	dBPassKey                     = "WORKFLOW_MANAGER_API_DBPASS"
-	clustersTableName             = "clusters"
-	clustersTableIDKey            = "cluster_id"
-	clustersTableFirstSeenKey     = "first_seen"
-	clustersTableLastSeenKey      = "last_seen"
-	clustersTableDataKey          = "data"
-	versionsTableName             = "versions"
-	versionsTableComponentNameKey = "component_name"
-	versionsTableLastUpdatedKey   = "last_updated"
-	versionsTableDataKey          = "data"
+	rDSRegionKey                             = "WORKFLOW_MANAGER_API_RDS_REGION"
+	dBNameKey                                = "WORKFLOW_MANAGER_API_DBNAME"
+	dBUserKey                                = "WORKFLOW_MANAGER_API_DBUSER"
+	dBPassKey                                = "WORKFLOW_MANAGER_API_DBPASS"
+	clustersTableName                        = "clusters"
+	clustersTableIDKey                       = "cluster_id"
+	clustersTableFirstSeenKey                = "first_seen"
+	clustersTableLastSeenKey                 = "last_seen"
+	clustersTableDataKey                     = "data"
+	clustersCheckinsTableName                = "clusters_checkins"
+	clustersCheckinsTableIDKey               = "checkins_id"
+	clustersCheckinsTableClusterIDKey        = "cluster_id"
+	clustersCheckinsTableClusterCreatedAtKey = "created_at"
+	clustersCheckinsTableDataKey             = "data"
+	versionsTableName                        = "versions"
+	versionsTableComponentNameKey            = "component_name"
+	versionsTableLastUpdatedKey              = "last_updated"
+	versionsTableDataKey                     = "data"
 )
 
 var (
@@ -46,15 +51,23 @@ var (
 
 // ClustersTable type that expresses the `clusters` postgres table schema
 type ClustersTable struct {
-	clusterID string
+	clusterID string // PRIMARY KEY
 	firstSeen time.Time
 	lastSeen  time.Time
 	data      sqlxTypes.JSONText
 }
 
+// ClustersCheckinsTable type that expresses the `clusters_checkins` postgres table schema
+type ClustersCheckinsTable struct {
+	checkinID string    // PRIMARY KEY, type uuid
+	clusterID string    // indexed
+	createdAt time.Time // indexed
+	data      sqlxTypes.JSONText
+}
+
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
 type VersionsTable struct {
-	componentName string
+	componentName string // PRIMARY KEY
 	lastUpdated   time.Time
 	data          sqlxTypes.JSONText
 }
@@ -68,6 +81,7 @@ type DB interface {
 type Cluster interface {
 	Get(*sql.DB, string) (types.Cluster, error)
 	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
+	Checkin(*sql.DB, string, types.Cluster) (sql.Result, error)
 }
 
 // ClusterFromDB fulfills the Cluster interface
@@ -100,6 +114,7 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	}
 	row := getDBRecord(db, clustersTableName, clustersTableIDKey, id)
 	var result sql.Result
+	// Register the "latest checkin" with the primary cluster record
 	rowResult := ClustersTable{}
 	if err := row.Scan(&rowResult.clusterID, &rowResult.firstSeen, &rowResult.lastSeen, &rowResult.data); err != nil {
 		result, err = newClusterDBRecord(db, id, js)
@@ -128,6 +143,20 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	}
 	mu.Unlock()
 	return ret, nil
+}
+
+// Checkin method for ClusterFromDB, the actual database/sql.DB implementation
+func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
+	js, err := json.Marshal(cluster)
+	if err != nil {
+		fmt.Println("error marshaling data")
+	}
+	result, err := newClusterCheckinsDBRecord(db, id, js)
+	if err != nil {
+		log.Println("cluster checkin db record not created")
+		return nil, err
+	}
+	return result, nil
 }
 
 // Version is an interface for managing a persistent cluster record
@@ -232,26 +261,37 @@ func VerifyPersistentStorage() error {
 	}
 	err = verifyVersionsTable(db)
 	if err != nil {
-		log.Println("unable to verify versions table")
+		log.Println("unable to verify " + versionsTableName + " table")
 		return err
 	}
 	count, err := getTableCount(db, versionsTableName)
 	if err != nil {
-		log.Println("unable to get record count for versions table")
+		log.Println("unable to get record count for " + versionsTableName + " table")
 		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + versionsTableName + " table")
 	err = verifyClustersTable(db)
 	if err != nil {
-		log.Println("unable to verify clusters table")
+		log.Println("unable to verify " + clustersTableName + " table")
 		return err
 	}
 	count, err = getTableCount(db, clustersTableName)
 	if err != nil {
-		log.Println("unable to get record count for versions table")
+		log.Println("unable to get record count for " + clustersTableName + " table")
 		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersTableName + " table")
+	err = verifyClustersCheckinsTable(db)
+	if err != nil {
+		log.Println("unable to verify " + clustersCheckinsTableName + " table")
+		return err
+	}
+	count, err = getTableCount(db, clustersCheckinsTableName)
+	if err != nil {
+		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
+		return err
+	}
+	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
 	return nil
 }
 
@@ -287,6 +327,12 @@ func SetCluster(id string, cluster types.Cluster, d DB, c Cluster) (types.Cluste
 	if err != nil {
 		return types.Cluster{}, err
 	}
+	// Check in
+	_, err = c.Checkin(db, id, cluster)
+	if err != nil {
+		return types.Cluster{}, err
+	}
+	// Update cluster record
 	ret, err := c.Set(db, id, cluster)
 	if err != nil {
 		return types.Cluster{}, err
@@ -355,12 +401,24 @@ func createClustersTable(db *sql.DB) (sql.Result, error) {
 	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s timestamp, %s timestamp DEFAULT current_timestamp, %s json )", clustersTableName, clustersTableIDKey, clustersTableFirstSeenKey, clustersTableLastSeenKey, clustersTableDataKey))
 }
 
+func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
+	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s uuid, %s timestamp, %s json, unique (%s, %s) )", clustersCheckinsTableName, clustersCheckinsTableIDKey, clustersTableIDKey, clustersCheckinsTableClusterCreatedAtKey, clustersCheckinsTableDataKey, clustersCheckinsTableClusterIDKey, clustersCheckinsTableClusterCreatedAtKey))
+}
+
 func createVersionsTable(db *sql.DB) (sql.Result, error) {
 	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s varchar(64) PRIMARY KEY, %s timestamp, %s json )", versionsTableName, versionsTableComponentNameKey, versionsTableLastUpdatedKey, versionsTableDataKey))
 }
 
 func verifyClustersTable(db *sql.DB) error {
 	if _, err := createClustersTable(db); err != nil {
+		log.Println("unable to verify clusters table exists")
+		return err
+	}
+	return nil
+}
+
+func verifyClustersCheckinsTable(db *sql.DB) error {
+	if _, err := createClustersCheckinsTable(db); err != nil {
 		log.Println("unable to verify clusters table exists")
 		return err
 	}
@@ -413,6 +471,12 @@ func newVersionDBRecord(db *sql.DB, component string, data []byte) (sql.Result, 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
 	now := time.Now().Format(time.RFC3339)
 	update := fmt.Sprintf("UPDATE %s SET data='%s', last_seen='%s' WHERE cluster_id='%s'", clustersTableName, string(data), now, id)
+	return db.Exec(update)
+}
+
+func newClusterCheckinsDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
+	now := time.Now().Format(time.RFC3339)
+	update := fmt.Sprintf("INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')", clustersCheckinsTableName, string(data), now, id)
 	return db.Exec(update)
 }
 
