@@ -1,0 +1,187 @@
+hash: ca552adce0a6b5dbbf94893bc3564bf62f2e720ee0d10ca8ee80b6c225a02698
+updated: 2016-03-06T13:44:32.028064981-08:00
+imports:
+- name: bitbucket.org/ww/goautoneg
+  version: 75cd24fc2f2c
+- name: github.com/aws/aws-sdk-go
+  version: 84dd2369d1041b2c79c67bc81bba00636711d01b
+  subpackages:
+  - aws
+  - aws/session
+  - service/rds
+  - aws/awserr
+  - aws/credentials
+  - aws/client
+  - aws/corehandlers
+  - aws/defaults
+  - aws/request
+  - private/endpoints
+  - aws/awsutil
+  - aws/client/metadata
+  - private/protocol
+  - private/protocol/query
+  - private/signer/v4
+  - private/waiter
+  - aws/credentials/ec2rolecreds
+  - aws/ec2metadata
+  - private/protocol/query/queryutil
+  - private/protocol/xml/xmlutil
+  - private/protocol/rest
+- name: github.com/beorn7/perks
+  version: b965b613227fddccbfffe13eae360ed3fa822f8d
+  subpackages:
+  - quantile
+- name: github.com/blang/semver
+  version: 31b736133b98f26d5e078ec9eb591666edfd091f
+- name: github.com/davecgh/go-spew
+  version: 3e6e67c4dcea3ac2f25fd4731abc0e1deaf36216
+  subpackages:
+  - spew
+- name: github.com/deis/workflow-manager
+  version: fd8986f737e622d858266ac745defcd7912aa543
+  repo: git@github.com:deis/workflow-manager
+  vcs: git
+  subpackages:
+  - components
+  - types
+  - data
+  - handlers
+  - jobs
+- name: github.com/emicklei/go-restful
+  version: 1f9a0ee00ff93717a275e15b30cf7df356255877
+  subpackages:
+  - swagger
+  - log
+- name: github.com/ghodss/yaml
+  version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
+- name: github.com/go-ini/ini
+  version: 776aa739ce9373377cd16f526cdf06cb4c89b40f
+- name: github.com/golang/glog
+  version: 44145f04b68cf362d9c4df2182967c2275eaefed
+- name: github.com/golang/protobuf
+  version: 7f07925444bb51fa4cf9dfe6f7661876f8852275
+  subpackages:
+  - proto
+- name: github.com/google/cadvisor
+  version: a8085bf9276c22f16dbcd7aa56f0d4d0626a0b2e
+  subpackages:
+  - api
+  - cache/memory
+  - collector
+  - container
+  - events
+  - fs
+  - healthz
+  - http
+  - info/v1
+  - info/v2
+  - manager
+  - metrics
+  - pages
+  - storage
+  - summary
+  - utils
+  - validate
+  - version
+- name: github.com/google/gofuzz
+  version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
+- name: github.com/gorilla/context
+  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
+- name: github.com/gorilla/mux
+  version: 147a95f5e36a65f1c7b29440b9b0283aab154693
+- name: github.com/jmespath/go-jmespath
+  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+- name: github.com/jmoiron/sqlx
+  version: 398dd5876282499cdfd4cb8ea0f31a672abe9495
+  subpackages:
+  - types
+  - reflectx
+- name: github.com/juju/ratelimit
+  version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
+- name: github.com/lib/pq
+  version: 165a3529e799da61ab10faed1fabff3662d6193f
+  subpackages:
+  - oid
+- name: github.com/matttproud/golang_protobuf_extensions
+  version: fc2b8d3a73c4867e51861bbdd5ae3c1f0869dd6a
+  subpackages:
+  - pbutil
+- name: github.com/pborman/uuid
+  version: ca53cad383cad2479bbba7f7a1a05797ec1386e4
+- name: github.com/prometheus/client_golang
+  version: 3b78d7a77f51ccbc364d4bc170920153022cfd08
+  subpackages:
+  - prometheus
+- name: github.com/prometheus/client_model
+  version: fa8ad6fec33561be4280a8f0514318c79d7f6cb6
+  subpackages:
+  - go
+- name: github.com/prometheus/common
+  version: ef7a9a5fb138aa5d3a19988537606226869a0390
+  subpackages:
+  - expfmt
+  - model
+- name: github.com/prometheus/procfs
+  version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
+- name: github.com/satori/go.uuid
+  version: e673fdd4dea8a7334adbbe7f57b7e4b00bdc5502
+- name: github.com/spf13/pflag
+  version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
+- name: golang.org/x/crypto
+  version: c84e1f8e3a7e322d497cd16c0e8a13c7e127baf3
+  subpackages:
+  - ssh
+- name: golang.org/x/net
+  version: c2528b2dd8352441850638a8bb678c2ad056fd3e
+  subpackages:
+  - context
+  - html
+  - websocket
+- name: gopkg.in/yaml.v2
+  version: d466437aa4adc35830964cffc5b5f262c63ddcb4
+- name: k8s.io/kubernetes
+  version: e4e6878293a339e4087dae684647c9e53f1cf9f0
+  subpackages:
+  - client/unversioned
+  - labels
+  - api
+  - pkg
+  - pkg/api
+  - pkg/client/unversioned
+  - pkg/labels
+  - pkg/api/meta
+  - pkg/api/resource
+  - pkg/api/unversioned
+  - pkg/auth/user
+  - pkg/conversion
+  - pkg/fields
+  - pkg/runtime
+  - pkg/types
+  - pkg/util
+  - pkg/util/rand
+  - pkg/util/sets
+  - pkg/api/errors
+  - pkg/api/install
+  - pkg/api/latest
+  - pkg/api/validation
+  - pkg/apis/extensions
+  - pkg/apis/extensions/install
+  - pkg/client/metrics
+  - pkg/conversion/queryparams
+  - pkg/util/wait
+  - pkg/version
+  - pkg/watch
+  - pkg/watch/json
+  - pkg/util/fielderrors
+  - pkg/util/validation
+  - third_party/forked/reflect
+  - pkg/util/yaml
+  - pkg/util/errors
+  - pkg/api/registered
+  - pkg/api/util
+  - pkg/api/v1
+  - pkg/capabilities
+  - pkg/apis/extensions/v1beta1
+- name: speter.net/go/exp/math/dec/inf
+  version: 42ca6cd68aa922bc3f32f1e056e61b65945d9ad7
+devImports: []
