@@ -6,6 +6,8 @@ import:
   - aws/session
   - service/rds
 - package: github.com/deis/workflow-manager
+  repo: git@github.com:deis/workflow-manager
+  vcs: git
   subpackages:
   - components
   - types
@@ -14,3 +16,7 @@ import:
   subpackages:
   - types
 - package: github.com/lib/pq
+- package: github.com/arschles/assert
+- package: github.com/mxk/go-sqlite
+  subpackages:
+  - sqlite3
