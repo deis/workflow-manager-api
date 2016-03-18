@@ -25,7 +25,7 @@ func TestClustersHandler(t *testing.T) {
 	for i, testCase := range testCases {
 		handler := ClustersHandler(testCase.DB, testCase.Count)
 		w := httptest.NewRecorder()
-		r, err := http.NewRequest("GET" "/1/clusters", &bytes.Buffer{})
+		r, err := http.NewRequest("GET", "/1/clusters", &bytes.Buffer{})
 		assert.NoErr(t, err)
 		handler(w, r)
 	}
