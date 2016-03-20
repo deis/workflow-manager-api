@@ -1,10 +1,10 @@
-hash: ca552adce0a6b5dbbf94893bc3564bf62f2e720ee0d10ca8ee80b6c225a02698
-updated: 2016-03-06T13:44:32.028064981-08:00
+hash: ad91ecbad6da7ef63bed9c69470f4ca0da0e6bdaae69b457e7c63f421af93748
+updated: 2016-03-20T19:02:54.520326686Z
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: github.com/aws/aws-sdk-go
-  version: 84dd2369d1041b2c79c67bc81bba00636711d01b
+  version: 4da0bec8953a0a540f391930a946917b12a95671
   subpackages:
   - aws
   - aws/session
@@ -38,15 +38,29 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/workflow-manager
-  version: fd8986f737e622d858266ac745defcd7912aa543
-  repo: git@github.com:deis/workflow-manager
-  vcs: git
+  version: b37815165204e8a899ece414286fd8e7aba9f6f1
   subpackages:
   - components
   - types
+  - config
   - data
-  - handlers
-  - jobs
+- name: github.com/docker/docker
+  version: 2b27fe17a1b3fb8472fde96d768fa70996adf201
+  subpackages:
+  - pkg/jsonmessage
+  - pkg/mount
+  - pkg/parsers
+  - pkg/symlink
+  - pkg/term
+  - pkg/timeutils
+  - pkg/units
+- name: github.com/docker/libcontainer
+  version: 5dc7ba0f24332273461e45bc49edcb4d5aa6c44c
+  subpackages:
+  - cgroups/fs
+  - configs
+  - cgroups
+  - system
 - name: github.com/emicklei/go-restful
   version: 1f9a0ee00ff93717a275e15b30cf7df356255877
   subpackages:
@@ -88,16 +102,17 @@ imports:
 - name: github.com/gorilla/context
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 - name: github.com/gorilla/mux
-  version: 147a95f5e36a65f1c7b29440b9b0283aab154693
+  version: 0eeaf8392f5b04950925b8a69fe70f110fa7cbfc
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/jmoiron/sqlx
   version: 398dd5876282499cdfd4cb8ea0f31a672abe9495
   subpackages:
   - types
-  - reflectx
 - name: github.com/juju/ratelimit
   version: 772f5c38e468398c4511514f4f6aa9a4185bc0a0
+- name: github.com/kelseyhightower/envconfig
+  version: cea086319492c3940683ea5e122aa5de70a33923
 - name: github.com/lib/pq
   version: 165a3529e799da61ab10faed1fabff3662d6193f
   subpackages:
@@ -140,7 +155,7 @@ imports:
 - name: gopkg.in/yaml.v2
   version: d466437aa4adc35830964cffc5b5f262c63ddcb4
 - name: k8s.io/kubernetes
-  version: e4e6878293a339e4087dae684647c9e53f1cf9f0
+  version: a8af33dc07ee08defa2d503f81e7deea32dd1d3b
   subpackages:
   - client/unversioned
   - labels
@@ -149,6 +164,7 @@ imports:
   - pkg/api
   - pkg/client/unversioned
   - pkg/labels
+  - pkg/api/errors
   - pkg/api/meta
   - pkg/api/resource
   - pkg/api/unversioned
@@ -160,7 +176,6 @@ imports:
   - pkg/util
   - pkg/util/rand
   - pkg/util/sets
-  - pkg/api/errors
   - pkg/api/install
   - pkg/api/latest
   - pkg/api/validation
@@ -174,9 +189,9 @@ imports:
   - pkg/watch/json
   - pkg/util/fielderrors
   - pkg/util/validation
+  - pkg/util/errors
   - third_party/forked/reflect
   - pkg/util/yaml
-  - pkg/util/errors
   - pkg/api/registered
   - pkg/api/util
   - pkg/api/v1
