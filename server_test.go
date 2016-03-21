@@ -74,10 +74,10 @@ func TestPostClusters(t *testing.T) {
 	defer server.Close()
 	resp, err := httpPost(server, urlPath(1, "clusters", id), jsonData)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("POSTing to endpoint (%s)", err)
 	}
 	if resp.StatusCode != 200 {
-		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
+		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
 	resp, err = httpGet(server, urlPath(1, "clusters", id))
 	defer resp.Body.Close()
