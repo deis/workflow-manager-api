@@ -7,5 +7,7 @@ cache:
     - vendor
 services:
   - docker
+install:
+  - make bootstrap
 script:
   - make test build docker-build
