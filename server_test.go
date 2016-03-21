@@ -35,7 +35,7 @@ func TestPostVersions(t *testing.T) {
 
 // tests the GET /{apiVersion}/clusters endpoint
 func TestGetClusters(t *testing.T) {
-	memDB, err := data.NewMemDB()
+	memDB, err := newMemDB()
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
@@ -60,7 +60,7 @@ func TestGetClusterByID(t *testing.T) {
 
 // tests the POST {apiVersion}/clusters/{id} endpoint
 func TestPostClusters(t *testing.T) {
-	memDB, err := data.NewMemDB()
+	memDB, err := newMemDB()
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}

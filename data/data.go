@@ -414,8 +414,8 @@ func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
 		clustersCheckinsTableClusterCreatedAtKey,
 		clustersCheckinsTableDataKey,
 		clustersCheckinsTableClusterIDKey,
-		clustersCheckinsTableClusterCreatedAtKey
-		))
+		clustersCheckinsTableClusterCreatedAtKey,
+	))
 }
 
 func createVersionsTable(db *sql.DB) (sql.Result, error) {
