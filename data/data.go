@@ -7,7 +7,6 @@ import (
 	"os"
 	"strconv"
 	"sync"
-	"time"
 
 	"database/sql"
 
@@ -52,23 +51,23 @@ var (
 // ClustersTable type that expresses the `clusters` postgres table schema
 type ClustersTable struct {
 	clusterID string // PRIMARY KEY
-	firstSeen time.Time
-	lastSeen  time.Time
+	firstSeen *Timestamp
+	lastSeen  *Timestamp
 	data      sqlxTypes.JSONText
 }
 
 // ClustersCheckinsTable type that expresses the `clusters_checkins` postgres table schema
 type ClustersCheckinsTable struct {
-	checkinID string    // PRIMARY KEY, type uuid
-	clusterID string    // indexed
-	createdAt time.Time // indexed
+	checkinID string     // PRIMARY KEY, type uuid
+	clusterID string     // indexed
+	createdAt *Timestamp // indexed
 	data      sqlxTypes.JSONText
 }
 
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
 type VersionsTable struct {
 	componentName string // PRIMARY KEY
-	lastUpdated   time.Time
+	lastUpdated   *Timestamp
 	data          sqlxTypes.JSONText
 }
 
@@ -99,8 +98,8 @@ func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 		log.Println("error parsing cluster")
 		return types.Cluster{}, err
 	}
-	cluster.FirstSeen = rowResult.firstSeen
-	cluster.LastSeen = rowResult.lastSeen
+	cluster.FirstSeen = *rowResult.firstSeen.Time
+	cluster.LastSeen = *rowResult.lastSeen.Time
 	return cluster, nil
 }
 
@@ -396,7 +395,9 @@ func getRDSDB() (*sql.DB, error) {
 }
 
 func createClustersTable(db *sql.DB) (sql.Result, error) {
-	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s timestamp, %s timestamp DEFAULT current_timestamp, %s json )", clustersTableName, clustersTableIDKey, clustersTableFirstSeenKey, clustersTableLastSeenKey, clustersTableDataKey))
+	return db.Exec(fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s timestamp, %s timestamp DEFAULT current_timestamp, %s json )",
+		clustersTableName, clustersTableIDKey, clustersTableFirstSeenKey, clustersTableLastSeenKey, clustersTableDataKey))
 }
 
 func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
@@ -455,31 +456,26 @@ func getTableCount(db *sql.DB, table string) (int, error) {
 }
 
 func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	now := time.Now().Format(time.RFC3339)
-	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, first_seen, last_seen, data) VALUES('%s', '%s', '%s', '%s')", clustersTableName, id, now, now, string(data))
+	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, first_seen, last_seen, data) VALUES('%s', '%s', '%s', '%s')", clustersTableName, id, now(), now(), string(data))
 	return db.Exec(insert)
 }
 
 func newVersionDBRecord(db *sql.DB, component string, data []byte) (sql.Result, error) {
-	now := time.Now().Format(time.RFC3339)
-	insert := fmt.Sprintf("INSERT INTO %s (component_name, last_updated, data) VALUES('%s', '%s', '%s')", versionsTableName, component, now, string(data))
+	insert := fmt.Sprintf("INSERT INTO %s (component_name, last_updated, data) VALUES('%s', '%s', '%s')", versionsTableName, component, now(), string(data))
 	return db.Exec(insert)
 }
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	now := time.Now().Format(time.RFC3339)
-	update := fmt.Sprintf("UPDATE %s SET data='%s', last_seen='%s' WHERE cluster_id='%s'", clustersTableName, string(data), now, id)
+	update := fmt.Sprintf("UPDATE %s SET data='%s', last_seen='%s' WHERE cluster_id='%s'", clustersTableName, string(data), now(), id)
 	return db.Exec(update)
 }
 
 func newClusterCheckinsDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	now := time.Now().Format(time.RFC3339)
-	update := fmt.Sprintf("INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')", clustersCheckinsTableName, string(data), now, id)
+	update := fmt.Sprintf("INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')", clustersCheckinsTableName, string(data), now(), id)
 	return db.Exec(update)
 }
 
 func updateVersionDBRecord(db *sql.DB, component string, data []byte) (sql.Result, error) {
-	now := time.Now().Format(time.RFC3339)
-	update := fmt.Sprintf("UPDATE %s SET data='%s', last_updated='%s' WHERE component_name='%s'", versionsTableName, string(data), now, component)
+	update := fmt.Sprintf("UPDATE %s SET data='%s', last_updated='%s' WHERE component_name='%s'", versionsTableName, string(data), now(), component)
 	return db.Exec(update)
 }
