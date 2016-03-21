@@ -175,7 +175,7 @@ func (c VersionFromDB) Get(db *sql.DB, component string) (types.ComponentVersion
 	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
 		return types.ComponentVersion{}, err
 	}
-	componentVersion, err := components.ParseJSONComponent(rowResult.data)
+	componentVersion, err := parseJSONComponent(rowResult.data)
 	if err != nil {
 		log.Println("error parsing component version")
 		return types.ComponentVersion{}, err
