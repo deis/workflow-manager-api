@@ -3,29 +3,38 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/deis/workflow-manager-api/data"
-	"github.com/deis/workflow-manager-api/handlers"
 	"github.com/deis/workflow-manager/types"
-	"github.com/gorilla/mux"
 )
 
 func newServer(db data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
 	// Routes consist of a path and a handler function.
-	r := mux.NewRouter()
-	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsGetHandler(db, ver)).Methods("GET")
-	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsPostHandler(db, ver)).Methods("POST")
-	r.HandleFunc("/{apiVersion}/clusters", handlers.ClustersHandler(db, counter)).Methods("GET")
-	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersGetHandler(db, cluster)).Methods("GET")
-	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersPostHandler(db, cluster)).Methods("POST")
-	return httptest.NewServer(r)
+	return httptest.NewServer(getRoutes(db, ver, counter, cluster))
 }
 
+func urlPath(ver int, remainder ...string) string {
+	return fmt.Sprintf("%d/%s", ver, strings.Join(remainder, "/"))
+}
+
+// tests the GET /{apiVersion}/versions/{component} endpoint
+func TestGetVersions(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the POST /{apiVersion}/versions/{component} endpoint
+func TestPostVersions(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the GET /{apiVersion}/clusters endpoint
 func TestGetClusters(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	if err != nil {
@@ -33,7 +42,7 @@ func TestGetClusters(t *testing.T) {
 	}
 	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
 	defer server.Close()
-	resp, err := httpGet(server, "/versions")
+	resp, err := httpGet(server, urlPath(1, "clusters"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -42,6 +51,12 @@ func TestGetClusters(t *testing.T) {
 	}
 }
 
+// tests the GET /{apiVersion}/clusters/{id} endpoint
+func TestGetClusterByID(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the POST {apiVersion}/clusters/{id} endpoint
 func TestPostClusters(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	if err != nil {
@@ -51,7 +66,7 @@ func TestPostClusters(t *testing.T) {
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
 	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
 	defer server.Close()
-	resp, err := httpPost(server.URL+"/clusters/"+id, jsonData)
+	resp, err := httpPost(server, urlPath(1, "clusters", id), jsonData)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -99,10 +114,10 @@ func parseJSONClusters(r *http.Response) map[string]types.Cluster {
 }
 
 func httpGet(s *httptest.Server, route string) (*http.Response, error) {
-	return http.Get(s.URL + route)
+	return http.Get(s.URL + "/" + route)
 }
 
-func httpPost(url string, json string) (*http.Response, error) {
-	jsonStr := []byte(json)
-	return http.Post(url, "application/json", bytes.NewBuffer(jsonStr))
+func httpPost(s *httptest.Server, route string, json string) (*http.Response, error) {
+	fullURL := s.URL + "/" + route
+	return http.Post(fullURL, "application/json", bytes.NewBuffer([]byte(json)))
 }
