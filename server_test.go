@@ -40,7 +40,7 @@ func TestGetClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
-	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
+	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
 	resp, err := httpGet(server, urlPath(1, "clusters"))
 	if err != nil {
@@ -64,7 +64,7 @@ func TestPostClusters(t *testing.T) {
 	}
 	id := "123"
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
-	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
+	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
 	resp, err := httpPost(server, urlPath(1, "clusters", id), jsonData)
 	if err != nil {
@@ -73,44 +73,53 @@ func TestPostClusters(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
 	}
-	resp, err = httpGet(server, "/clusters")
+	resp, err = httpGet(server, urlPath(1, "clusters", id))
 	defer resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.StatusCode != 200 {
-		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
+		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	json := parseJSONClusters(resp)
-	if json[id].Components[0].Component.Name != "component-a" {
+	clusterMap := make(map[string]types.Cluster)
+	// if err := json.NewDecoder(resp.Body).Decode(&clusterMap); err != nil {
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		t.Fatalf("error reading response body (%s)", err)
+	}
+	t.Logf("got response body %s", string(respBody))
+	if err := json.Unmarshal(respBody, &clusterMap); err != nil {
+		t.Fatalf("parsing clusters map (%s)", err)
+	}
+	if clusterMap[id].Components[0].Component.Name != "component-a" {
 		t.Error("unexpected component name from JSON response")
 	}
 	//TODO Why do we have to dereference "Version" twice?
-	if json[id].Components[0].Version.Version != "1.0" {
+	if clusterMap[id].Components[0].Version.Version != "1.0" {
 		t.Error("unexpected component version from JSON response")
 	}
 }
 
-func parseJSONClusters(r *http.Response) map[string]types.Cluster {
-	rawJSON, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Print(err)
+func parseJSONClusters(r *http.Response) (map[string]types.Cluster, error) {
+	rawJSONMap := make(map[string]*json.RawMessage)
+	if err := json.NewDecoder(r.Body).Decode(&rawJSONMap); err != nil {
+		return nil, err
 	}
-	var rawJSONMap map[string]*json.RawMessage
-	err = json.Unmarshal(rawJSON, &rawJSONMap)
-	if err != nil {
-		log.Print(err)
-	}
+	log.Printf("received raw json map %+v", rawJSONMap)
+
 	clusters := make(map[string]types.Cluster)
 	for id := range rawJSONMap {
 		var clusterObj types.Cluster
-		err = json.Unmarshal(*rawJSONMap[id], &clusterObj)
-		if err != nil {
+		if rawJSONMap[id] == nil {
+			return nil, fmt.Errorf("id %s is nil", id)
+		}
+		if err := json.Unmarshal(*rawJSONMap[id], &clusterObj); err != nil {
 			log.Print(err)
+			continue
 		}
 		clusters[id] = clusterObj
 	}
-	return clusters
+	return clusters, nil
 }
 
 func httpGet(s *httptest.Server, route string) (*http.Response, error) {
