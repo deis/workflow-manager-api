@@ -397,15 +397,35 @@ func getRDSDB() (*sql.DB, error) {
 func createClustersTable(db *sql.DB) (sql.Result, error) {
 	return db.Exec(fmt.Sprintf(
 		"CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s timestamp, %s timestamp DEFAULT current_timestamp, %s json )",
-		clustersTableName, clustersTableIDKey, clustersTableFirstSeenKey, clustersTableLastSeenKey, clustersTableDataKey))
+		clustersTableName,
+		clustersTableIDKey,
+		clustersTableFirstSeenKey,
+		clustersTableLastSeenKey,
+		clustersTableDataKey,
+	))
 }
 
 func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
-	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s uuid, %s timestamp, %s json, unique (%s, %s) )", clustersCheckinsTableName, clustersCheckinsTableIDKey, clustersTableIDKey, clustersCheckinsTableClusterCreatedAtKey, clustersCheckinsTableDataKey, clustersCheckinsTableClusterIDKey, clustersCheckinsTableClusterCreatedAtKey))
+	return db.Exec(fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s uuid, %s timestamp, %s json, unique (%s, %s) )",
+		clustersCheckinsTableName,
+		clustersCheckinsTableIDKey,
+		clustersTableIDKey,
+		clustersCheckinsTableClusterCreatedAtKey,
+		clustersCheckinsTableDataKey,
+		clustersCheckinsTableClusterIDKey,
+		clustersCheckinsTableClusterCreatedAtKey
+		))
 }
 
 func createVersionsTable(db *sql.DB) (sql.Result, error) {
-	return db.Exec(fmt.Sprintf("CREATE TABLE IF NOT EXISTS %s ( %s varchar(64) PRIMARY KEY, %s timestamp, %s json )", versionsTableName, versionsTableComponentNameKey, versionsTableLastUpdatedKey, versionsTableDataKey))
+	return db.Exec(fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s ( %s varchar(64) PRIMARY KEY, %s timestamp, %s json )",
+		versionsTableName,
+		versionsTableComponentNameKey,
+		versionsTableLastUpdatedKey,
+		versionsTableDataKey,
+	))
 }
 
 func verifyClustersTable(db *sql.DB) error {
