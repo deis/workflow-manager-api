@@ -153,7 +153,7 @@ func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sq
 	}
 	result, err := newClusterCheckinsDBRecord(db, id, js)
 	if err != nil {
-		log.Println("cluster checkin db record not created")
+		log.Println("cluster checkin db record not created", err)
 		return nil, err
 	}
 	return result, nil
