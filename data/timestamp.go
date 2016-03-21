@@ -3,7 +3,6 @@ package data
 import (
 	"database/sql/driver"
 	"errors"
-	"fmt"
 	"time"
 )
 
