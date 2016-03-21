@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"testing"
+	"net/http/httptest"
+	"net/http"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager-api/data"
