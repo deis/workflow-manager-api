@@ -16,20 +16,20 @@ The `data` package is designed to bootstrap from scratch a working (empty) table
 Data is organized into three tables, with fields outlined below:
 
 * `clusters`, a table that stores "Cluster" records (each cluster record maps to a unique deis cluster seen in the wild)
-..* `cluster_id uuid PRIMARY KEY`
-..* `first_seen timestamp`
-..* `last_seen timestamp DEFAULT current_timestamp`
-..* `data json`
+  * `cluster_id uuid PRIMARY KEY`
+  * `first_seen timestamp`
+  * `last_seen timestamp DEFAULT current_timestamp`
+  * `data json`
 * `clusters_checkins`, a table that stores records of deis clusters checking in with the API
-..* `checkins_id bigserial PRIMARY KEY`
-..* `cluster_id uuid`
-..* `created_at timestamp`
-..* `data json`
-..* with a uniqueness constraint `unique (cluster_id, created_at)`
+  * `checkins_id bigserial PRIMARY KEY`
+  * `cluster_id uuid`
+  * `created_at timestamp`
+  * `data json`
+  * with a uniqueness constraint `unique (cluster_id, created_at)`
 * `versions`, a table that stores authoritative deis component version information
-..* `component_name varchar(64) PRIMARY KEY`
-..* `last_updated timestamp`
-..* `data json`
+  * `component_name varchar(64) PRIMARY KEY`
+  * `last_updated timestamp`
+  * `data json`
 
 ## License
 
