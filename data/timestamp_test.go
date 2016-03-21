@@ -6,7 +6,8 @@ import (
 )
 
 // since various times have been decoded from different encodings, they have different bits of
-// information. for example, a time decoded from time.Kitchen (3:04PM) has much less information
+// information (and missing info is assumed to be the zero value by time.Parse).
+// For example, a time decoded from time.Kitchen (3:04PM) has much less information
 // than time.RFC3339Nano (2006-01-02T15:04:05.999999999Z07:00), so t1.Equal(t2) will be false.
 // this func tries to determine whether they are "close enough"
 func fuzzyTimeEqual(t1 time.Time, t2 time.Time) bool {
