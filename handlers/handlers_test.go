@@ -14,7 +14,7 @@ import (
 type clustersHandlerTestCase struct {
 	Name  string
 	DB    data.DB
-	Count db.Count
+	Count data.Count
 }
 
 func TestClustersHandler(t *testing.T) {
