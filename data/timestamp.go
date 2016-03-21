@@ -10,6 +10,10 @@ const (
 	stdTimestampFmt = time.RFC3339
 )
 
+var (
+	errInvalidType = errors.New("invalid type for current timestamp")
+)
+
 // Timestamp is a fmt.Stringer, sql.Scanner and driver.Valuer implementation which is able to encode and decode
 // time.Time values into and out of a database. This implementation was inspired heavily from
 // https://groups.google.com/forum/#!topic/golang-nuts/P6Wrm_uVvJ0
@@ -35,7 +39,7 @@ func (ts *Timestamp) Scan(value interface{}) error {
 		ts.Time = &t
 		return nil
 	default:
-		return errors.New("invalid type for current_timestamp")
+		return errInvalidType
 	}
 }
 
