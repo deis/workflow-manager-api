@@ -17,6 +17,4 @@ import:
   - types
 - package: github.com/lib/pq
 - package: github.com/arschles/assert
-- package: github.com/mxk/go-sqlite
-  subpackages:
-  - sqlite3
+- package: github.com/mxk/go-sqlite/sqlite3

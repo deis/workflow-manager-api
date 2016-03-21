@@ -9,22 +9,29 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/deis/workflow-manager-api/data"
+	"github.com/deis/workflow-manager-api/handlers"
 	"github.com/deis/workflow-manager/types"
 	"github.com/gorilla/mux"
 )
 
-func newServer() *httptest.Server {
-	r := mux.NewRouter()
+func newServer(db data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
 	// Routes consist of a path and a handler function.
-	r.HandleFunc("/clusters", defaultHandler)
-	r.HandleFunc("/versions", versionsHandler).Methods("GET")
-	r.HandleFunc("/versions", versionsPostHandler).Methods("POST")
-	r.HandleFunc("/clusters/{id}", clustersPostHandler).Methods("POST")
+	r := mux.NewRouter()
+	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsGetHandler(db, ver)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsPostHandler(db, ver)).Methods("POST")
+	r.HandleFunc("/{apiVersion}/clusters", handlers.ClustersHandler(db, counter)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersGetHandler(db, cluster)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersPostHandler(db, cluster)).Methods("POST")
 	return httptest.NewServer(r)
 }
 
 func TestGetClusters(t *testing.T) {
-	server := newServer()
+	memDB, err := data.NewMemDB()
+	if err != nil {
+		t.Fatalf("error creating new in-memory DB (%s)", err)
+	}
+	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
 	defer server.Close()
 	resp, err := httpGet(server, "/versions")
 	if err != nil {
@@ -36,9 +43,13 @@ func TestGetClusters(t *testing.T) {
 }
 
 func TestPostClusters(t *testing.T) {
+	memDB, err := data.NewMemDB()
+	if err != nil {
+		t.Fatalf("error creating new in-memory DB (%s)", err)
+	}
 	id := "123"
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
-	server := newServer()
+	server := newServer(memDB, data.FakeVersion{}, data.FakeCount{}, data.FakeCluster{})
 	defer server.Close()
 	resp, err := httpPost(server.URL+"/clusters/"+id, jsonData)
 	if err != nil {
