@@ -6,8 +6,6 @@ import:
   - aws/session
   - service/rds
 - package: github.com/deis/workflow-manager
-  vcs: git
-  repo: git@github.com:deis/workflow-manager
   subpackages:
   - components
   - types
