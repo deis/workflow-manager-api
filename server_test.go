@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/httptest"
@@ -87,21 +86,19 @@ func TestPostClusters(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	clusterMap := make(map[string]types.Cluster)
-	// if err := json.NewDecoder(resp.Body).Decode(&clusterMap); err != nil {
-	respBody, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
+	cluster := new(types.Cluster)
+	if err := json.NewDecoder(resp.Body).Decode(cluster); err != nil {
 		t.Fatalf("error reading response body (%s)", err)
 	}
-	t.Logf("got response body %s", string(respBody))
-	if err := json.Unmarshal(respBody, &clusterMap); err != nil {
-		t.Fatalf("parsing clusters map (%s)", err)
+	if len(cluster.Components) <= 0 {
+		t.Fatalf("no components returned")
 	}
-	if clusterMap[id].Components[0].Component.Name != "component-a" {
+	if cluster.Components[0].Component.Name != "component-a" {
 		t.Error("unexpected component name from JSON response")
 	}
-	//TODO Why do we have to dereference "Version" twice?
-	if clusterMap[id].Components[0].Version.Version != "1.0" {
+	// Note that we have to dereference "Version" twice because cluster.Components[0].Version
+	// is itself a types.Version, which has both a "Released" and "Version" field
+	if cluster.Components[0].Version.Version != "1.0" {
 		t.Error("unexpected component version from JSON response")
 	}
 }
