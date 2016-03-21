@@ -1,5 +1,5 @@
-hash: 9b309b068793fc00a584a6bbf47ca0393a1b02716a83f60aed4769761ed4c74e
-updated: 2016-03-21T11:13:54.075983136-07:00
+hash: 0a4b244a0a57f044a285064a483060b83cdead61511aa19e2a3fffaddd2921bd
+updated: 2016-03-21T15:27:47.384017723-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
@@ -41,8 +41,6 @@ imports:
   - spew
 - name: github.com/deis/workflow-manager
   version: b37815165204e8a899ece414286fd8e7aba9f6f1
-  repo: git@github.com:deis/workflow-manager
-  vcs: git
   subpackages:
   - components
   - types
