@@ -3,9 +3,9 @@ package handlers
 import (
 	"bytes"
 	"errors"
-	"testing"
-	"net/http/httptest"
 	"net/http"
+	"net/http/httptest"
+	"testing"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager-api/data"
@@ -24,7 +24,7 @@ func TestClustersHandler(t *testing.T) {
 		{Name: "Valid count", DB: db, Count: data.FakeCount{Num: 123, Err: nil}},
 		{Name: "Error counting", DB: db, Count: data.FakeCount{Num: 0, Err: errors.New("SOME ERROR")}},
 	}
-	for i, testCase := range testCases {
+	for _, testCase := range testCases {
 		handler := ClustersHandler(testCase.DB, testCase.Count)
 		w := httptest.NewRecorder()
 		r, err := http.NewRequest("GET", "/1/clusters", &bytes.Buffer{})
