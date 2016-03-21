@@ -253,14 +253,12 @@ func (r RDSDB) Get() (*sql.DB, error) {
 }
 
 // VerifyPersistentStorage is a high level interace for verifying storage abstractions
-func VerifyPersistentStorage() error {
-	db, err := getRDSDB()
+func VerifyPersistentStorage(dbGetter DB) error {
+	db, err := dbGetter.Get()
 	if err != nil {
-		log.Println("couldn't get a db connection")
 		return err
 	}
-	err = verifyVersionsTable(db)
-	if err != nil {
+	if err := verifyVersionsTable(db); err != nil {
 		log.Println("unable to verify " + versionsTableName + " table")
 		return err
 	}

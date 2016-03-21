@@ -21,13 +21,12 @@ var (
 
 // Main opens up a TLS listening port
 func main() {
-	err := data.VerifyPersistentStorage()
-	if err != nil {
+	db := data.RDSDB{}
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatal("unable to verify persistent storage")
 	}
-	r := getRoutes(data.RDSDB{}, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
-	err = http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r)
-	if err != nil {
+	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
+	if err := http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }

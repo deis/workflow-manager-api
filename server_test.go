@@ -40,6 +40,9 @@ func TestGetClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
+	if err := data.VerifyPersistentStorage(memDB); err != nil {
+		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	}
 	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
 	resp, err := httpGet(server, urlPath(1, "clusters"))
@@ -61,6 +64,9 @@ func TestPostClusters(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(memDB); err != nil {
+		t.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
 	id := "123"
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
