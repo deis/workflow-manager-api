@@ -10,22 +10,10 @@ import (
 
 func testCluster() types.Cluster {
 	return types.Cluster{
-		ID:        clusterID,
-		FirstSeen: time.Now(),
-		LastSeen:  time.Now().Add(1 * time.Hour),
-		Components: []types.ComponentVersion{
-			types.ComponentVersion{
-				Component: types.Component{
-					Name:        componentName,
-					Description: componentDescription,
-				},
-				Version: types.Version{
-					Version:  version,
-					Released: released,
-				},
-				UpdateAvailable: updateAvailable,
-			},
-		},
+		ID:         clusterID,
+		FirstSeen:  time.Now(),
+		LastSeen:   time.Now().Add(1 * time.Hour),
+		Components: []types.ComponentVersion{testComponentVersion()},
 	}
 }
 
