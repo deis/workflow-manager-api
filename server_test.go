@@ -46,7 +46,7 @@ func TestGetVersions(t *testing.T) {
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
 	decodedVer := new(types.ComponentVersion)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedVer))
-	assert.Equal(t, *decodedVer, setVer, "version")
+	assert.Equal(t, *decodedVer, setVer, "component version")
 }
 
 // tests the POST /{apiVersion}/versions/{component} endpoint
