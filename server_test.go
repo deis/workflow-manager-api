@@ -51,7 +51,30 @@ func TestGetVersions(t *testing.T) {
 
 // tests the POST /{apiVersion}/versions/{component} endpoint
 func TestPostVersions(t *testing.T) {
-	t.Skip("TODO")
+	memDB, err := newMemDB()
+	assert.NoErr(t, err)
+	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
+	versionFromDB := data.VersionFromDB{}
+	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
+	defer srv.Close()
+	component := "testcomponent"
+	componentVer := types.ComponentVersion{
+		Component:       types.Component{Name: component, Description: "this is a test component"},
+		Version:         types.Version{Version: "testversion", Released: "today"},
+		UpdateAvailable: "yup",
+	}
+	body := new(bytes.Buffer)
+	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
+	resp, err := httpPost(srv, urlPath(1, "versions", component), string(body.Bytes()))
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+	retComponentVersion := new(types.ComponentVersion)
+	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(retComponentVersion))
+	assert.Equal(t, *retComponentVersion, componentVer, "component version")
+	fetchedComponentVersion, err := data.GetVersion(component, memDB, versionFromDB)
+	assert.NoErr(t, err)
+	assert.Equal(t, fetchedComponentVersion, componentVer, "component version")
 }
 
 // tests the GET /{apiVersion}/clusters endpoint
