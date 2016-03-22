@@ -15,6 +15,11 @@ import (
 	"github.com/deis/workflow-manager/types"
 )
 
+const (
+	componentName = "testcomponent"
+	clusterID     = "testcluster"
+)
+
 func newServer(db data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
 	// Routes consist of a path and a handler function.
 	return httptest.NewServer(getRoutes(db, ver, counter, cluster))
@@ -32,15 +37,14 @@ func TestGetVersions(t *testing.T) {
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
-	component := "testcomponent"
 	componentVer := types.ComponentVersion{
-		Component:       types.Component{Name: component, Description: "this is a test component"},
+		Component:       types.Component{Name: componentName, Description: "this is a test component"},
 		Version:         types.Version{Version: "testversion", Released: "today"},
 		UpdateAvailable: "yup",
 	}
-	setVer, err := data.SetVersion(component, componentVer, memDB, versionFromDB)
+	setVer, err := data.SetVersion(componentName, componentVer, memDB, versionFromDB)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath(1, "versions", component))
+	resp, err := httpGet(srv, urlPath(1, "versions", componentName))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -57,22 +61,21 @@ func TestPostVersions(t *testing.T) {
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
-	component := "testcomponent"
 	componentVer := types.ComponentVersion{
-		Component:       types.Component{Name: component, Description: "this is a test component"},
+		Component:       types.Component{Name: componentName, Description: "this is a test component"},
 		Version:         types.Version{Version: "testversion", Released: "today"},
 		UpdateAvailable: "yup",
 	}
 	body := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
-	resp, err := httpPost(srv, urlPath(1, "versions", component), string(body.Bytes()))
+	resp, err := httpPost(srv, urlPath(1, "versions", componentName), string(body.Bytes()))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
 	retComponentVersion := new(types.ComponentVersion)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(retComponentVersion))
 	assert.Equal(t, *retComponentVersion, componentVer, "component version")
-	fetchedComponentVersion, err := data.GetVersion(component, memDB, versionFromDB)
+	fetchedComponentVersion, err := data.GetVersion(componentName, memDB, versionFromDB)
 	assert.NoErr(t, err)
 	assert.Equal(t, fetchedComponentVersion, componentVer, "component version")
 }
@@ -108,11 +111,10 @@ func TestGetClusterByID(t *testing.T) {
 	clusterFromDB := data.ClusterFromDB{}
 	srv := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, clusterFromDB)
 	defer srv.Close()
-	id := "123"
-	cluster := types.Cluster{ID: id, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
-	newCluster, err := data.SetCluster(id, cluster, memDB, clusterFromDB)
+	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
+	newCluster, err := data.SetCluster(clusterID, cluster, memDB, clusterFromDB)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath(1, "clusters", id))
+	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, 200, "response code")
@@ -130,18 +132,17 @@ func TestPostClusters(t *testing.T) {
 	if err := data.VerifyPersistentStorage(memDB); err != nil {
 		t.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
-	id := "123"
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
 	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
-	resp, err := httpPost(server, urlPath(1, "clusters", id), jsonData)
+	resp, err := httpPost(server, urlPath(1, "clusters", clusterID), jsonData)
 	if err != nil {
 		t.Fatalf("POSTing to endpoint (%s)", err)
 	}
 	if resp.StatusCode != 200 {
 		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	resp, err = httpGet(server, urlPath(1, "clusters", id))
+	resp, err = httpGet(server, urlPath(1, "clusters", clusterID))
 	defer resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
