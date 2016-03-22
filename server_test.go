@@ -34,7 +34,7 @@ func TestGetVersions(t *testing.T) {
 	defer srv.Close()
 	component := "testcomponent"
 	componentVer := types.ComponentVersion{
-		Component:       types.Component{Name: "testcomponent", Description: "this is a test component"},
+		Component:       types.Component{Name: component, Description: "this is a test component"},
 		Version:         types.Version{Version: "testversion", Released: "today"},
 		UpdateAvailable: "yup",
 	}
