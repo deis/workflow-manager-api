@@ -21,23 +21,22 @@ var (
 
 // Main opens up a TLS listening port
 func main() {
-	err := data.VerifyPersistentStorage()
-	if err != nil {
+	db := data.RDSDB{}
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatal("unable to verify persistent storage")
 	}
-	r := getRoutes()
-	err = http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r)
-	if err != nil {
+	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
+	if err := http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func getRoutes() *mux.Router {
+func getRoutes(db data.DB, version data.Version, count data.Count, cluster data.Cluster) *mux.Router {
 	r := mux.NewRouter()
-	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsGetHandler(data.RDSDB{}, data.VersionFromDB{})).Methods("GET")
-	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsPostHandler(data.RDSDB{}, data.VersionFromDB{})).Methods("POST")
-	r.HandleFunc("/{apiVersion}/clusters", handlers.ClustersHandler(data.RDSDB{}, data.ClusterCount{})).Methods("GET")
-	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersGetHandler(data.RDSDB{}, data.ClusterFromDB{})).Methods("GET")
-	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersPostHandler(data.RDSDB{}, data.ClusterFromDB{})).Methods("POST")
+	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsGetHandler(db, version)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsPostHandler(db, version)).Methods("POST")
+	r.HandleFunc("/{apiVersion}/clusters", handlers.ClustersHandler(db, count)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersGetHandler(db, cluster)).Methods("GET")
+	r.HandleFunc("/{apiVersion}/clusters/{id}", handlers.ClustersPostHandler(db, cluster)).Methods("POST")
 	return r
 }

@@ -3,6 +3,7 @@ package handlers
 // handler echoes the HTTP request.
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
@@ -59,11 +60,14 @@ func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *h
 		var result types.Cluster
 		result, err = data.SetCluster(id, cluster, d, c)
 		if err != nil {
+			log.Printf("SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		data, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
 			log.Fatalf("JSON marshaling failed: %s", err)
+			http.Error(w, fmt.Sprintf("JSON marshaling failed", err), http.StatusInternalServerError)
+			return
 		}
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte(data))

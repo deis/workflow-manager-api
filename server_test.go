@@ -3,30 +3,48 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"fmt"
 	"log"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
+	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager/types"
-	"github.com/gorilla/mux"
 )
 
-func newServer() *httptest.Server {
-	r := mux.NewRouter()
+func newServer(db data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
 	// Routes consist of a path and a handler function.
-	r.HandleFunc("/clusters", defaultHandler)
-	r.HandleFunc("/versions", versionsHandler).Methods("GET")
-	r.HandleFunc("/versions", versionsPostHandler).Methods("POST")
-	r.HandleFunc("/clusters/{id}", clustersPostHandler).Methods("POST")
-	return httptest.NewServer(r)
+	return httptest.NewServer(getRoutes(db, ver, counter, cluster))
 }
 
+func urlPath(ver int, remainder ...string) string {
+	return fmt.Sprintf("%d/%s", ver, strings.Join(remainder, "/"))
+}
+
+// tests the GET /{apiVersion}/versions/{component} endpoint
+func TestGetVersions(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the POST /{apiVersion}/versions/{component} endpoint
+func TestPostVersions(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the GET /{apiVersion}/clusters endpoint
 func TestGetClusters(t *testing.T) {
-	server := newServer()
+	memDB, err := newMemDB()
+	if err != nil {
+		t.Fatalf("error creating new in-memory DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(memDB); err != nil {
+		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	}
+	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
-	resp, err := httpGet(server, "/versions")
+	resp, err := httpGet(server, urlPath(1, "clusters"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -35,63 +53,83 @@ func TestGetClusters(t *testing.T) {
 	}
 }
 
+// tests the GET /{apiVersion}/clusters/{id} endpoint
+func TestGetClusterByID(t *testing.T) {
+	t.Skip("TODO")
+}
+
+// tests the POST {apiVersion}/clusters/{id} endpoint
 func TestPostClusters(t *testing.T) {
+	memDB, err := newMemDB()
+	if err != nil {
+		t.Fatalf("error creating new in-memory DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(memDB); err != nil {
+		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	}
 	id := "123"
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
-	server := newServer()
+	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
-	resp, err := httpPost(server.URL+"/clusters/"+id, jsonData)
+	resp, err := httpPost(server, urlPath(1, "clusters", id), jsonData)
 	if err != nil {
-		t.Fatal(err)
+		t.Fatalf("POSTing to endpoint (%s)", err)
 	}
 	if resp.StatusCode != 200 {
-		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
+		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	resp, err = httpGet(server, "/clusters")
+	resp, err = httpGet(server, urlPath(1, "clusters", id))
 	defer resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
 	}
 	if resp.StatusCode != 200 {
-		t.Fatalf("Received non-200 response: %d\n", resp.StatusCode)
+		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	json := parseJSONClusters(resp)
-	if json[id].Components[0].Component.Name != "component-a" {
+	cluster := new(types.Cluster)
+	if err := json.NewDecoder(resp.Body).Decode(cluster); err != nil {
+		t.Fatalf("error reading response body (%s)", err)
+	}
+	if len(cluster.Components) <= 0 {
+		t.Fatalf("no components returned")
+	}
+	if cluster.Components[0].Component.Name != "component-a" {
 		t.Error("unexpected component name from JSON response")
 	}
-	//TODO Why do we have to dereference "Version" twice?
-	if json[id].Components[0].Version.Version != "1.0" {
+	// Note that we have to dereference "Version" twice because cluster.Components[0].Version
+	// is itself a types.Version, which has both a "Released" and "Version" field
+	if cluster.Components[0].Version.Version != "1.0" {
 		t.Error("unexpected component version from JSON response")
 	}
 }
 
-func parseJSONClusters(r *http.Response) map[string]types.Cluster {
-	rawJSON, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Print(err)
+func parseJSONClusters(r *http.Response) (map[string]types.Cluster, error) {
+	rawJSONMap := make(map[string]*json.RawMessage)
+	if err := json.NewDecoder(r.Body).Decode(&rawJSONMap); err != nil {
+		return nil, err
 	}
-	var rawJSONMap map[string]*json.RawMessage
-	err = json.Unmarshal(rawJSON, &rawJSONMap)
-	if err != nil {
-		log.Print(err)
-	}
+	log.Printf("received raw json map %+v", rawJSONMap)
+
 	clusters := make(map[string]types.Cluster)
 	for id := range rawJSONMap {
 		var clusterObj types.Cluster
-		err = json.Unmarshal(*rawJSONMap[id], &clusterObj)
-		if err != nil {
+		if rawJSONMap[id] == nil {
+			return nil, fmt.Errorf("id %s is nil", id)
+		}
+		if err := json.Unmarshal(*rawJSONMap[id], &clusterObj); err != nil {
 			log.Print(err)
+			continue
 		}
 		clusters[id] = clusterObj
 	}
-	return clusters
+	return clusters, nil
 }
 
 func httpGet(s *httptest.Server, route string) (*http.Response, error) {
-	return http.Get(s.URL + route)
+	return http.Get(s.URL + "/" + route)
 }
 
-func httpPost(url string, json string) (*http.Response, error) {
-	jsonStr := []byte(json)
-	return http.Post(url, "application/json", bytes.NewBuffer(jsonStr))
+func httpPost(s *httptest.Server, route string, json string) (*http.Response, error) {
+	fullURL := s.URL + "/" + route
+	return http.Post(fullURL, "application/json", bytes.NewBuffer([]byte(json)))
 }
