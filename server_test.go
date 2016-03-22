@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -121,28 +120,6 @@ func TestPostClusters(t *testing.T) {
 	if cluster.Components[0].Version.Version != "1.0" {
 		t.Error("unexpected component version from JSON response")
 	}
-}
-
-func parseJSONClusters(r *http.Response) (map[string]types.Cluster, error) {
-	rawJSONMap := make(map[string]*json.RawMessage)
-	if err := json.NewDecoder(r.Body).Decode(&rawJSONMap); err != nil {
-		return nil, err
-	}
-	log.Printf("received raw json map %+v", rawJSONMap)
-
-	clusters := make(map[string]types.Cluster)
-	for id := range rawJSONMap {
-		var clusterObj types.Cluster
-		if rawJSONMap[id] == nil {
-			return nil, fmt.Errorf("id %s is nil", id)
-		}
-		if err := json.Unmarshal(*rawJSONMap[id], &clusterObj); err != nil {
-			log.Print(err)
-			continue
-		}
-		clusters[id] = clusterObj
-	}
-	return clusters, nil
 }
 
 func httpGet(s *httptest.Server, route string) (*http.Response, error) {
