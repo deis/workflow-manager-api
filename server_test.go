@@ -26,7 +26,27 @@ func urlPath(ver int, remainder ...string) string {
 
 // tests the GET /{apiVersion}/versions/{component} endpoint
 func TestGetVersions(t *testing.T) {
-	t.Skip("TODO")
+	memDB, err := newMemDB()
+	assert.NoErr(t, err)
+	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
+	versionFromDB := data.VersionFromDB{}
+	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
+	defer srv.Close()
+	component := "testcomponent"
+	componentVer := types.ComponentVersion{
+		Component:       types.Component{Name: "testcomponent", Description: "this is a test component"},
+		Version:         types.Version{Version: "testversion", Released: "today"},
+		UpdateAvailable: "yup",
+	}
+	setVer, err := data.SetVersion(component, componentVer, memDB, versionFromDB)
+	assert.NoErr(t, err)
+	resp, err := httpGet(srv, urlPath(1, "versions", component))
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+	decodedVer := new(types.ComponentVersion)
+	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedVer))
+	assert.Equal(t, *decodedVer, setVer, "version")
 }
 
 // tests the POST /{apiVersion}/versions/{component} endpoint
