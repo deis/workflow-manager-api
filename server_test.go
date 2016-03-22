@@ -9,7 +9,9 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
+	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager/types"
 )
@@ -55,7 +57,25 @@ func TestGetClusters(t *testing.T) {
 
 // tests the GET /{apiVersion}/clusters/{id} endpoint
 func TestGetClusterByID(t *testing.T) {
-	t.Skip("TODO")
+	memDB, err := newMemDB()
+	assert.NoErr(t, err)
+	if err := data.VerifyPersistentStorage(memDB); err != nil {
+		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	}
+	clusterFromDB := data.ClusterFromDB{}
+	srv := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, clusterFromDB)
+	defer srv.Close()
+	id := "123"
+	cluster := types.Cluster{ID: id, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
+	newCluster, err := data.SetCluster(id, cluster, memDB, clusterFromDB)
+	assert.NoErr(t, err)
+	resp, err := httpGet(srv, urlPath(1, "clusters", id))
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, 200, "response code")
+	decodedCluster := new(types.Cluster)
+	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedCluster))
+	assert.Equal(t, *decodedCluster, newCluster, "returned cluster")
 }
 
 // tests the POST {apiVersion}/clusters/{id} endpoint
