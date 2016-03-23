@@ -26,7 +26,7 @@ func main() {
 		log.Fatal("unable to verify persistent storage")
 	}
 	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
-	if err := http.ListenAndServeTLS(":"+listenPort, "server.pem", "server.key", r); err != nil {
+	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
