@@ -31,7 +31,3 @@ func newMemDB() (DB, error) {
 	}
 	return &memDB{db: db}, nil
 }
-
-func newSQLite3DB() (*sql.DB, error) {
-	return sql.Open(sqlite3Str, memStr)
-}
