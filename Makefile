@@ -1,6 +1,7 @@
 SHORT_NAME ?= workflow-manager-api
 
 include versioning.mk
+include includes.mk
 
 # Enable vendor/ directory support.
 export GO15VENDOREXPERIMENT=1
