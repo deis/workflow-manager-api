@@ -46,8 +46,4 @@ docker-build:
 	docker build --rm -t ${IMAGE} rootfs
 	docker tag ${IMAGE} ${MUTABLE_IMAGE}
 
-# Push to a registry that Kubernetes can access.
-docker-push:
-	docker push ${IMAGE}
-
 .PHONY: all build docker-compile kube-up kube-down deploy
