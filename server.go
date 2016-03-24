@@ -23,7 +23,7 @@ var (
 func main() {
 	db := data.RDSDB{}
 	if err := data.VerifyPersistentStorage(db); err != nil {
-		log.Fatal("unable to verify persistent storage")
+		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
 	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
