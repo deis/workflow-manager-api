@@ -21,7 +21,7 @@ import (
 
 const (
 	rDSRegionKey                             = "WORKFLOW_MANAGER_API_RDS_REGION"
-	dBNameKey                                = "WORKFLOW_MANAGER_API_DBNAME"
+	dBInstanceKey                            = "WORKFLOW_MANAGER_API_DBINSTANCE"
 	dBUserKey                                = "WORKFLOW_MANAGER_API_DBUSER"
 	dBPassKey                                = "WORKFLOW_MANAGER_API_DBPASS"
 	clustersTableName                        = "clusters"
@@ -41,11 +41,11 @@ const (
 )
 
 var (
-	rDSRegion = os.Getenv(rDSRegionKey)
-	dBName    = os.Getenv(dBNameKey)
-	dBUser    = os.Getenv(dBUserKey)
-	dBPass    = os.Getenv(dBPassKey)
-	mu        sync.Mutex
+	rDSRegion  = os.Getenv(rDSRegionKey)
+	dBInstance = os.Getenv(dBInstanceKey)
+	dBUser     = os.Getenv(dBUserKey)
+	dBPass     = os.Getenv(dBPassKey)
+	mu         sync.Mutex
 )
 
 // ClustersTable type that expresses the `clusters` postgres table schema
@@ -370,14 +370,14 @@ func getRDSSession() *rds.RDS {
 func getRDSDB() (*sql.DB, error) {
 	svc := getRDSSession()
 	dbInstanceIdentifier := new(string)
-	dbInstanceIdentifier = &dBName
+	dbInstanceIdentifier = &dBInstance
 	params := rds.DescribeDBInstancesInput{DBInstanceIdentifier: dbInstanceIdentifier}
 	resp, err := svc.DescribeDBInstances(&params)
 	if err != nil {
 		return nil, err
 	}
 	if len(resp.DBInstances) > 1 {
-		log.Printf("more than one database instance returned for %s, using the 1st one\n", dBName)
+		log.Printf("more than one database instance returned for %s, using the 1st one", dBInstance)
 	}
 	instance := resp.DBInstances[0]
 	url := *instance.Endpoint.Address + ":" + strconv.FormatInt(*instance.Endpoint.Port, 10)
