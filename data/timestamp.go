@@ -24,6 +24,9 @@ type Timestamp struct {
 // Scan is the Scanner interface implementation
 func (ts *Timestamp) Scan(value interface{}) error {
 	switch v := value.(type) {
+	case time.Time:
+		ts.Time = &v
+		return nil
 	case string:
 		t, err := time.Parse(stdTimestampFmt, v)
 		if err != nil {
