@@ -18,6 +18,7 @@ func ClustersHandler(d data.DB, c data.Count) func(http.ResponseWriter, *http.Re
 	return func(w http.ResponseWriter, r *http.Request) {
 		count, err := data.GetClusterCount(d, c)
 		if err != nil {
+			log.Printf("data.GetClusterCount error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -31,11 +32,13 @@ func ClustersGetHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *ht
 		id := mux.Vars(r)["id"]
 		cluster, err := data.GetCluster(id, d, c)
 		if err != nil {
+			log.Printf("data.GetCluster error (%s)", err)
 			http.NotFound(w, r)
 			return
 		}
 		js, err := json.Marshal(cluster)
 		if err != nil {
+			log.Printf("JSON marshaling failed (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -54,18 +57,18 @@ func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *h
 		cluster := types.Cluster{}
 		err := json.NewDecoder(r.Body).Decode(&cluster)
 		if err != nil {
-			log.Print(err)
+			log.Printf("Error decoding POST body JSON data (%s)", err)
 			return
 		}
 		var result types.Cluster
 		result, err = data.SetCluster(id, cluster, d, c)
 		if err != nil {
-			log.Printf("SetCluster error (%s)", err)
+			log.Printf("data.SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		data, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			log.Fatalf("JSON marshaling failed: %s", err)
+			log.Printf("JSON marshaling failed (%s)", err)
 			http.Error(w, fmt.Sprintf("JSON marshaling failed", err), http.StatusInternalServerError)
 			return
 		}
@@ -80,11 +83,13 @@ func VersionsGetHandler(d data.DB, v data.Version) func(http.ResponseWriter, *ht
 		component := mux.Vars(r)["component"]
 		componentVersion, err := data.GetVersion(component, d, v)
 		if err != nil {
+			log.Printf("data.GetVersion error (%s)", err)
 			http.NotFound(w, r)
 			return
 		}
 		js, err := json.Marshal(componentVersion)
 		if err != nil {
+			log.Printf("JSON marshaling failed (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -103,16 +108,17 @@ func VersionsPostHandler(d data.DB, v data.Version) func(http.ResponseWriter, *h
 		componentVersion := types.ComponentVersion{}
 		err := json.NewDecoder(r.Body).Decode(&componentVersion)
 		if err != nil {
-			log.Print(err)
+			log.Printf("Error decoding POST body JSON data (%s)", err)
 			return
 		}
 		result, err := data.SetVersion(component, componentVersion, d, v)
 		if err != nil {
+			log.Printf("data.SetVersion error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 		data, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
-			log.Fatalf("JSON marshaling failed: %s", err)
+			log.Printf("JSON marshaling failed (%s)", err)
 		}
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte(data))
