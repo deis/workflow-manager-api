@@ -23,6 +23,7 @@ type timestampScanTestCase struct {
 func TestTimestampScan(t *testing.T) {
 	now := time.Now()
 	testCases := []timestampScanTestCase{
+		timestampScanTestCase{val: now, expectedTime: now, expectedErr: false},
 		timestampScanTestCase{val: now.Format(stdTimestampFmt), expectedTime: now, expectedErr: false},
 		timestampScanTestCase{val: []byte(now.Format(stdTimestampFmt)), expectedTime: now, expectedErr: false},
 		timestampScanTestCase{val: now.Format(time.ANSIC), expectedTime: now, expectedErr: true},
