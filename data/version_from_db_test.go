@@ -40,7 +40,8 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	assert.NoErr(t, err)
 	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)
-	assert.NoErr(t, VerifyPersistentStorage(memDB))
+	_, err = VerifyPersistentStorage(memDB)
+	assert.NoErr(t, err)
 	ver := VersionFromDB{}
 	cVerNoExist, err := ver.Get(sqliteDB, componentName)
 	assert.True(t, err != nil, "error not returned but expected")

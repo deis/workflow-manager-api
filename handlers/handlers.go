@@ -2,6 +2,7 @@ package handlers
 
 // handler echoes the HTTP request.
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -14,9 +15,9 @@ import (
 )
 
 // ClustersHandler route handler
-func ClustersHandler(d data.DB, c data.Count) func(http.ResponseWriter, *http.Request) {
+func ClustersHandler(db *sql.DB, c data.Count) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		count, err := data.GetClusterCount(d, c)
+		count, err := data.GetClusterCount(db, c)
 		if err != nil {
 			log.Printf("data.GetClusterCount error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -27,10 +28,10 @@ func ClustersHandler(d data.DB, c data.Count) func(http.ResponseWriter, *http.Re
 }
 
 // ClustersGetHandler route handler
-func ClustersGetHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *http.Request) {
+func ClustersGetHandler(db *sql.DB, c data.Cluster) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		cluster, err := data.GetCluster(id, d, c)
+		cluster, err := data.GetCluster(id, db, c)
 		if err != nil {
 			log.Printf("data.GetCluster error (%s)", err)
 			http.NotFound(w, r)
@@ -47,7 +48,7 @@ func ClustersGetHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *ht
 }
 
 // ClustersPostHandler route handler
-func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *http.Request) {
+func ClustersPostHandler(db *sql.DB, c data.Cluster) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
@@ -61,7 +62,7 @@ func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *h
 			return
 		}
 		var result types.Cluster
-		result, err = data.SetCluster(id, cluster, d, c)
+		result, err = data.SetCluster(id, cluster, db, c)
 		if err != nil {
 			log.Printf("data.SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -78,10 +79,10 @@ func ClustersPostHandler(d data.DB, c data.Cluster) func(http.ResponseWriter, *h
 }
 
 // VersionsGetHandler route handler
-func VersionsGetHandler(d data.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
+func VersionsGetHandler(db *sql.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		component := mux.Vars(r)["component"]
-		componentVersion, err := data.GetVersion(component, d, v)
+		componentVersion, err := data.GetVersion(component, db, v)
 		if err != nil {
 			log.Printf("data.GetVersion error (%s)", err)
 			http.NotFound(w, r)
@@ -98,7 +99,7 @@ func VersionsGetHandler(d data.DB, v data.Version) func(http.ResponseWriter, *ht
 }
 
 // VersionsPostHandler route handler
-func VersionsPostHandler(d data.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
+func VersionsPostHandler(db *sql.DB, v data.Version) func(http.ResponseWriter, *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Content-Type") != "application/json" {
 			http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
@@ -111,7 +112,7 @@ func VersionsPostHandler(d data.DB, v data.Version) func(http.ResponseWriter, *h
 			log.Printf("Error decoding POST body JSON data (%s)", err)
 			return
 		}
-		result, err := data.SetVersion(component, componentVersion, d, v)
+		result, err := data.SetVersion(component, componentVersion, db, v)
 		if err != nil {
 			log.Printf("data.SetVersion error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

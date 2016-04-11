@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -20,7 +21,8 @@ const (
 	clusterID     = "testcluster"
 )
 
-func newServer(db data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
+func newServer(d data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
+	db, _ := d.Get()
 	// Routes consist of a path and a handler function.
 	return httptest.NewServer(getRoutes(db, ver, counter, cluster))
 }
@@ -33,7 +35,8 @@ func urlPath(ver int, remainder ...string) string {
 func TestGetVersions(t *testing.T) {
 	memDB, err := newMemDB()
 	assert.NoErr(t, err)
-	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NoErr(t, err)
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
@@ -42,7 +45,7 @@ func TestGetVersions(t *testing.T) {
 		Version:         types.Version{Version: "testversion", Released: "today"},
 		UpdateAvailable: "yup",
 	}
-	setVer, err := data.SetVersion(componentName, componentVer, memDB, versionFromDB)
+	setVer, err := data.SetVersion(componentName, componentVer, db, versionFromDB)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "versions", componentName))
 	assert.NoErr(t, err)
@@ -57,7 +60,8 @@ func TestGetVersions(t *testing.T) {
 func TestPostVersions(t *testing.T) {
 	memDB, err := newMemDB()
 	assert.NoErr(t, err)
-	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NoErr(t, err)
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
@@ -75,7 +79,7 @@ func TestPostVersions(t *testing.T) {
 	retComponentVersion := new(types.ComponentVersion)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(retComponentVersion))
 	assert.Equal(t, *retComponentVersion, componentVer, "component version")
-	fetchedComponentVersion, err := data.GetVersion(componentName, memDB, versionFromDB)
+	fetchedComponentVersion, err := data.GetVersion(componentName, db, versionFromDB)
 	assert.NoErr(t, err)
 	assert.Equal(t, fetchedComponentVersion, componentVer, "component version")
 }
@@ -86,8 +90,9 @@ func TestGetClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
-	if err := data.VerifyPersistentStorage(memDB); err != nil {
-		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	_, err = data.VerifyPersistentStorage(memDB)
+	if err != nil {
+		log.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
 	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
@@ -105,14 +110,15 @@ func TestGetClusters(t *testing.T) {
 func TestGetClusterByID(t *testing.T) {
 	memDB, err := newMemDB()
 	assert.NoErr(t, err)
-	if err := data.VerifyPersistentStorage(memDB); err != nil {
-		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	db, err := data.VerifyPersistentStorage(memDB)
+	if err != nil {
+		log.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
 	clusterFromDB := data.ClusterFromDB{}
 	srv := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, clusterFromDB)
 	defer srv.Close()
 	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
-	newCluster, err := data.SetCluster(clusterID, cluster, memDB, clusterFromDB)
+	newCluster, err := data.SetCluster(clusterID, cluster, db, clusterFromDB)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)
@@ -129,8 +135,9 @@ func TestPostClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
-	if err := data.VerifyPersistentStorage(memDB); err != nil {
-		t.Fatalf("VerifyPersistentStorage (%s)", err)
+	_, err = data.VerifyPersistentStorage(memDB)
+	if err != nil {
+		log.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
 	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
