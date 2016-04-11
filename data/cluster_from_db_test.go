@@ -42,7 +42,8 @@ func TestClusterFromDBCheckin(t *testing.T) {
 	assert.NoErr(t, err)
 	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)
-	_, err = VerifyPersistentStorage(memDB)
+	db, err := VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "db")
 	assert.NoErr(t, err)
 	c := ClusterFromDB{}
 	res, err := c.Checkin(sqliteDB, clusterID, testCluster())

@@ -90,7 +90,8 @@ func TestGetClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
-	_, err = data.VerifyPersistentStorage(memDB)
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "db")
 	if err != nil {
 		log.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
@@ -135,7 +136,8 @@ func TestPostClusters(t *testing.T) {
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
-	_, err = data.VerifyPersistentStorage(memDB)
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "db")
 	if err != nil {
 		log.Fatalf("VerifyPersistentStorage (%s)", err)
 	}
