@@ -252,52 +252,48 @@ func (r RDSDB) Get() (*sql.DB, error) {
 }
 
 // VerifyPersistentStorage is a high level interace for verifying storage abstractions
-func VerifyPersistentStorage(dbGetter DB) error {
+func VerifyPersistentStorage(dbGetter DB) (*sql.DB, error) {
 	db, err := dbGetter.Get()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if err := verifyVersionsTable(db); err != nil {
 		log.Println("unable to verify " + versionsTableName + " table")
-		return err
+		return db, err
 	}
 	count, err := getTableCount(db, versionsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + versionsTableName + " table")
-		return err
+		return db, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + versionsTableName + " table")
 	err = verifyClustersTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersTableName + " table")
-		return err
+		return db, err
 	}
 	count, err = getTableCount(db, clustersTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersTableName + " table")
-		return err
+		return db, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersTableName + " table")
 	err = verifyClustersCheckinsTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersCheckinsTableName + " table")
-		return err
+		return db, err
 	}
 	count, err = getTableCount(db, clustersCheckinsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
-		return err
+		return db, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
-	return nil
+	return db, nil
 }
 
 // GetClusterCount is a high level interface for retrieving a simple cluster count
-func GetClusterCount(d DB, c Count) (int, error) {
-	db, err := d.Get()
-	if err != nil {
-		return 0, err
-	}
+func GetClusterCount(db *sql.DB, c Count) (int, error) {
 	count, err := c.Get(db)
 	if err != nil {
 		return 0, err
@@ -306,11 +302,7 @@ func GetClusterCount(d DB, c Count) (int, error) {
 }
 
 // GetCluster is a high level interface for retrieving a cluster data record
-func GetCluster(id string, d DB, c Cluster) (types.Cluster, error) {
-	db, err := d.Get()
-	if err != nil {
-		return types.Cluster{}, err
-	}
+func GetCluster(id string, db *sql.DB, c Cluster) (types.Cluster, error) {
 	cluster, err := c.Get(db, id)
 	if err != nil {
 		return types.Cluster{}, err
@@ -319,13 +311,9 @@ func GetCluster(id string, d DB, c Cluster) (types.Cluster, error) {
 }
 
 // SetCluster is a high level interface for updating a cluster data record
-func SetCluster(id string, cluster types.Cluster, d DB, c Cluster) (types.Cluster, error) {
-	db, err := d.Get()
-	if err != nil {
-		return types.Cluster{}, err
-	}
+func SetCluster(id string, cluster types.Cluster, db *sql.DB, c Cluster) (types.Cluster, error) {
 	// Check in
-	_, err = c.Checkin(db, id, cluster)
+	_, err := c.Checkin(db, id, cluster)
 	if err != nil {
 		return types.Cluster{}, err
 	}
@@ -338,11 +326,7 @@ func SetCluster(id string, cluster types.Cluster, d DB, c Cluster) (types.Cluste
 }
 
 // GetVersion is a high level interface for retrieving a version data record
-func GetVersion(component string, d DB, v Version) (types.ComponentVersion, error) {
-	db, err := d.Get()
-	if err != nil {
-		return types.ComponentVersion{}, err
-	}
+func GetVersion(component string, db *sql.DB, v Version) (types.ComponentVersion, error) {
 	componentVersion, err := v.Get(db, component)
 	if err != nil {
 		return types.ComponentVersion{}, err
@@ -351,11 +335,7 @@ func GetVersion(component string, d DB, v Version) (types.ComponentVersion, erro
 }
 
 // SetVersion is a high level interface for updating a component version record
-func SetVersion(component string, componentVersion types.ComponentVersion, d DB, v Version) (types.ComponentVersion, error) {
-	db, err := d.Get()
-	if err != nil {
-		return types.ComponentVersion{}, err
-	}
+func SetVersion(component string, componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
 	ret, err := v.Set(db, component, componentVersion)
 	if err != nil {
 		return types.ComponentVersion{}, err

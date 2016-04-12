@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -21,8 +22,8 @@ var (
 
 // Main opens up a TLS listening port
 func main() {
-	db := data.RDSDB{}
-	if err := data.VerifyPersistentStorage(db); err != nil {
+	db, err := data.VerifyPersistentStorage(data.RDSDB{})
+	if err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
 	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
@@ -31,7 +32,7 @@ func main() {
 	}
 }
 
-func getRoutes(db data.DB, version data.Version, count data.Count, cluster data.Cluster) *mux.Router {
+func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.Cluster) *mux.Router {
 	r := mux.NewRouter()
 	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsGetHandler(db, version)).Methods("GET")
 	r.HandleFunc("/{apiVersion}/versions/{component}", handlers.VersionsPostHandler(db, version)).Methods("POST")

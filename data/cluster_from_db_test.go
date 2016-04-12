@@ -18,12 +18,12 @@ func testCluster() types.Cluster {
 }
 
 func TestClusterFromDBRoundTrip(t *testing.T) {
-	db, err := newMemDB()
+	memDB, err := newMemDB()
 	assert.NoErr(t, err)
-	sqliteDB, err := db.Get()
+	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)
-
-	assert.NoErr(t, VerifyPersistentStorage(db))
+	_, err = VerifyPersistentStorage(memDB)
+	assert.NoErr(t, err)
 	c := ClusterFromDB{}
 	cluster, err := c.Get(sqliteDB, clusterID)
 	assert.True(t, err != nil, "error not returned when expected")
@@ -38,12 +38,13 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 }
 
 func TestClusterFromDBCheckin(t *testing.T) {
-	db, err := newMemDB()
+	memDB, err := newMemDB()
 	assert.NoErr(t, err)
-	sqliteDB, err := db.Get()
+	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)
-
-	assert.NoErr(t, VerifyPersistentStorage(db))
+	db, err := VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "db")
+	assert.NoErr(t, err)
 	c := ClusterFromDB{}
 	res, err := c.Checkin(sqliteDB, clusterID, testCluster())
 	assert.NoErr(t, err)
