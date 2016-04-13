@@ -31,8 +31,8 @@ func urlPath(ver int, remainder ...string) string {
 	return fmt.Sprintf("%d/%s", ver, strings.Join(remainder, "/"))
 }
 
-// tests the GET /{apiVersion}/versions/{component} endpoint
-func TestGetVersions(t *testing.T) {
+// tests the GET /{apiVersion}/versions/{train}/{component}/{version} endpoint
+func TestGetVersion(t *testing.T) {
 	memDB, err := newMemDB()
 	assert.NoErr(t, err)
 	db, err := data.VerifyPersistentStorage(memDB)
@@ -41,22 +41,54 @@ func TestGetVersions(t *testing.T) {
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
 	componentVer := types.ComponentVersion{
-		Component:       types.Component{Name: componentName, Description: "this is a test component"},
-		Version:         types.Version{Version: "testversion", Released: "today"},
-		UpdateAvailable: "yup",
+		Component: types.Component{Name: componentName},
+		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
 	}
-	setVer, err := data.SetVersion(componentName, componentVer, db, versionFromDB)
+	_, err = data.SetVersion(componentVer, db, versionFromDB)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath(1, "versions", componentName))
+	resp, err := httpGet(srv, urlPath(1, "versions", componentVer.Version.Train, componentVer.Component.Name, componentVer.Version.Version))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
 	decodedVer := new(types.ComponentVersion)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedVer))
-	assert.Equal(t, *decodedVer, setVer, "component version")
+	assert.Equal(t, *decodedVer, componentVer, "component version")
 }
 
-// tests the POST /{apiVersion}/versions/{component} endpoint
+// tests the GET /{apiVersion}/versions/{train}/{component} endpoint
+func TestGetComponentTrainVersions(t *testing.T) {
+	memDB, err := newMemDB()
+	assert.NoErr(t, err)
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NoErr(t, err)
+	versionFromDB := data.VersionFromDB{}
+	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
+	defer srv.Close()
+	componentVers := []types.ComponentVersion{}
+	componentVer1 := types.ComponentVersion{
+		Component: types.Component{Name: componentName},
+		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-1", Released: "2016-03-30T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+	}
+	componentVer2 := types.ComponentVersion{
+		Component: types.Component{Name: componentName},
+		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+	}
+	componentVers = append(componentVers, componentVer1)
+	componentVers = append(componentVers, componentVer2)
+	_, err = data.SetVersion(componentVers[0], db, versionFromDB)
+	assert.NoErr(t, err)
+	_, err = data.SetVersion(componentVers[1], db, versionFromDB)
+	assert.NoErr(t, err)
+	resp, err := httpGet(srv, urlPath(1, "versions", componentVer1.Version.Train, componentVer1.Component.Name))
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+	decodedVer := new([]types.ComponentVersion)
+	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedVer))
+	assert.Equal(t, *decodedVer, componentVers, "component versions")
+}
+
+// tests the POST /{apiVersion}/versions/{train}/{component}/{version} endpoint
 func TestPostVersions(t *testing.T) {
 	memDB, err := newMemDB()
 	assert.NoErr(t, err)
@@ -65,26 +97,28 @@ func TestPostVersions(t *testing.T) {
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterCount{}, data.ClusterFromDB{})
 	defer srv.Close()
+	train := "beta"
+	version := "2.0.0-beta-2"
 	componentVer := types.ComponentVersion{
-		Component:       types.Component{Name: componentName, Description: "this is a test component"},
-		Version:         types.Version{Version: "testversion", Released: "today"},
-		UpdateAvailable: "yup",
+		Component: types.Component{Name: componentName},
+		Version:   types.Version{Train: train, Version: version, Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
 	}
 	body := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
-	resp, err := httpPost(srv, urlPath(1, "versions", componentName), string(body.Bytes()))
+	resp, err := httpPost(srv, urlPath(2, "versions", train, componentName, version), string(body.Bytes()))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
 	retComponentVersion := new(types.ComponentVersion)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(retComponentVersion))
+	// TODO: version data property not traveling and returning as expected
 	assert.Equal(t, *retComponentVersion, componentVer, "component version")
-	fetchedComponentVersion, err := data.GetVersion(componentName, db, versionFromDB)
+	fetchedComponentVersion, err := data.GetVersion(componentVer, db, versionFromDB)
 	assert.NoErr(t, err)
 	assert.Equal(t, fetchedComponentVersion, componentVer, "component version")
 }
 
-// tests the GET /{apiVersion}/clusters endpoint
+// tests the GET /{apiVersion}/clusters/count endpoint
 func TestGetClusters(t *testing.T) {
 	memDB, err := newMemDB()
 	if err != nil {
@@ -97,7 +131,7 @@ func TestGetClusters(t *testing.T) {
 	}
 	server := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
 	defer server.Close()
-	resp, err := httpGet(server, urlPath(1, "clusters"))
+	resp, err := httpGet(server, urlPath(1, "clusters", "count"))
 	if err != nil {
 		t.Fatal(err)
 	}

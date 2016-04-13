@@ -14,3 +14,17 @@ func parseJSONComponent(jTxt sqlxTypes.JSONText) (types.ComponentVersion, error)
 	}
 	return *ret, nil
 }
+
+func parseDBVersions(versions []VersionsTable) ([]types.ComponentVersion, error) {
+	componentVersions := make([]types.ComponentVersion, len(versions))
+	for i, version := range versions {
+		versionData, err := version.data.MarshalJSON()
+		if err != nil {
+			return nil, err
+		}
+		component := types.Component{Name: version.componentName}
+		version := types.Version{Train: version.train, Version: version.version, Released: version.releaseTimestamp.String(), Data: versionData}
+		componentVersions[i] = types.ComponentVersion{Component: component, Version: version}
+	}
+	return componentVersions, nil
+}

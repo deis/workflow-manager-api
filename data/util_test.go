@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager/types"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
 )
@@ -19,7 +20,7 @@ func TestParseJSONComponentFail(t *testing.T) {
 func TestParseJSONComponentSucc(t *testing.T) {
 	cVer := types.ComponentVersion{
 		Component:       types.Component{Name: "test name", Description: "test description"},
-		Version:         types.Version{Version: "test version", Released: "test release"},
+		Version:         types.Version{Train: "stable", Version: "test version", Released: "test release", Data: []byte(`{}`)},
 		UpdateAvailable: "test update avail",
 	}
 	b, err := json.Marshal(cVer)
@@ -32,7 +33,5 @@ func TestParseJSONComponentSucc(t *testing.T) {
 	if err != nil {
 		t.Fatalf("returned error %s", err)
 	}
-	if parsedCVer != cVer {
-		t.Fatalf("old component version != new (%+v != %+v)", cVer, parsedCVer)
-	}
+	assert.Equal(t, parsedCVer, cVer, "component version")
 }

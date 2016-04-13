@@ -1,7 +1,6 @@
 package data
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/arschles/assert"
@@ -17,22 +16,11 @@ func testComponentVersion() types.ComponentVersion {
 		Version: types.Version{
 			Version:  version,
 			Released: released,
+			Train:    train,
+			Data:     versionData,
 		},
 		UpdateAvailable: updateAvailable,
 	}
-}
-
-func cVerEqual(v1, v2 types.ComponentVersion) error {
-	if v1.Component.Name != v2.Component.Name {
-		return fmt.Errorf("component name %s != %s", v1.Component.Name, v2.Component.Name)
-	}
-	if v1.Component.Description != v2.Component.Description {
-		return fmt.Errorf("component description %s != %s", v1.Component.Description, v2.Component.Description)
-	}
-	if v1.Version.Version != v2.Version.Version {
-		return fmt.Errorf("version %s != %s", v1.Version.Version, v2.Version.Version)
-	}
-	return nil
 }
 
 func TestVersionFromDBRoundTrip(t *testing.T) {
@@ -44,14 +32,20 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	assert.NotNil(t, db, "db")
 	assert.NoErr(t, err)
 	ver := VersionFromDB{}
-	cVerNoExist, err := ver.Get(sqliteDB, componentName)
+	componentVersion := testComponentVersion()
+	cVerNoExist, err := ver.Get(sqliteDB, componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
 	assert.Equal(t, cVerNoExist, types.ComponentVersion{}, "component version")
-	expectedCVer := testComponentVersion()
-	cVerSet, err := ver.Set(sqliteDB, componentName, expectedCVer)
+	cVerSet, err := ver.Set(sqliteDB, componentVersion)
 	assert.NoErr(t, err)
-	assert.NoErr(t, cVerEqual(cVerSet, expectedCVer))
-	getCVer, err := ver.Get(sqliteDB, componentName)
+	assert.Equal(t, cVerSet.Component.Name, componentVersion.Component.Name, "component name")
+	assert.Equal(t, cVerSet.Version.Version, componentVersion.Version.Version, "version string")
+	assert.Equal(t, cVerSet.Version.Released, componentVersion.Version.Released, "released string")
+	assert.Equal(t, cVerSet.Version.Train, componentVersion.Version.Train, "version train")
+	getCVer, err := ver.Get(sqliteDB, componentVersion)
 	assert.NoErr(t, err)
-	assert.NoErr(t, cVerEqual(getCVer, expectedCVer))
+	assert.Equal(t, getCVer.Component.Name, componentVersion.Component.Name, "component name")
+	assert.Equal(t, getCVer.Version.Version, componentVersion.Version.Version, "version string")
+	assert.Equal(t, getCVer.Version.Released, componentVersion.Version.Released, "released string")
+	assert.Equal(t, getCVer.Version.Train, componentVersion.Version.Train, "version train")
 }

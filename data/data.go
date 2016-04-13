@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"os"
@@ -35,17 +36,21 @@ const (
 	clustersCheckinsTableClusterCreatedAtKey = "created_at"
 	clustersCheckinsTableDataKey             = "data"
 	versionsTableName                        = "versions"
+	versionsTableIDKey                       = "version_id"
 	versionsTableComponentNameKey            = "component_name"
-	versionsTableLastUpdatedKey              = "last_updated"
+	versionsTableTrainKey                    = "train"
+	versionsTableVersionKey                  = "version"
+	versionsTableReleaseTimeStampKey         = "release_timestamp"
 	versionsTableDataKey                     = "data"
 )
 
 var (
-	rDSRegion  = os.Getenv(rDSRegionKey)
-	dBInstance = os.Getenv(dBInstanceKey)
-	dBUser     = os.Getenv(dBUserKey)
-	dBPass     = os.Getenv(dBPassKey)
-	mu         sync.Mutex
+	rDSRegion                 = os.Getenv(rDSRegionKey)
+	dBInstance                = os.Getenv(dBInstanceKey)
+	dBUser                    = os.Getenv(dBUserKey)
+	dBPass                    = os.Getenv(dBPassKey)
+	mu                        sync.Mutex
+	errInvalidDBRecordRequest = errors.New("invalid DB record request")
 )
 
 // ClustersTable type that expresses the `clusters` postgres table schema
@@ -66,9 +71,12 @@ type ClustersCheckinsTable struct {
 
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
 type VersionsTable struct {
-	componentName string // PRIMARY KEY
-	lastUpdated   *Timestamp
-	data          sqlxTypes.JSONText
+	versionID        string // PRIMARY KEY
+	componentName    string // indexed
+	train            string // indexed
+	version          string // indexed
+	releaseTimestamp *Timestamp
+	data             sqlxTypes.JSONText
 }
 
 // DB is an interface for managing a DB instance
@@ -88,7 +96,7 @@ type ClusterFromDB struct{}
 
 // Get method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
-	row := getDBRecord(db, clustersTableName, clustersTableIDKey, id)
+	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
 	rowResult := ClustersTable{}
 	if err := row.Scan(&rowResult.clusterID, &rowResult.firstSeen, &rowResult.lastSeen, &rowResult.data); err != nil {
 		return types.Cluster{}, err
@@ -111,7 +119,7 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	if err != nil {
 		fmt.Println("error marshaling data")
 	}
-	row := getDBRecord(db, clustersTableName, clustersTableIDKey, id)
+	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
 	var result sql.Result
 	// Register the "latest checkin" with the primary cluster record
 	rowResult := ClustersTable{}
@@ -160,46 +168,95 @@ func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sq
 
 // Version is an interface for managing a persistent cluster record
 type Version interface {
-	Get(*sql.DB, string) (types.ComponentVersion, error)
-	Set(*sql.DB, string, types.ComponentVersion) (types.ComponentVersion, error)
+	// Retrieve a single Version record from a DB matching the unique property values in a ComponentVersion struct
+	Get(*sql.DB, types.ComponentVersion) (types.ComponentVersion, error)
+	// Retrieve a list of Version records that match a given component + train
+	Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error)
+	// Retrieve the most recent Version record that matches a given component + train
+	Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error)
+	// Store/Update a single Version record into a DB
+	Set(*sql.DB, types.ComponentVersion) (types.ComponentVersion, error)
 }
 
 // VersionFromDB fulfills the Version interface
 type VersionFromDB struct{}
 
 // Get method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Get(db *sql.DB, component string) (types.ComponentVersion, error) {
-	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
+func (c VersionFromDB) Get(db *sql.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
+	row := getDBRecord(db, versionsTableName,
+		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
+		[]string{cV.Component.Name, cV.Version.Train, cV.Version.Version})
 	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
+	//TODO: sql.NullString is to pass tests, not for production
+	var s sql.NullString
+	if err := row.Scan(&s, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
 		return types.ComponentVersion{}, err
 	}
-	componentVersion, err := parseJSONComponent(rowResult.data)
-	if err != nil {
-		log.Println("error parsing component version")
-		return types.ComponentVersion{}, err
+	componentVersion := types.ComponentVersion{
+		Component: types.Component{
+			Name: rowResult.componentName,
+		},
+		Version: types.Version{
+			Version:  rowResult.version,
+			Released: rowResult.releaseTimestamp.String(),
+			Train:    rowResult.train,
+			Data:     rowResult.data,
+		},
 	}
 	return componentVersion, nil
 }
 
+// Collection method for VersionFromDB, the actual database/sql.DB implementation
+func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error) {
+	rows, err := getDBRecords(db, versionsTableName,
+		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
+		[]string{train, component})
+	if err != nil {
+		return []types.ComponentVersion{}, err
+	}
+	rowsResult := []VersionsTable{}
+	var row VersionsTable
+	defer rows.Close()
+	for rows.Next() {
+		//TODO: sql.NullString is to pass tests, not for production
+		var s sql.NullString
+		err = rows.Scan(&s, &row.componentName,
+			&row.train, &row.version, &row.releaseTimestamp, &row.data)
+		if err != nil {
+			return []types.ComponentVersion{}, err
+		}
+		rowsResult = append(rowsResult, row)
+	}
+	componentVersions, err := parseDBVersions(rowsResult)
+	if err != nil {
+		log.Println("error parsing DB versions data")
+		return []types.ComponentVersion{}, err
+	}
+	return componentVersions, nil
+}
+
+// Latest method for VersionFromDB, the actual database/sql.DB implementation
+func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
+	// TODO: implement
+	return types.ComponentVersion{}, nil
+}
+
 // Set method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Set(db *sql.DB, component string, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
 	var ret types.ComponentVersion // return variable
 	mu.Lock()
-	js, err := json.Marshal(componentVersion)
-	if err != nil {
-		fmt.Println("error marshaling data")
-	}
-	row := getDBRecord(db, versionsTableName, versionsTableComponentNameKey, component)
+	row := getDBRecord(db, versionsTableName,
+		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
+		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
 	var result sql.Result
 	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.componentName, &rowResult.lastUpdated, &rowResult.data); err != nil {
-		result, err = newVersionDBRecord(db, component, js)
+	if err := row.Scan(&rowResult.versionID, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
+		result, err = newVersionDBRecord(db, componentVersion)
 		if err != nil {
 			log.Println(err)
 		}
 	} else {
-		result, err = updateVersionDBRecord(db, component, js)
+		result, err = updateVersionDBRecord(db, componentVersion)
 		if err != nil {
 			log.Println(err)
 		}
@@ -211,7 +268,7 @@ func (c VersionFromDB) Set(db *sql.DB, component string, componentVersion types.
 	if affected == 0 {
 		log.Println("no records updated")
 	} else if affected == 1 {
-		ret, err = c.Get(db, component)
+		ret, err = c.Get(db, componentVersion)
 		if err != nil {
 			return types.ComponentVersion{}, err
 		}
@@ -326,8 +383,26 @@ func SetCluster(id string, cluster types.Cluster, db *sql.DB, c Cluster) (types.
 }
 
 // GetVersion is a high level interface for retrieving a version data record
-func GetVersion(component string, db *sql.DB, v Version) (types.ComponentVersion, error) {
-	componentVersion, err := v.Get(db, component)
+func GetVersion(componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
+	componentVersion, err := v.Get(db, componentVersion)
+	if err != nil {
+		return types.ComponentVersion{}, err
+	}
+	return componentVersion, nil
+}
+
+// GetComponentTrainVersions is a high level interface for retrieving component versions for a given "train"
+func GetComponentTrainVersions(train string, component string, db *sql.DB, v Version) ([]types.ComponentVersion, error) {
+	componentVersions, err := v.Collection(db, train, component)
+	if err != nil {
+		return []types.ComponentVersion{}, err
+	}
+	return componentVersions, nil
+}
+
+// GetLatestComponentTrainVersion is a high level interface for retrieving the latest component version for a given "train"
+func GetLatestComponentTrainVersion(train string, component string, db *sql.DB, v Version) (types.ComponentVersion, error) {
+	componentVersion, err := v.Latest(db, train, component)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
@@ -335,8 +410,8 @@ func GetVersion(component string, db *sql.DB, v Version) (types.ComponentVersion
 }
 
 // SetVersion is a high level interface for updating a component version record
-func SetVersion(component string, componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
-	ret, err := v.Set(db, component, componentVersion)
+func SetVersion(componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
+	ret, err := v.Set(db, componentVersion)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
@@ -399,13 +474,20 @@ func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
 }
 
 func createVersionsTable(db *sql.DB) (sql.Result, error) {
-	return db.Exec(fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s ( %s varchar(64) PRIMARY KEY, %s timestamp, %s json )",
+	query := fmt.Sprintf(
+		"CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s varchar(32), %s varchar(24), %s varchar(32), %s timestamp, %s json, unique (%s, %s, %s) )",
 		versionsTableName,
+		versionsTableIDKey,
 		versionsTableComponentNameKey,
-		versionsTableLastUpdatedKey,
+		versionsTableTrainKey,
+		versionsTableVersionKey,
+		versionsTableReleaseTimeStampKey,
 		versionsTableDataKey,
-	))
+		versionsTableComponentNameKey,
+		versionsTableTrainKey,
+		versionsTableVersionKey,
+	)
+	return db.Exec(query)
 }
 
 func verifyClustersTable(db *sql.DB) error {
@@ -432,8 +514,47 @@ func verifyVersionsTable(db *sql.DB) error {
 	return nil
 }
 
-func getDBRecord(db *sql.DB, table string, key string, val string) *sql.Row {
-	return db.QueryRow(fmt.Sprintf("SELECT * FROM %s WHERE %s = '%s'", table, key, val))
+// getDBRecord is a convenience that executes a simple "SELECT *" SQL query against
+// a passed-in db reference, accepting an arbitrary number of keys(table fields)/vals
+// assumes a single record response
+func getDBRecord(db *sql.DB, table string, keys []string, vals []string) *sql.Row {
+	sliceEqualize(&keys, &vals)
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	for i, key := range keys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = '%s'", key, vals[i])
+		} else {
+			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
+		}
+	}
+	return db.QueryRow(query)
+}
+
+// getDBRecords is a convenience that executes a simple "SELECT *" SQL query against
+// a passed-in db reference, accepting an arbitrary number of keys(table fields)/vals
+func getDBRecords(db *sql.DB, table string, keys []string, vals []string) (*sql.Rows, error) {
+	sliceEqualize(&keys, &vals)
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	for i, key := range keys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = '%s'", key, vals[i])
+		} else {
+			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
+		}
+	}
+	return db.Query(query)
+}
+
+// sliceEqualize is a convenience that ensures two slices of strings have equal lengths
+// if not, the larger slice's elements that exceed the boundary of the smaller are stripped
+func sliceEqualize(slice1 *[]string, slice2 *[]string) {
+	if len(*slice1) != len(*slice2) {
+		if len(*slice1) > len(*slice2) {
+			*slice1 = (*slice1)[:len(*slice2)]
+		} else {
+			*slice2 = (*slice2)[:len(*slice1)]
+		}
+	}
 }
 
 func getAllRows(db *sql.DB, table string) (*sql.Rows, error) {
@@ -460,9 +581,50 @@ func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) 
 	return db.Exec(insert)
 }
 
-func newVersionDBRecord(db *sql.DB, component string, data []byte) (sql.Result, error) {
-	insert := fmt.Sprintf("INSERT INTO %s (component_name, last_updated, data) VALUES('%s', '%s', '%s')", versionsTableName, component, now(), string(data))
+func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
+	insert := fmt.Sprintf(
+		"INSERT INTO %s (%s, %s, %s, %s, %s) VALUES('%s', '%s', '%s', '%s', '%s')",
+		versionsTableName,
+		versionsTableComponentNameKey,
+		versionsTableTrainKey,
+		versionsTableVersionKey,
+		versionsTableReleaseTimeStampKey,
+		versionsTableDataKey,
+		componentVersion.Component.Name,
+		componentVersion.Version.Train,
+		componentVersion.Version.Version,
+		componentVersion.Version.Released,
+		string(componentVersion.Version.Data[:]),
+	)
 	return db.Exec(insert)
+}
+
+func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
+	data, err := json.Marshal(componentVersion.Version.Data)
+	if err != nil {
+		return nil, err
+	}
+	update := fmt.Sprintf(
+		"UPDATE %s SET %s='%s', %s='%s', %s='%s', %s='%s', %s='%s' WHERE %s='%s' AND %s='%s' AND %s='%s'",
+		versionsTableName,
+		versionsTableComponentNameKey,
+		componentVersion.Component.Name,
+		versionsTableTrainKey,
+		componentVersion.Version.Train,
+		versionsTableVersionKey,
+		componentVersion.Version.Version,
+		versionsTableReleaseTimeStampKey,
+		componentVersion.Version.Released,
+		versionsTableDataKey,
+		string(data),
+		versionsTableComponentNameKey,
+		componentVersion.Component.Name,
+		versionsTableTrainKey,
+		componentVersion.Version.Train,
+		versionsTableVersionKey,
+		componentVersion.Version.Version,
+	)
+	return db.Exec(update)
 }
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
@@ -472,10 +634,5 @@ func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, erro
 
 func newClusterCheckinsDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
 	update := fmt.Sprintf("INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')", clustersCheckinsTableName, string(data), now(), id)
-	return db.Exec(update)
-}
-
-func updateVersionDBRecord(db *sql.DB, component string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("UPDATE %s SET data='%s', last_updated='%s' WHERE component_name='%s'", versionsTableName, string(data), now(), component)
 	return db.Exec(update)
 }

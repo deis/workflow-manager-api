@@ -5,6 +5,11 @@ const (
 	componentName        = "testcomponent"
 	componentDescription = "this is a component"
 	version              = "testversion"
-	released             = "testreleased"
+	train                = "stable"
+	released             = "2006-01-02T15:04:05Z"
 	updateAvailable      = "yup"
+)
+
+var (
+	versionData = []byte(`{}`)
 )
