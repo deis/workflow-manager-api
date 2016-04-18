@@ -40,6 +40,7 @@ func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST")
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db, count)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db, cluster)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db, cluster)).Methods("POST")
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db, cluster)).Methods("POST").
+		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	return r
 }
