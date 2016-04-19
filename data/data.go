@@ -387,14 +387,12 @@ func createClustersTable(db *sql.DB) (sql.Result, error) {
 
 func createClustersCheckinsTable(db *sql.DB) (sql.Result, error) {
 	return db.Exec(fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s uuid, %s timestamp, %s json, unique (%s, %s) )",
+		"CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s uuid, %s timestamp, %s json )",
 		clustersCheckinsTableName,
 		clustersCheckinsTableIDKey,
 		clustersTableIDKey,
 		clustersCheckinsTableClusterCreatedAtKey,
 		clustersCheckinsTableDataKey,
-		clustersCheckinsTableClusterIDKey,
-		clustersCheckinsTableClusterCreatedAtKey,
 	))
 }
 
