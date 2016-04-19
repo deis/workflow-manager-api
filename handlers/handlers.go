@@ -70,7 +70,7 @@ func ClustersPostHandler(db *sql.DB, c data.Cluster) func(http.ResponseWriter, *
 		data, err := json.MarshalIndent(result, "", "  ")
 		if err != nil {
 			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, fmt.Sprintf("JSON marshaling failed", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("JSON marshaling failed (%s)", err), http.StatusInternalServerError)
 			return
 		}
 		w.Header().Set("Content-Type", "text/plain")
