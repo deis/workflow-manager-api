@@ -1,12 +1,12 @@
 hash: 0a4b244a0a57f044a285064a483060b83cdead61511aa19e2a3fffaddd2921bd
-updated: 2016-03-21T15:56:18.40195291-07:00
+updated: 2016-04-19T10:38:19.04822411-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: github.com/arschles/assert
   version: d21ecd4884be33397d1298c3738b2b4937c7f499
 - name: github.com/aws/aws-sdk-go
-  version: 4da0bec8953a0a540f391930a946917b12a95671
+  version: eb85a963838ae4ef2773c5b07f9e5bbf3865da46
   subpackages:
   - aws
   - aws/session
@@ -40,7 +40,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/workflow-manager
-  version: b37815165204e8a899ece414286fd8e7aba9f6f1
+  version: 6a7acfe9d13bb7c289d24e3f01b0029c10df0cec
   subpackages:
   - components
   - types
@@ -71,7 +71,7 @@ imports:
 - name: github.com/ghodss/yaml
   version: 73d445a93680fa1a78ae23a5839bad48f32ba1ee
 - name: github.com/go-ini/ini
-  version: 776aa739ce9373377cd16f526cdf06cb4c89b40f
+  version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/golang/glog
   version: 44145f04b68cf362d9c4df2182967c2275eaefed
 - name: github.com/golang/protobuf
@@ -102,7 +102,7 @@ imports:
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/gorilla/context
-  version: 215affda49addc4c8ef7e2534915df2c8c35c6cd
+  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
 - name: github.com/gorilla/mux
   version: 0eeaf8392f5b04950925b8a69fe70f110fa7cbfc
 - name: github.com/jmespath/go-jmespath
@@ -116,7 +116,7 @@ imports:
 - name: github.com/kelseyhightower/envconfig
   version: cea086319492c3940683ea5e122aa5de70a33923
 - name: github.com/lib/pq
-  version: 165a3529e799da61ab10faed1fabff3662d6193f
+  version: 3cd0097429be7d611bb644ef85b42bfb102ceea4
   subpackages:
   - oid
 - name: github.com/matttproud/golang_protobuf_extensions
@@ -145,7 +145,7 @@ imports:
 - name: github.com/prometheus/procfs
   version: 490cc6eb5fa45bf8a8b7b73c8bc82a8160e8531d
 - name: github.com/satori/go.uuid
-  version: e673fdd4dea8a7334adbbe7f57b7e4b00bdc5502
+  version: f9ab0dce87d815821e221626b772e3475a0d2749
 - name: github.com/spf13/pflag
   version: 8e7dc108ab3a1ab6ce6d922bbaff5657b88e8e49
 - name: golang.org/x/crypto
