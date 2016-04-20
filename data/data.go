@@ -178,6 +178,13 @@ type Version interface {
 	Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error)
 	// Store/Update a single Version record into a DB
 	Set(*sql.DB, types.ComponentVersion) (types.ComponentVersion, error)
+	// MultiLatest fetches from the DB and returns the latest release for each component/train pair
+	// given in ct. Returns an empty slice and non-nil error on any error communicating with the
+	// database or otherwise if the first returned value is not empty, it's guaranteed to:
+	//
+	// - Be the same length as ct
+	// - Have the same ordering as ct, with respect to the component name
+	MultiLatest(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error)
 }
 
 // VersionFromDB fulfills the Version interface
@@ -279,11 +286,13 @@ func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) 
 		result, err = newVersionDBRecord(db, componentVersion)
 		if err != nil {
 			log.Println(err)
+			return types.ComponentVersion{}, err
 		}
 	} else {
 		result, err = updateVersionDBRecord(db, componentVersion)
 		if err != nil {
 			log.Println(err)
+			return types.ComponentVersion{}, err
 		}
 	}
 	affected, err := result.RowsAffected()

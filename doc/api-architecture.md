@@ -114,7 +114,7 @@ Moreover, we will assume a more proximate relationship between the API and persi
   ```
 - Multi Get a collection of latest releases
   - Request type and URL
-    - `POST /:apiVersion/versions/latest` *not yet implemented*
+    - `POST /:apiVersion/versions/latest`
   - Request body
   ```
   {
