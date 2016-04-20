@@ -17,8 +17,6 @@ Data is organized into three tables, with fields outlined below:
 
 * `clusters`, a table that stores "Cluster" records (each cluster record maps to a unique deis cluster seen in the wild)
   * `cluster_id uuid PRIMARY KEY`
-  * `first_seen timestamp`
-  * `last_seen timestamp DEFAULT current_timestamp`
   * `data json`
 * `clusters_checkins`, a table that stores records of deis clusters checking in with the API
   * `checkins_id bigserial PRIMARY KEY`

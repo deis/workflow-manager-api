@@ -27,8 +27,6 @@ const (
 	dBPassKey                                = "WORKFLOW_MANAGER_API_DBPASS"
 	clustersTableName                        = "clusters"
 	clustersTableIDKey                       = "cluster_id"
-	clustersTableFirstSeenKey                = "first_seen"
-	clustersTableLastSeenKey                 = "last_seen"
 	clustersTableDataKey                     = "data"
 	clustersCheckinsTableName                = "clusters_checkins"
 	clustersCheckinsTableIDKey               = "checkins_id"
@@ -56,8 +54,6 @@ var (
 // ClustersTable type that expresses the `clusters` postgres table schema
 type ClustersTable struct {
 	clusterID string // PRIMARY KEY
-	firstSeen *Timestamp
-	lastSeen  *Timestamp
 	data      sqlxTypes.JSONText
 }
 
@@ -98,7 +94,7 @@ type ClusterFromDB struct{}
 func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
 	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.firstSeen, &rowResult.lastSeen, &rowResult.data); err != nil {
+	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
 		return types.Cluster{}, err
 	}
 	cluster, err := components.ParseJSONCluster(rowResult.data)
@@ -106,8 +102,6 @@ func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 		log.Println("error parsing cluster")
 		return types.Cluster{}, err
 	}
-	cluster.FirstSeen = *rowResult.firstSeen.Time
-	cluster.LastSeen = *rowResult.lastSeen.Time
 	return cluster, nil
 }
 
@@ -123,7 +117,7 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	var result sql.Result
 	// Register the "latest checkin" with the primary cluster record
 	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.firstSeen, &rowResult.lastSeen, &rowResult.data); err != nil {
+	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
 		result, err = newClusterDBRecord(db, id, js)
 		if err != nil {
 			log.Println(err)
@@ -451,11 +445,9 @@ func getRDSDB() (*sql.DB, error) {
 
 func createClustersTable(db *sql.DB) (sql.Result, error) {
 	return db.Exec(fmt.Sprintf(
-		"CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s timestamp, %s timestamp DEFAULT current_timestamp, %s json )",
+		"CREATE TABLE IF NOT EXISTS %s ( %s uuid PRIMARY KEY, %s json )",
 		clustersTableName,
 		clustersTableIDKey,
-		clustersTableFirstSeenKey,
-		clustersTableLastSeenKey,
 		clustersTableDataKey,
 	))
 }
@@ -575,7 +567,7 @@ func getTableCount(db *sql.DB, table string) (int, error) {
 }
 
 func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, first_seen, last_seen, data) VALUES('%s', '%s', '%s', '%s')", clustersTableName, id, now(), now(), string(data))
+	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, data) VALUES('%s', '%s')", clustersTableName, id, string(data))
 	return db.Exec(insert)
 }
 
@@ -626,7 +618,7 @@ func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) 
 }
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("UPDATE %s SET data='%s', last_seen='%s' WHERE cluster_id='%s'", clustersTableName, string(data), now(), id)
+	update := fmt.Sprintf("UPDATE %s SET data='%s', WHERE cluster_id='%s'", clustersTableName, string(data), id)
 	return db.Exec(update)
 }
 
