@@ -220,7 +220,7 @@ func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([
 		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
 		[]string{train, component})
 	if err != nil {
-		return []types.ComponentVersion{}, err
+		return nil, err
 	}
 	rowsResult := []VersionsTable{}
 	var row VersionsTable
@@ -231,14 +231,14 @@ func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([
 		err = rows.Scan(&s, &row.componentName,
 			&row.train, &row.version, &row.releaseTimestamp, &row.data)
 		if err != nil {
-			return []types.ComponentVersion{}, err
+			return nil, err
 		}
 		rowsResult = append(rowsResult, row)
 	}
 	componentVersions, err := parseDBVersions(rowsResult)
 	if err != nil {
 		log.Println("error parsing DB versions data")
-		return []types.ComponentVersion{}, err
+		return nil, err
 	}
 	return componentVersions, nil
 }
@@ -426,7 +426,7 @@ func GetVersion(componentVersion types.ComponentVersion, db *sql.DB, v Version) 
 func GetComponentTrainVersions(train string, component string, db *sql.DB, v Version) ([]types.ComponentVersion, error) {
 	componentVersions, err := v.Collection(db, train, component)
 	if err != nil {
-		return []types.ComponentVersion{}, err
+		return nil, err
 	}
 	return componentVersions, nil
 }
