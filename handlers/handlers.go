@@ -50,10 +50,6 @@ func GetCluster(db *sql.DB, c data.Cluster) http.Handler {
 // ClusterCheckin route handler
 func ClusterCheckin(db *sql.DB, c data.Cluster) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/json" {
-			http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
-			return
-		}
 		id := mux.Vars(r)["id"]
 		cluster := types.Cluster{}
 		err := json.NewDecoder(r.Body).Decode(&cluster)
@@ -152,10 +148,6 @@ func GetLatestComponentTrainVersion(db *sql.DB, v data.Version) http.Handler {
 // PublishVersion route handler
 func PublishVersion(db *sql.DB, v data.Version) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/json" {
-			http.Error(w, "expected application/json", http.StatusUnsupportedMediaType)
-			return
-		}
 		componentVersion := types.ComponentVersion{}
 		err := json.NewDecoder(r.Body).Decode(&componentVersion)
 		if err != nil {
