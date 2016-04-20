@@ -2,14 +2,8 @@
 
 The Workflow Manager Service API is responsible for interfacing with Deis Workflow data. It is a golang https implementation that speaks JSON. The API is the source of authority for the following:
 
-* a list of all Deis clusters whose Workflow Manager clients have chosen to share anonymous usage data
-* metadata relevant to each unique Deis cluster: which components are installed, and which versions
-* various statistics on each cluster, e.g.:
-  * count of clusters "currently" running
-  * count of clusters "recently" disappeared
-  * count of clusters "recently" added
-  * average age of clusters
-* "latest" stable version for each Deis cluster component
+* metadata about unique Deis clusters that have checked in: which components are installed at the time of check-in, and which versions
+* current stable version for each Deis cluster component
 
 Additionally, the API is the official interface for accepting Workflow Manager data, e.g.:
 
@@ -20,24 +14,23 @@ Additionally, the API is the official interface for accepting Workflow Manager d
 
 # Usage
 
+To download dependencies:
+```
+$ make bootstrap
+```
 To test:
 ```
-$ go test
-PASS
-ok  	github.com/deis/workflow-manager-api	0.012s
+$ make test
 ```
 To build:
 ```
-$ go build -o workflow-manager-api *.go
+$ IMAGE_PREFIX=$MY_DOCKERHUB_ACCOUNT make build docker-build docker-push
 ```
-To run:
-```
-$ ./workflow-manager-api
-```
+(All of the above operations assume a local Docker environment.)
 
 # Status
 
-The API is currently for demonstration only. Included in the codebase are a private key and self-signed certificate; these should be considered disposable at this time and for testing/demo only.
+A working, minimal API is currently live at https://versions.deis.com.
 
 ## License
 
