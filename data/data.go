@@ -53,6 +53,14 @@ var (
 	errInvalidDBRecordRequest = errors.New("invalid DB record request")
 )
 
+type errNoMoreRows struct {
+	tableName string
+}
+
+func (e errNoMoreRows) Error() string {
+	return fmt.Sprintf("no more rows available in the '%s' table", e.tableName)
+}
+
 // ClustersTable type that expresses the `clusters` postgres table schema
 type ClustersTable struct {
 	clusterID string // PRIMARY KEY
@@ -237,8 +245,31 @@ func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([
 
 // Latest method for VersionFromDB, the actual database/sql.DB implementation
 func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
-	// TODO: implement
-	return types.ComponentVersion{}, nil
+	rows, err := getOrderedDBRecords(
+		db,
+		versionsTableName,
+		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
+		[]string{train, component},
+		newOrderBy(versionsTableReleaseTimeStampKey, "desc"),
+	)
+	if err != nil {
+		return types.ComponentVersion{}, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var row VersionsTable
+		//TODO: sql.NullString is to pass tests, not for production
+		var s sql.NullString
+		if err = rows.Scan(&s, &row.componentName, &row.train, &row.version, &row.releaseTimestamp, &row.data); err != nil {
+			return types.ComponentVersion{}, err
+		}
+		cv, err := parseDBVersion(row)
+		if err != nil {
+			return types.ComponentVersion{}, err
+		}
+		return cv, nil
+	}
+	return types.ComponentVersion{}, errNoMoreRows{tableName: versionsTableName}
 }
 
 // Set method for VersionFromDB, the actual database/sql.DB implementation
@@ -539,6 +570,22 @@ func getDBRecords(db *sql.DB, table string, keys []string, vals []string) (*sql.
 		} else {
 			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
 		}
+	}
+	return db.Query(query)
+}
+
+func getOrderedDBRecords(db *sql.DB, table string, keys, vals []string, ordering *orderBy) (*sql.Rows, error) {
+	sliceEqualize(&keys, &vals)
+	query := fmt.Sprintf("SELECT * FROM %s", table)
+	for i, key := range keys {
+		if i == 0 {
+			query += fmt.Sprintf(" WHERE %s = '%s'", key, vals[i])
+		} else {
+			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
+		}
+	}
+	if ordering != nil {
+		query += fmt.Sprintf(" %s", ordering.String())
 	}
 	return db.Query(query)
 }

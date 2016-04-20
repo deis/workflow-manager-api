@@ -33,7 +33,7 @@ func urlPath(ver int, remainder ...string) string {
 
 // tests the GET /{apiVersion}/versions/{train}/{component}/{version} endpoint
 func TestGetVersion(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	db, err := data.VerifyPersistentStorage(memDB)
 	assert.NoErr(t, err)
@@ -57,7 +57,7 @@ func TestGetVersion(t *testing.T) {
 
 // tests the GET /{apiVersion}/versions/{train}/{component} endpoint
 func TestGetComponentTrainVersions(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	db, err := data.VerifyPersistentStorage(memDB)
 	assert.NoErr(t, err)
@@ -88,9 +88,63 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	assert.Equal(t, *decodedVer, componentVers, "component versions")
 }
 
+// tests the GET /{apiVersion}/versions/{train}/{component}/latest endpoint
+func TestGetLatestComponentTrainVersion(t *testing.T) {
+	const componentName = "testcomponent"
+	const train = "testtrain"
+	const releaseTimeFormat = "2006-01-02T15:04:05Z"
+
+	memDB, err := data.NewMemDB()
+	assert.NoErr(t, err)
+	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "returned database")
+	assert.NoErr(t, err)
+	ver := data.VersionFromDB{}
+	srv := newServer(memDB, ver, data.ClusterCount{}, data.ClusterFromDB{})
+	defer srv.Close()
+
+	const numCVs = 4
+	const latestCVIdx = 2
+	componentVersions := make([]types.ComponentVersion, numCVs)
+	for i := 0; i < numCVs; i++ {
+		cv := types.ComponentVersion{}
+		cv.Component.Name = componentName
+		cv.Component.Description = fmt.Sprintf("description%d", i)
+		cv.Version.Train = train
+		cv.Version.Version = fmt.Sprintf("testversion%d", i)
+		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(releaseTimeFormat)
+		cv.Version.Data = []byte(fmt.Sprintf("data%d", i))
+		if i == latestCVIdx {
+			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(releaseTimeFormat)
+		}
+		if _, setErr := ver.Set(db, cv); setErr != nil {
+			t.Fatalf("error setting component version %d (%s)", i, setErr)
+		}
+		componentVersions[i] = cv
+	}
+
+	// resp, err := httpGet(srv, urlPath(2, "versions", train, componentName, "latest"))
+	resp, err := httpGet(srv, fmt.Sprintf("v2/versions/%s/%s/latest", train, componentName))
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+	cv := new(types.ComponentVersion)
+	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(cv))
+	exCV := componentVersions[latestCVIdx]
+
+	assert.Equal(t, cv.Component.Name, exCV.Component.Name, "component name")
+	// since the versions table doesn't store a description now, make sure it comes back empty
+	assert.Equal(t, cv.Component.Description, "", "component name")
+
+	assert.Equal(t, cv.Version.Train, exCV.Version.Train, "component version")
+	assert.Equal(t, cv.Version.Version, exCV.Version.Version, "component version")
+	assert.Equal(t, cv.Version.Released, exCV.Version.Released, "component release time")
+	assert.Equal(t, string(cv.Version.Data), string(exCV.Version.Data), "component version data")
+}
+
 // tests the POST /{apiVersion}/versions/{train}/{component}/{version} endpoint
 func TestPostVersions(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	db, err := data.VerifyPersistentStorage(memDB)
 	assert.NoErr(t, err)
@@ -120,7 +174,7 @@ func TestPostVersions(t *testing.T) {
 
 // tests the GET /{apiVersion}/clusters/count endpoint
 func TestGetClusters(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
@@ -143,7 +197,7 @@ func TestGetClusters(t *testing.T) {
 
 // tests the GET /{apiVersion}/clusters/{id} endpoint
 func TestGetClusterByID(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	db, err := data.VerifyPersistentStorage(memDB)
 	if err != nil {
@@ -166,7 +220,7 @@ func TestGetClusterByID(t *testing.T) {
 
 // tests the POST {apiVersion}/clusters/{id} endpoint
 func TestPostClusters(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := data.NewMemDB()
 	if err != nil {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}

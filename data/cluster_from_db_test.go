@@ -18,7 +18,7 @@ func testCluster() types.Cluster {
 }
 
 func TestClusterFromDBRoundTrip(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)
@@ -38,7 +38,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 }
 
 func TestClusterFromDBCheckin(t *testing.T) {
-	memDB, err := newMemDB()
+	memDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	sqliteDB, err := memDB.Get()
 	assert.NoErr(t, err)

@@ -41,7 +41,7 @@ build:
 	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} goupx --strip-binary -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
 
 test:
-	${DEV_ENV_CMD} sh -c 'go test $$(glide nv)'
+	${DEV_ENV_CMD} sh -c 'go test -tags testonly $$(glide nv)'
 
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs

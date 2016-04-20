@@ -22,6 +22,9 @@ To test:
 ```
 $ make test
 ```
+_Note_: if you prefer to run tests with `go test`, you'll need
+[`glide`](https://github.com/Masterminds/glide) on your `PATH`. Once you have it,
+run `go test -tags testonly $(glide nv)` to run tests.
 To build:
 ```
 $ IMAGE_PREFIX=$MY_DOCKERHUB_ACCOUNT make build docker-build docker-push

@@ -94,13 +94,12 @@ Moreover, we will assume a more proximate relationship between the API and persi
   ```
 - Get the latest component + train release
   - Request type and URL
-    - `GET /:apiVersion/versions/:train/:component/latest` *not yet implemented*
+    - `GET /:apiVersion/versions/:train/:component/latest`
   - 200 Response Body
   ```
   {
     "component": {
       "name": "deis-builder",
-      "description": "Deis Builder"
     },
     "version": {
       "train": "stable",

@@ -34,11 +34,11 @@ func main() {
 
 func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.Cluster) *mux.Router {
 	r := mux.NewRouter()
-	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db, version)).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db, version)).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db, version)).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
+	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db, version)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db, count)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db, cluster)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db, cluster)).Methods("POST").

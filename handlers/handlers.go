@@ -123,28 +123,6 @@ func GetComponentTrainVersions(db *sql.DB, v data.Version) http.Handler {
 	})
 }
 
-// GetLatestComponentTrainVersion route handler
-func GetLatestComponentTrainVersion(db *sql.DB, v data.Version) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		routeParams := mux.Vars(r)
-		train := routeParams["train"]
-		component := routeParams["component"]
-		componentVersions, err := data.GetLatestComponentTrainVersion(train, component, db, v)
-		if err != nil {
-			log.Printf("data.GetLatestComponentVersions error (%s)", err)
-			http.NotFound(w, r)
-			return
-		}
-		js, err := json.Marshal(componentVersions)
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		writeJSON(js, w)
-	})
-}
-
 // PublishVersion route handler
 func PublishVersion(db *sql.DB, v data.Version) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
