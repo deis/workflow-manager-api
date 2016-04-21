@@ -665,7 +665,7 @@ func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) 
 }
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("UPDATE %s SET data='%s', WHERE cluster_id='%s'", clustersTableName, string(data), id)
+	update := fmt.Sprintf("UPDATE %s SET data='%s' WHERE cluster_id='%s'", clustersTableName, string(data), id)
 	return db.Exec(update)
 }
 
