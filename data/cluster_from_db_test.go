@@ -2,7 +2,6 @@ package data
 
 import (
 	"testing"
-	"time"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager/types"
@@ -11,8 +10,6 @@ import (
 func testCluster() types.Cluster {
 	return types.Cluster{
 		ID:         clusterID,
-		FirstSeen:  time.Now(),
-		LastSeen:   time.Now().Add(1 * time.Hour),
 		Components: []types.ComponentVersion{testComponentVersion()},
 	}
 }
