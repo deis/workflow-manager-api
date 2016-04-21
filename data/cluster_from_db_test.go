@@ -26,12 +26,20 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 	assert.True(t, err != nil, "error not returned when expected")
 	assert.Equal(t, cluster, types.Cluster{}, "returned cluster")
 	expectedCluster := testCluster()
-	setCluster, err := c.Set(sqliteDB, clusterID, expectedCluster)
+	// the first time we invoke .Set() it will create a new record
+	newCluster, err := c.Set(sqliteDB, clusterID, expectedCluster)
 	assert.NoErr(t, err)
-	assert.Equal(t, setCluster.ID, expectedCluster.ID, "cluster")
+	assert.Equal(t, newCluster.ID, expectedCluster.ID, "cluster ID property")
+	assert.Equal(t, newCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
+	// modify the cluster object
+	expectedCluster.Components[0].Component.Description = "new description"
+	// the next time we invoke .Set() it should update the existing record we just created
+	updatedCluster, err := c.Set(sqliteDB, clusterID, expectedCluster)
+	assert.NoErr(t, err)
+	assert.Equal(t, updatedCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
 	getCluster, err := c.Get(sqliteDB, clusterID)
 	assert.NoErr(t, err)
-	assert.Equal(t, getCluster, setCluster, "cluster")
+	assert.Equal(t, getCluster, updatedCluster, "cluster")
 }
 
 func TestClusterFromDBCheckin(t *testing.T) {
