@@ -27,26 +27,6 @@ func ClustersCount(db *sql.DB, c data.Count) http.Handler {
 	})
 }
 
-// GetCluster route handler
-func GetCluster(db *sql.DB, c data.Cluster) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		cluster, err := data.GetCluster(id, db, c)
-		if err != nil {
-			log.Printf("data.GetCluster error (%s)", err)
-			http.NotFound(w, r)
-			return
-		}
-		js, err := json.Marshal(cluster)
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		writeJSON(js, w)
-	})
-}
-
 // ClusterCheckin route handler
 func ClusterCheckin(db *sql.DB, c data.Cluster) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
