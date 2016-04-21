@@ -17,8 +17,9 @@ import (
 )
 
 const (
-	componentName = "testcomponent"
-	clusterID     = "testcluster"
+	componentName     = "testcomponent"
+	clusterID         = "testcluster"
+	releaseTimeFormat = "2006-01-02T15:04:05Z"
 )
 
 func newServer(d data.DB, ver data.Version, counter data.Count, cluster data.Cluster) *httptest.Server {
@@ -92,7 +93,6 @@ func TestGetComponentTrainVersions(t *testing.T) {
 func TestGetLatestComponentTrainVersion(t *testing.T) {
 	const componentName = "testcomponent"
 	const train = "testtrain"
-	const releaseTimeFormat = "2006-01-02T15:04:05Z"
 
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
@@ -123,8 +123,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		componentVersions[i] = cv
 	}
 
-	// resp, err := httpGet(srv, urlPath(2, "versions", train, componentName, "latest"))
-	resp, err := httpGet(srv, fmt.Sprintf("v2/versions/%s/%s/latest", train, componentName))
+	resp, err := httpGet(srv, urlPath(2, "versions", train, componentName, "latest"))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")

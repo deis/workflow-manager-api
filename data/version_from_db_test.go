@@ -93,3 +93,67 @@ func TestVersionFromDBLatest(t *testing.T) {
 	assert.Equal(t, cv.Version.Released, exCV.Version.Released, "component release time")
 	assert.Equal(t, string(cv.Version.Data), string(exCV.Version.Data), "component version data")
 }
+
+func TestVersionFromDBMultiLatest(t *testing.T) {
+	memDB, err := NewMemDB()
+	assert.NoErr(t, err)
+
+	db, err := VerifyPersistentStorage(memDB)
+	assert.NotNil(t, db, "db")
+	assert.NoErr(t, err)
+	ver := VersionFromDB{}
+
+	componentNames := []string{"component1", "component2", "component3"}
+	trains := []string{"train1", "train2", "train3"}
+	componentAndTrainSlice := make([]ComponentAndTrain, len(componentNames)*len(trains))
+	// mapping from component/train (string representation) to release time
+	releaseTimes := make(map[string]time.Time)
+
+	const numForEach = 3
+	for i, componentName := range componentNames {
+		for j, train := range trains {
+			ct := ComponentAndTrain{
+				ComponentName: componentName,
+				Train:         train,
+			}
+			offset := i * len(componentNames)
+			idx := offset + j
+			componentAndTrainSlice[idx] = ct
+			for n := 0; n < numForEach; n++ {
+				cv := testComponentVersion()
+				cv.Component.Name = componentName
+				cv.Version.Train = train
+
+				//specify a different version for each component version in this name/train
+				cv.Version.Version = fmt.Sprintf("version%d-%d", idx, n)
+				cvReleaseTime := time.Now().Add(time.Duration(idx*(n+1)) * time.Hour)
+				cv.Version.Released = cvReleaseTime.Format(released)
+
+				// record the latest release time for each component
+				ct := componentAndTrainFromComponentVersion(cv)
+				if releaseTimes[ct.String()].Before(cvReleaseTime) {
+					releaseTimes[ct.String()] = cvReleaseTime
+				}
+				if _, setErr := ver.Set(db, cv); setErr != nil {
+					t.Fatalf("error setting component version %d (%s)", idx, setErr)
+				}
+			}
+		}
+	}
+
+	componentVersions, err := ver.MultiLatest(db, componentAndTrainSlice)
+	assert.NoErr(t, err)
+	assert.Equal(t, len(componentVersions), len(releaseTimes), "number of returned components")
+	for _, componentVersion := range componentVersions {
+		ct := componentAndTrainFromComponentVersion(componentVersion)
+		exReleaseTime := releaseTimes[ct.String()].Format(released)
+		if exReleaseTime != componentVersion.Version.Released {
+			t.Errorf(
+				"expected release time (%s) doesn't match actual (%s) for component %s",
+				exReleaseTime,
+				componentVersion.Version.Released,
+				componentVersion.Component.Name,
+			)
+		}
+	}
+}
