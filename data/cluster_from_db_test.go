@@ -1,11 +1,38 @@
 package data
 
 import (
+	"database/sql"
+	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager/types"
 )
+
+var (
+	errInvalidCreatedTime = errors.New("no valid created time is possible")
+)
+
+type errInvalidNumSet struct {
+	num int
+}
+
+func (e errInvalidNumSet) Error() string {
+	return fmt.Sprintf("invalid num set: %d", e.num)
+}
+
+func newDB() (*sql.DB, error) {
+	memDB, err := NewMemDB()
+	if err != nil {
+		return nil, err
+	}
+	db, err := VerifyPersistentStorage(memDB)
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
 
 func testCluster() types.Cluster {
 	return types.Cluster{
@@ -15,11 +42,7 @@ func testCluster() types.Cluster {
 }
 
 func TestClusterFromDBRoundTrip(t *testing.T) {
-	memDB, err := NewMemDB()
-	assert.NoErr(t, err)
-	sqliteDB, err := memDB.Get()
-	assert.NoErr(t, err)
-	_, err = VerifyPersistentStorage(memDB)
+	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
 	c := ClusterFromDB{}
 	cluster, err := c.Get(sqliteDB, clusterID)
@@ -43,12 +66,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 }
 
 func TestClusterFromDBCheckin(t *testing.T) {
-	memDB, err := NewMemDB()
-	assert.NoErr(t, err)
-	sqliteDB, err := memDB.Get()
-	assert.NoErr(t, err)
-	db, err := VerifyPersistentStorage(memDB)
-	assert.NotNil(t, db, "db")
+	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
 	c := ClusterFromDB{}
 	res, err := c.Checkin(sqliteDB, clusterID, testCluster())

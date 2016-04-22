@@ -335,6 +335,45 @@ Moreover, we will assume a more proximate relationship between the API and persi
   ```
   10231
   ```
+- Filter clusters by age
+  - Request type and URL
+    - `GET /:apiVersion/clusters/age?checked_in_before=:timestamp&checked_in_after=:timestamp&created_before=:timestamp&created_after=:timestamp`
+  - 200 Response Body
+
+  ```
+  {
+    "data": [
+      {
+        "id": "8c6da034-c8b1-489a-a55d-a2215d93f934",
+        "firstSeen": "2016-03-11T23:54:39Z",
+        "lastSeen": "2016-03-31T23:54:39Z",
+        "components": [
+          {
+            "component": {
+              "name": "deis-builder",
+              "description": "Deis Builder"
+            },
+            "version": {
+              "train": "stable",
+              "version": "2.0.0",
+              "released": "2016-03-31T23:54:39Z"
+            }
+          },
+          ...
+        ]
+      }
+    ]
+  }
+  ```
+  - Error conditions
+	  - `400 Bad Request` if `created_before` > `checked_in_before`
+		  - Because you can't have clusters that were checked in before they were created
+	  - `400 Bad Request` if `checked_in_after` >= `checked_in_before`
+		  - Because you can't have clusters that were checked in before time T-1 and at the same time checked in after time T+1 (or both at time T)
+	  - `400 Bad Request` if `created_after` >= `created_before`
+		  - Because you can't have clusters that were created after time T+1 and at the same time created before time T-1 (or both at time T)
+	  - `400 Bad Request` if `checked_in_before` <= `created_after`
+		  - Because you can't have clusters that were checked in before time T-1 and at the same time created after time T+1 (or both at time T)
 - Get component metadata for a specific deis cluster
   - Request type and URL
     - `GET /:apiVersion/clusters/:id`
