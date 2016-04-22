@@ -28,8 +28,8 @@ func parseDBVersions(versions []VersionsTable) ([]types.ComponentVersion, error)
 }
 
 func parseDBVersion(version VersionsTable) (types.ComponentVersion, error) {
-	versionData, err := version.data.MarshalJSON()
-	if err != nil {
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(version.data, &data); err != nil {
 		return types.ComponentVersion{}, err
 	}
 	return types.ComponentVersion{
@@ -40,7 +40,7 @@ func parseDBVersion(version VersionsTable) (types.ComponentVersion, error) {
 			Train:    version.train,
 			Version:  version.version,
 			Released: version.releaseTimestamp.String(),
-			Data:     versionData,
+			Data:     data,
 		},
 	}, nil
 }

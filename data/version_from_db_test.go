@@ -72,7 +72,9 @@ func TestVersionFromDBLatest(t *testing.T) {
 		cv.Version.Train = train
 		cv.Version.Version = fmt.Sprintf("testversion%d", i)
 		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(released)
-		cv.Version.Data = []byte(fmt.Sprintf("data%d", i))
+		cv.Version.Data = map[string]interface{}{
+			"notes": fmt.Sprintf("data%d", i),
+		}
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(released)
 		}
@@ -91,7 +93,7 @@ func TestVersionFromDBLatest(t *testing.T) {
 	assert.Equal(t, cv.Version.Train, exCV.Version.Train, "component version")
 	assert.Equal(t, cv.Version.Version, exCV.Version.Version, "component version")
 	assert.Equal(t, cv.Version.Released, exCV.Version.Released, "component release time")
-	assert.Equal(t, string(cv.Version.Data), string(exCV.Version.Data), "component version data")
+	assert.Equal(t, cv.Version.Data, exCV.Version.Data, "component version data")
 }
 
 func TestVersionFromDBMultiLatest(t *testing.T) {

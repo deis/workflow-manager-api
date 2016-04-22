@@ -1,12 +1,12 @@
 hash: 0a4b244a0a57f044a285064a483060b83cdead61511aa19e2a3fffaddd2921bd
-updated: 2016-04-19T10:38:19.04822411-07:00
+updated: 2016-04-22T15:47:45.22189698-07:00
 imports:
 - name: bitbucket.org/ww/goautoneg
   version: 75cd24fc2f2c
 - name: github.com/arschles/assert
   version: d21ecd4884be33397d1298c3738b2b4937c7f499
 - name: github.com/aws/aws-sdk-go
-  version: eb85a963838ae4ef2773c5b07f9e5bbf3865da46
+  version: 4acef85041b5e039cc17094885dd3ce93a7be290
   subpackages:
   - aws
   - aws/session
@@ -40,7 +40,7 @@ imports:
   subpackages:
   - spew
 - name: github.com/deis/workflow-manager
-  version: 6a7acfe9d13bb7c289d24e3f01b0029c10df0cec
+  version: a21b95fc764d444a19a375bb1fe99a5c98a67432
   subpackages:
   - components
   - types
@@ -102,7 +102,7 @@ imports:
 - name: github.com/google/gofuzz
   version: bbcb9da2d746f8bdbd6a936686a0a6067ada0ec5
 - name: github.com/gorilla/context
-  version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
+  version: a8d44e7d8e4d532b6a27a02dd82abb31cc1b01bd
 - name: github.com/gorilla/mux
   version: 0eeaf8392f5b04950925b8a69fe70f110fa7cbfc
 - name: github.com/jmespath/go-jmespath
