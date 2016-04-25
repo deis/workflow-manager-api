@@ -5,6 +5,9 @@ branches:
 cache:
   directories:
     - vendor
+env:
+  global:
+    - IMAGE_PREFIX=deisci
 services:
   - docker
 sudo: required
