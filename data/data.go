@@ -7,7 +7,6 @@ import (
 	"log"
 	"os"
 	"strconv"
-	"sync"
 
 	"database/sql"
 
@@ -47,7 +46,6 @@ var (
 	dBInstance                = os.Getenv(dBInstanceKey)
 	dBUser                    = os.Getenv(dBUserKey)
 	dBPass                    = os.Getenv(dBPassKey)
-	mu                        sync.Mutex
 	errInvalidDBRecordRequest = errors.New("invalid DB record request")
 )
 
@@ -116,7 +114,6 @@ func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
 // Set method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	var ret types.Cluster // return variable
-	mu.Lock()
 	js, err := json.Marshal(cluster)
 	if err != nil {
 		fmt.Println("error marshaling data")
@@ -150,7 +147,6 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	} else if affected > 1 {
 		log.Println("updated more than one record with same ID value!")
 	}
-	mu.Unlock()
 	return ret, nil
 }
 
@@ -276,7 +272,6 @@ func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types
 // Set method for VersionFromDB, the actual database/sql.DB implementation
 func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
 	var ret types.ComponentVersion // return variable
-	mu.Lock()
 	row := getDBRecord(db, versionsTableName,
 		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
 		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
@@ -309,7 +304,6 @@ func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) 
 	} else if affected > 1 {
 		log.Println("updated more than one record with same ID value!")
 	}
-	mu.Unlock()
 	return ret, nil
 }
 
