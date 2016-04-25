@@ -11,5 +11,7 @@ const (
 )
 
 var (
-	versionData = []byte(`{}`)
+	versionData = map[string]interface{}{
+		"notes": "release notes",
+	}
 )

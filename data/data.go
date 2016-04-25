@@ -197,16 +197,9 @@ func (c VersionFromDB) Get(db *sql.DB, cV types.ComponentVersion) (types.Compone
 	if err := row.Scan(&s, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
 		return types.ComponentVersion{}, err
 	}
-	componentVersion := types.ComponentVersion{
-		Component: types.Component{
-			Name: rowResult.componentName,
-		},
-		Version: types.Version{
-			Version:  rowResult.version,
-			Released: rowResult.releaseTimestamp.String(),
-			Train:    rowResult.train,
-			Data:     rowResult.data,
-		},
+	componentVersion, err := parseDBVersion(rowResult)
+	if err != nil {
+		return types.ComponentVersion{}, err
 	}
 	return componentVersion, nil
 }
@@ -622,6 +615,11 @@ func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) 
 }
 
 func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
+	data, err := json.Marshal(componentVersion.Version.Data)
+	if err != nil {
+		log.Printf("JSON marshaling failed (%s)", err)
+		return nil, err
+	}
 	insert := fmt.Sprintf(
 		"INSERT INTO %s (%s, %s, %s, %s, %s) VALUES('%s', '%s', '%s', '%s', '%s')",
 		versionsTableName,
@@ -634,7 +632,7 @@ func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sq
 		componentVersion.Version.Train,
 		componentVersion.Version.Version,
 		componentVersion.Version.Released,
-		string(componentVersion.Version.Data[:]),
+		string(data),
 	)
 	return db.Exec(insert)
 }
@@ -642,6 +640,7 @@ func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sq
 func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
 	data, err := json.Marshal(componentVersion.Version.Data)
 	if err != nil {
+		log.Printf("JSON marshaling failed (%s)", err)
 		return nil, err
 	}
 	update := fmt.Sprintf(

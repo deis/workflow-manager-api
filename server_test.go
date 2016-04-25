@@ -43,7 +43,9 @@ func TestGetVersion(t *testing.T) {
 	defer srv.Close()
 	componentVer := types.ComponentVersion{
 		Component: types.Component{Name: componentName},
-		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+		Version: types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: map[string]interface{}{
+			"notes": "release notes",
+		}},
 	}
 	_, err = data.SetVersion(componentVer, db, versionFromDB)
 	assert.NoErr(t, err)
@@ -68,11 +70,15 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	componentVers := []types.ComponentVersion{}
 	componentVer1 := types.ComponentVersion{
 		Component: types.Component{Name: componentName},
-		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-1", Released: "2016-03-30T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+		Version: types.Version{Train: "beta", Version: "2.0.0-beta-1", Released: "2016-03-30T23:54:39Z", Data: map[string]interface{}{
+			"notes": "release notes",
+		}},
 	}
 	componentVer2 := types.ComponentVersion{
 		Component: types.Component{Name: componentName},
-		Version:   types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+		Version: types.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: map[string]interface{}{
+			"notes": "release notes",
+		}},
 	}
 	componentVers = append(componentVers, componentVer1)
 	componentVers = append(componentVers, componentVer2)
@@ -113,7 +119,9 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		cv.Version.Train = train
 		cv.Version.Version = fmt.Sprintf("testversion%d", i)
 		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(releaseTimeFormat)
-		cv.Version.Data = []byte(fmt.Sprintf("data%d", i))
+		cv.Version.Data = map[string]interface{}{
+			"notes": fmt.Sprintf("data%d", i),
+		}
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(releaseTimeFormat)
 		}
@@ -138,7 +146,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 	assert.Equal(t, cv.Version.Train, exCV.Version.Train, "component version")
 	assert.Equal(t, cv.Version.Version, exCV.Version.Version, "component version")
 	assert.Equal(t, cv.Version.Released, exCV.Version.Released, "component release time")
-	assert.Equal(t, string(cv.Version.Data), string(exCV.Version.Data), "component version data")
+	assert.Equal(t, cv.Version.Data, exCV.Version.Data, "component version data")
 }
 
 // tests the POST /{apiVersion}/versions/{train}/{component}/{version} endpoint
@@ -154,7 +162,9 @@ func TestPostVersions(t *testing.T) {
 	version := "2.0.0-beta-2"
 	componentVer := types.ComponentVersion{
 		Component: types.Component{Name: componentName},
-		Version:   types.Version{Train: train, Version: version, Released: "2016-03-31T23:54:39Z", Data: []byte(`{"description": "release details"}`)},
+		Version: types.Version{Train: train, Version: version, Released: "2016-03-31T23:54:39Z", Data: map[string]interface{}{
+			"notes": "release notes",
+		}},
 	}
 	body := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
