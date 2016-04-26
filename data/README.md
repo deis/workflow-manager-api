@@ -23,11 +23,14 @@ Data is organized into three tables, with fields outlined below:
   * `cluster_id uuid`
   * `created_at timestamp`
   * `data json`
-  * with a uniqueness constraint `unique (cluster_id, created_at)`
 * `versions`, a table that stores authoritative deis component version information
-  * `component_name varchar(64) PRIMARY KEY`
-  * `last_updated timestamp`
+  * `version_id bigserial PRIMARY KEY`
+  * `component_name varchar(32)`
+  * `train varchar(24)`
+  * `version varchar(32)`
+  * `release_timestamp timestamp`
   * `data json`
+  * with a uniqueness constraint `unique (component_name, train, version)`
 
 ## License
 
