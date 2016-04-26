@@ -58,37 +58,46 @@ func CheckinAndSetCluster(db *gorm.DB, id string, cluster *types.Cluster) (*type
 	}
 	data := stypes.JSONText(buf.Bytes())
 
-	tx := db.Begin()
-	clusterTable, err := getClusterTableByID(db, id)
+	resDB, err := inTx(db, func(tx *gorm.DB) error {
+		clusterTable, err := getClusterTableByID(tx, id)
+		if err != nil {
+			// assume the cluster was missing so create it
+			created := tx.Create(&ClusterTable{ID: cluster.ID, Data: data})
+			if created.Error != nil {
+				return created.Error
+			}
+			if created.RowsAffected < 1 {
+				return errNoRowsAffected
+			}
+		} else {
+			// assume the cluster was not missing so update it
+			clusterTable.ID = cluster.ID
+			clusterTable.Data = data
+			updated := tx.Save(clusterTable)
+			if updated.Error != nil {
+				return updated.Error
+			}
+			if updated.RowsAffected < 1 {
+				return errNoRowsAffected
+			}
+		}
+		// check the cluster in
+		checkin := &ClusterCheckinTable{
+			CheckinID: id,
+			ClusterID: cluster.ID,
+			CreatedAt: nowTimestamp(),
+			Data:      data,
+		}
+		createDB := tx.Create(checkin)
+		if createDB.Error {
+			return nil, createDB.Error
+		}
+		return nil
+	})
 	if err != nil {
-		// assume the cluster was missing so create it
-		created := db.Create(&ClusterTable{ID: cluster.ID, Data: data})
-		if created.Error != nil {
-			tx.Rollback()
-			return nil, created.Error
-		}
-		if created.RowsAffected < 1 {
-			tx.Rollback()
-			return nil, errNoRowsAffected
-		}
-	} else {
-		// assume the cluster was not missing so update it
-		clusterTable.ID = cluster.ID
-		clusterTable.Data = data
-		updated := tx.Save(clusterTable)
-		if updated.Error != nil {
-			tx.Rollback()
-			return nil, updated.Error
-		}
-		if updated.RowsAffected < 1 {
-			return nil, errNoRowsAffected
-		}
+		return nil, err
 	}
-	committed := tx.Commit()
-	if committed.Error != nil {
-		return nil, committed.Error
-	}
-	if committed.RowsAffected < 1 {
+	if resDB.RowsAffected < 1 {
 		return nil, errNoRowsAffected
 	}
 	return cluster, nil
