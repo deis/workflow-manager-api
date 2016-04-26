@@ -3,7 +3,7 @@
 The Workflow Manager Service API is responsible for interfacing with Deis Workflow data. It is a golang https implementation that speaks JSON. The API is the source of authority for the following:
 
 * metadata about unique Deis clusters that have checked in: which components are installed at the time of check-in, and which versions
-* current stable version for each Deis cluster component
+* released version history for each Deis cluster component
 
 Additionally, the API is the official interface for accepting Workflow Manager data, e.g.:
 
