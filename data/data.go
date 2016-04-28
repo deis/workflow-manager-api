@@ -45,44 +45,40 @@ func (e errNoMoreRows) Error() string {
 }
 
 // VerifyPersistentStorage is a high level interace for verifying storage abstractions
-func VerifyPersistentStorage(dbGetter DB) (*sql.DB, error) {
-	db, err := dbGetter.Get()
-	if err != nil {
-		return nil, err
-	}
+func VerifyPersistentStorage(db *sql.DB) error {
 	if err := verifyVersionsTable(db); err != nil {
 		log.Println("unable to verify " + versionsTableName + " table")
-		return db, err
+		return err
 	}
 	count, err := getTableCount(db, versionsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + versionsTableName + " table")
-		return db, err
+		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + versionsTableName + " table")
 	err = verifyClustersTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersTableName + " table")
-		return db, err
+		return err
 	}
 	count, err = getTableCount(db, clustersTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersTableName + " table")
-		return db, err
+		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersTableName + " table")
 	err = verifyClustersCheckinsTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersCheckinsTableName + " table")
-		return db, err
+		return err
 	}
 	count, err = getTableCount(db, clustersCheckinsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
-		return db, err
+		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
-	return db, nil
+	return nil
 }
 
 // getDBRecord is a convenience that executes a simple "SELECT *" SQL query against

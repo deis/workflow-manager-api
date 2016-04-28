@@ -26,13 +26,9 @@ func testComponentVersion() types.ComponentVersion {
 }
 
 func TestVersionFromDBRoundTrip(t *testing.T) {
-	memDB, err := NewMemDB()
+	sqliteDB, err := NewMemDB()
 	assert.NoErr(t, err)
-	sqliteDB, err := memDB.Get()
-	assert.NoErr(t, err)
-	db, err := VerifyPersistentStorage(memDB)
-	assert.NotNil(t, db, "db")
-	assert.NoErr(t, err)
+	assert.NoErr(t, VerifyPersistentStorage(sqliteDB))
 	componentVersion := testComponentVersion()
 	cVerNoExist, err := GetVersion(sqliteDB, componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
@@ -52,13 +48,9 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 }
 
 func TestVersionFromDBLatest(t *testing.T) {
-	memDB, err := NewMemDB()
+	sqliteDB, err := NewMemDB()
 	assert.NoErr(t, err)
-	sqliteDB, err := memDB.Get()
-	assert.NoErr(t, err)
-	db, err := VerifyPersistentStorage(memDB)
-	assert.NotNil(t, db, "db")
-	assert.NoErr(t, err)
+	assert.NoErr(t, VerifyPersistentStorage(sqliteDB))
 
 	const numCVs = 4
 	const latestCVIdx = 2
@@ -97,12 +89,8 @@ func TestVersionFromDBLatest(t *testing.T) {
 func TestVersionFromDBMultiLatest(t *testing.T) {
 	memDB, err := NewMemDB()
 	assert.NoErr(t, err)
-
-	db, err := VerifyPersistentStorage(memDB)
-	assert.NotNil(t, db, "db")
-	assert.NoErr(t, err)
+	assert.NoErr(t, VerifyPersistentStorage(memDB))
 	ver := VersionFromDB{}
-
 	componentNames := []string{"component1", "component2", "component3"}
 	trains := []string{"train1", "train2", "train3"}
 	componentAndTrainSlice := make([]ComponentAndTrain, len(componentNames)*len(trains))
@@ -134,14 +122,14 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 				if releaseTimes[ct.String()].Before(cvReleaseTime) {
 					releaseTimes[ct.String()] = cvReleaseTime
 				}
-				if _, setErr := SetVersion(db, cv); setErr != nil {
+				if _, setErr := SetVersion(memDB, cv); setErr != nil {
 					t.Fatalf("error setting component version %d (%s)", idx, setErr)
 				}
 			}
 		}
 	}
 
-	componentVersions, err := ver.MultiLatest(db, componentAndTrainSlice)
+	componentVersions, err := ver.MultiLatest(memDB, componentAndTrainSlice)
 	assert.NoErr(t, err)
 	assert.Equal(t, len(componentVersions), len(releaseTimes), "number of returned components")
 	for _, componentVersion := range componentVersions {

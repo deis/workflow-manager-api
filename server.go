@@ -23,11 +23,14 @@ var (
 
 // Main opens up a TLS listening port
 func main() {
-	db, err := data.VerifyPersistentStorage(data.RDSDB{})
+	rdsDB, err := data.NewRDSDB()
 	if err != nil {
+		log.Fatalf("unable to create connection to RDS DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	r := getRoutes(db, data.VersionFromDB{}, data.ClusterFromDB{})
+	r := getRoutes(rdsDB, data.VersionFromDB{}, data.ClusterFromDB{})
 	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
