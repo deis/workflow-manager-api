@@ -3,7 +3,6 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"strings"
 
 	"github.com/deis/workflow-manager/types"
@@ -11,35 +10,6 @@ import (
 
 // VersionFromDB fulfills the Version interface
 type VersionFromDB struct{}
-
-// Collection method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error) {
-	rows, err := getDBRecords(db, versionsTableName,
-		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
-		[]string{train, component})
-	if err != nil {
-		return nil, err
-	}
-	rowsResult := []VersionsTable{}
-	var row VersionsTable
-	defer rows.Close()
-	for rows.Next() {
-		//TODO: sql.NullString is to pass tests, not for production
-		var s sql.NullString
-		err = rows.Scan(&s, &row.componentName,
-			&row.train, &row.version, &row.releaseTimestamp, &row.data)
-		if err != nil {
-			return nil, err
-		}
-		rowsResult = append(rowsResult, row)
-	}
-	componentVersions, err := parseDBVersions(rowsResult)
-	if err != nil {
-		log.Println("error parsing DB versions data")
-		return nil, err
-	}
-	return componentVersions, nil
-}
 
 // Latest method for VersionFromDB, the actual database/sql.DB implementation
 func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
