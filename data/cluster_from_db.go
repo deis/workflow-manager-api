@@ -13,21 +13,6 @@ import (
 // ClusterFromDB fulfills the Cluster interface
 type ClusterFromDB struct{}
 
-// Get method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		return types.Cluster{}, err
-	}
-	cluster, err := components.ParseJSONCluster(rowResult.data)
-	if err != nil {
-		log.Println("error parsing cluster")
-		return types.Cluster{}, err
-	}
-	return cluster, nil
-}
-
 // Set method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	var ret types.Cluster // return variable
@@ -57,7 +42,7 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	if affected == 0 {
 		log.Println("no records updated")
 	} else if affected == 1 {
-		ret, err = c.Get(db, id)
+		ret, err = GetCluster(db, id)
 		if err != nil {
 			return types.Cluster{}, err
 		}

@@ -31,7 +31,7 @@ func ClustersCount(db *sql.DB) http.Handler {
 func GetCluster(db *sql.DB, c data.Cluster) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		cluster, err := data.GetCluster(id, db, c)
+		cluster, err := data.GetCluster(db, id)
 		if err != nil {
 			log.Printf("data.GetCluster error (%s)", err)
 			http.NotFound(w, r)

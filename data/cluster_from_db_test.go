@@ -45,7 +45,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
 	c := ClusterFromDB{}
-	cluster, err := c.Get(sqliteDB, clusterID)
+	cluster, err := GetCluster(sqliteDB, clusterID)
 	assert.True(t, err != nil, "error not returned when expected")
 	assert.Equal(t, cluster, types.Cluster{}, "returned cluster")
 	expectedCluster := testCluster()
@@ -60,7 +60,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 	updatedCluster, err := c.Set(sqliteDB, clusterID, expectedCluster)
 	assert.NoErr(t, err)
 	assert.Equal(t, updatedCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
-	getCluster, err := c.Get(sqliteDB, clusterID)
+	getCluster, err := GetCluster(sqliteDB, clusterID)
 	assert.NoErr(t, err)
 	assert.Equal(t, getCluster, updatedCluster, "cluster")
 }
