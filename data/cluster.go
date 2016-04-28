@@ -13,7 +13,6 @@ import (
 // Cluster is an interface for managing a persistent cluster record
 type Cluster interface {
 	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
-	FilterByAge(*sql.DB, *ClusterAgeFilter) ([]types.Cluster, error)
 }
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
@@ -62,6 +61,43 @@ func CheckInCluster(db *sql.DB, id string, cluster types.Cluster) (sql.Result, e
 		return nil, err
 	}
 	return result, nil
+}
+
+// FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
+// in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
+func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster, error) {
+	query := fmt.Sprintf(`SELECT DISTINCT clusters.*
+		FROM clusters, clusters_checkins
+		WHERE clusters_checkins.cluster_id = clusters.cluster_id
+		GROUP BY clusters_checkins.cluster_id
+		HAVING MIN(clusters_checkins.created_at) > '%s'
+		AND MIN(clusters_checkins.created_at) < '%s'
+		AND MIN(clusters_checkins.created_at) > '%s'
+		AND MAX(clusters_checkins.created_at) < '%s'`,
+		filter.createdAfterTimestamp(),
+		filter.createdBeforeTimestamp(),
+		filter.checkedInAfterTimestamp(),
+		filter.checkedInBeforeTimestamp(),
+	)
+
+	rows, err := db.Query(query)
+	if err != nil {
+		return nil, err
+	}
+
+	clusters := []types.Cluster{}
+	for rows.Next() {
+		rowResult := ClustersTable{}
+		if err := rows.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
+			return nil, err
+		}
+		cluster, err := components.ParseJSONCluster(rowResult.data)
+		if err != nil {
+			return nil, err
+		}
+		clusters = append(clusters, cluster)
+	}
+	return clusters, nil
 }
 
 func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {

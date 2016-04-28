@@ -23,7 +23,7 @@ func ClustersAge(db *sql.DB, cluster data.Cluster) http.Handler {
 			return
 		}
 
-		clusters, err := cluster.FilterByAge(db, clusterAgeFilter)
+		clusters, err := data.FilterClustersByAge(db, clusterAgeFilter)
 		if err != nil {
 			log.Printf("Error filtering clusters by age (%s)", err)
 			http.Error(w, "database error", http.StatusInternalServerError)
