@@ -24,8 +24,8 @@ func TestTimestampScan(t *testing.T) {
 	now := time.Now()
 	testCases := []timestampScanTestCase{
 		timestampScanTestCase{val: now, expectedTime: now, expectedErr: false},
-		timestampScanTestCase{val: now.Format(stdTimestampFmt), expectedTime: now, expectedErr: false},
-		timestampScanTestCase{val: []byte(now.Format(stdTimestampFmt)), expectedTime: now, expectedErr: false},
+		timestampScanTestCase{val: now.Format(StdTimestampFmt), expectedTime: now, expectedErr: false},
+		timestampScanTestCase{val: []byte(now.Format(StdTimestampFmt)), expectedTime: now, expectedErr: false},
 		timestampScanTestCase{val: now.Format(time.ANSIC), expectedTime: now, expectedErr: true},
 		timestampScanTestCase{val: now.Format(time.UnixDate), expectedTime: now, expectedErr: true},
 		timestampScanTestCase{val: now.Format(time.RubyDate), expectedTime: now, expectedErr: true},
@@ -67,8 +67,9 @@ func TestTimestampScan(t *testing.T) {
 
 func TestTimestampNow(t *testing.T) {
 	n := now()
-	if _, err := time.Parse(stdTimestampFmt, n); err != nil {
-		t.Fatal(err)
+	nowTime := time.Now()
+	if n.Time.After(nowTime) {
+		t.Fatalf("Returned time %s was after the current time %s", n.Time, nowTime)
 	}
 }
 
@@ -76,7 +77,7 @@ func TestTimestampString(t *testing.T) {
 	now := time.Now()
 	ts := new(Timestamp)
 	ts.Time = &now
-	if _, err := time.Parse(stdTimestampFmt, ts.String()); err != nil {
+	if _, err := time.Parse(StdTimestampFmt, ts.String()); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -93,7 +94,7 @@ func TestTimestampValue(t *testing.T) {
 	if !ok {
 		t.Fatalf("returned value was not a string")
 	}
-	if _, err := time.Parse(stdTimestampFmt, str); err != nil {
-		t.Fatalf("returned value was not in expected format %s (%s)", stdTimestampFmt, err)
+	if _, err := time.Parse(StdTimestampFmt, str); err != nil {
+		t.Fatalf("returned value was not in expected format %s (%s)", StdTimestampFmt, err)
 	}
 }

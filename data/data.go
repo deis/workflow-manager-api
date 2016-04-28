@@ -13,7 +13,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
-	"github.com/deis/workflow-manager/components"
 	"github.com/deis/workflow-manager/types"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
 	_ "github.com/lib/pq" // Pure Go Postgres driver for database/sql
@@ -84,84 +83,6 @@ type VersionsTable struct {
 // DB is an interface for managing a DB instance
 type DB interface {
 	Get() (*sql.DB, error)
-}
-
-// Cluster is an interface for managing a persistent cluster record
-type Cluster interface {
-	Get(*sql.DB, string) (types.Cluster, error)
-	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
-	Checkin(*sql.DB, string, types.Cluster) (sql.Result, error)
-}
-
-// ClusterFromDB fulfills the Cluster interface
-type ClusterFromDB struct{}
-
-// Get method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		return types.Cluster{}, err
-	}
-	cluster, err := components.ParseJSONCluster(rowResult.data)
-	if err != nil {
-		log.Println("error parsing cluster")
-		return types.Cluster{}, err
-	}
-	return cluster, nil
-}
-
-// Set method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
-	var ret types.Cluster // return variable
-	js, err := json.Marshal(cluster)
-	if err != nil {
-		fmt.Println("error marshaling data")
-	}
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	var result sql.Result
-	// Register the "latest checkin" with the primary cluster record
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		result, err = newClusterDBRecord(db, id, js)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		result, err = updateClusterDBRecord(db, id, js)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		log.Println("failed to get affected row count")
-	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = c.Get(db, id)
-		if err != nil {
-			return types.Cluster{}, err
-		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
-	}
-	return ret, nil
-}
-
-// Checkin method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
-	js, err := json.Marshal(cluster)
-	if err != nil {
-		fmt.Println("error marshaling data")
-	}
-	result, err := newClusterCheckinsDBRecord(db, id, js)
-	if err != nil {
-		log.Println("cluster checkin db record not created", err)
-		return nil, err
-	}
-	return result, nil
 }
 
 // Version is an interface for managing a persistent cluster record
@@ -671,7 +592,13 @@ func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, erro
 	return db.Exec(update)
 }
 
-func newClusterCheckinsDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')", clustersCheckinsTableName, string(data), now(), id)
+func newClusterCheckinsDBRecord(db *sql.DB, id string, createdAt *Timestamp, data []byte) (sql.Result, error) {
+	update := fmt.Sprintf(
+		"INSERT INTO %s (data, created_at, cluster_id) VALUES('%s', '%s', '%s')",
+		clustersCheckinsTableName,
+		string(data),
+		createdAt.String(),
+		id,
+	)
 	return db.Exec(update)
 }

@@ -8,6 +8,7 @@ import (
 
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager-api/handlers"
+	"github.com/deis/workflow-manager-api/rest"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -45,6 +46,17 @@ func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db, count)).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db, cluster)).Methods("GET").
+		Queries(
+			rest.CheckedInBeforeQueryStringKey,
+			"",
+			rest.CheckedInAfterQueryStringKey,
+			"",
+			rest.CreatedBeforeQueryStringKey,
+			"",
+			rest.CreatedAfterQueryStringKey,
+			"",
+		)
 	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db, cluster)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db, cluster)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)

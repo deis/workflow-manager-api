@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	stdTimestampFmt = time.RFC3339
+	StdTimestampFmt = time.RFC3339
 )
 
 var (
@@ -28,14 +28,14 @@ func (ts *Timestamp) Scan(value interface{}) error {
 		ts.Time = &v
 		return nil
 	case string:
-		t, err := time.Parse(stdTimestampFmt, v)
+		t, err := time.Parse(StdTimestampFmt, v)
 		if err != nil {
 			return err
 		}
 		ts.Time = &t
 		return nil
 	case []byte:
-		t, err := time.Parse(stdTimestampFmt, string(v))
+		t, err := time.Parse(StdTimestampFmt, string(v))
 		if err != nil {
 			return err
 		}
@@ -48,15 +48,16 @@ func (ts *Timestamp) Scan(value interface{}) error {
 
 // Value is the Valuer interface implementation
 func (ts *Timestamp) Value() (driver.Value, error) {
-	str := ts.Time.Format(stdTimestampFmt)
+	str := ts.Time.Format(StdTimestampFmt)
 	return str, nil
 }
 
 // String is the fmt.Stringer interface implementation
 func (ts *Timestamp) String() string {
-	return ts.Time.Format(stdTimestampFmt)
+	return ts.Time.Format(StdTimestampFmt)
 }
 
-func now() string {
-	return time.Now().Format(stdTimestampFmt)
+func now() *Timestamp {
+	t := time.Now()
+	return &Timestamp{Time: &t}
 }
