@@ -11,8 +11,6 @@ import (
 
 // Version is an interface for managing a persistent cluster record
 type Version interface {
-	// Retrieve the most recent Version record that matches a given component + train
-	Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error)
 	// MultiLatest fetches from the DB and returns the latest release for each component/train pair
 	// given in ct. Returns an empty slice and non-nil error on any error communicating with the
 	// database or otherwise if the first returned value is not empty, it's guaranteed to:
@@ -92,13 +90,33 @@ func SetVersion(db *sql.DB, componentVersion types.ComponentVersion) (types.Comp
 	return ret, nil
 }
 
-// GetLatestComponentTrainVersion is a high level interface for retrieving the latest component version for a given "train"
-func GetLatestComponentTrainVersion(train string, component string, db *sql.DB, v Version) (types.ComponentVersion, error) {
-	componentVersion, err := v.Latest(db, train, component)
+// GetLatestVersion gets the latest version from the DB for the given train & component
+func GetLatestVersion(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
+	rows, err := getOrderedDBRecords(
+		db,
+		versionsTableName,
+		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
+		[]string{train, component},
+		newOrderBy(versionsTableReleaseTimeStampKey, "desc"),
+	)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
-	return componentVersion, nil
+	defer rows.Close()
+	for rows.Next() {
+		var row VersionsTable
+		//TODO: sql.NullString is to pass tests, not for production
+		var s sql.NullString
+		if err = rows.Scan(&s, &row.componentName, &row.train, &row.version, &row.releaseTimestamp, &row.data); err != nil {
+			return types.ComponentVersion{}, err
+		}
+		cv, err := parseDBVersion(row)
+		if err != nil {
+			return types.ComponentVersion{}, err
+		}
+		return cv, nil
+	}
+	return types.ComponentVersion{}, errNoMoreRows{tableName: versionsTableName}
 }
 
 func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {

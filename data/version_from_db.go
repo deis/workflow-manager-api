@@ -11,35 +11,6 @@ import (
 // VersionFromDB fulfills the Version interface
 type VersionFromDB struct{}
 
-// Latest method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
-	rows, err := getOrderedDBRecords(
-		db,
-		versionsTableName,
-		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
-		[]string{train, component},
-		newOrderBy(versionsTableReleaseTimeStampKey, "desc"),
-	)
-	if err != nil {
-		return types.ComponentVersion{}, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		var row VersionsTable
-		//TODO: sql.NullString is to pass tests, not for production
-		var s sql.NullString
-		if err = rows.Scan(&s, &row.componentName, &row.train, &row.version, &row.releaseTimestamp, &row.data); err != nil {
-			return types.ComponentVersion{}, err
-		}
-		cv, err := parseDBVersion(row)
-		if err != nil {
-			return types.ComponentVersion{}, err
-		}
-		return cv, nil
-	}
-	return types.ComponentVersion{}, errNoMoreRows{tableName: versionsTableName}
-}
-
 // MultiLatest is the Version interface implementation
 func (c VersionFromDB) MultiLatest(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error) {
 	componentsList := []string{}
