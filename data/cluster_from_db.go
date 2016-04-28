@@ -52,20 +52,6 @@ func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.
 	return ret, nil
 }
 
-// Checkin method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
-	js, err := json.Marshal(cluster)
-	if err != nil {
-		fmt.Println("error marshaling data")
-	}
-	result, err := newClusterCheckinsDBRecord(db, id, now(), js)
-	if err != nil {
-		log.Println("cluster checkin db record not created", err)
-		return nil, err
-	}
-	return result, nil
-}
-
 // FilterByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
 func (c ClusterFromDB) FilterByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster, error) {

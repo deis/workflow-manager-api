@@ -2,6 +2,7 @@ package data
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"log"
 
@@ -12,7 +13,6 @@ import (
 // Cluster is an interface for managing a persistent cluster record
 type Cluster interface {
 	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
-	Checkin(*sql.DB, string, types.Cluster) (sql.Result, error)
 	FilterByAge(*sql.DB, *ClusterAgeFilter) ([]types.Cluster, error)
 }
 
@@ -39,8 +39,7 @@ func GetCluster(db *sql.DB, id string) (types.Cluster, error) {
 // SetCluster is a high level interface for updating a cluster data record
 func SetCluster(id string, cluster types.Cluster, db *sql.DB, c Cluster) (types.Cluster, error) {
 	// Check in
-	_, err := c.Checkin(db, id, cluster)
-	if err != nil {
+	if _, err := CheckInCluster(db, id, cluster); err != nil {
 		return types.Cluster{}, err
 	}
 	// Update cluster record
@@ -49,6 +48,20 @@ func SetCluster(id string, cluster types.Cluster, db *sql.DB, c Cluster) (types.
 		return types.Cluster{}, err
 	}
 	return ret, nil
+}
+
+// CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
+func CheckInCluster(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
+	js, err := json.Marshal(cluster)
+	if err != nil {
+		fmt.Println("error marshaling data")
+	}
+	result, err := newClusterCheckinsDBRecord(db, id, now(), js)
+	if err != nil {
+		log.Println("cluster checkin db record not created", err)
+		return nil, err
+	}
+	return result, nil
 }
 
 func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {

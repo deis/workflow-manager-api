@@ -68,8 +68,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 func TestClusterFromDBCheckin(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
-	c := ClusterFromDB{}
-	res, err := c.Checkin(sqliteDB, clusterID, testCluster())
+	res, err := CheckInCluster(sqliteDB, clusterID, testCluster())
 	assert.NoErr(t, err)
 	rowsAffected, err := res.RowsAffected()
 	assert.NoErr(t, err)
