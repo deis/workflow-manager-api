@@ -176,7 +176,7 @@ func TestPostVersions(t *testing.T) {
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(retComponentVersion))
 	// TODO: version data property not traveling and returning as expected
 	assert.Equal(t, *retComponentVersion, componentVer, "component version")
-	fetchedComponentVersion, err := data.GetVersion(componentVer, db, versionFromDB)
+	fetchedComponentVersion, err := data.GetVersion(db, componentVer)
 	assert.NoErr(t, err)
 	assert.Equal(t, fetchedComponentVersion, componentVer, "component version")
 }

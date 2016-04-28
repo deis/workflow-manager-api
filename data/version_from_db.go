@@ -12,24 +12,6 @@ import (
 // VersionFromDB fulfills the Version interface
 type VersionFromDB struct{}
 
-// Get method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Get(db *sql.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
-	row := getDBRecord(db, versionsTableName,
-		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
-		[]string{cV.Component.Name, cV.Version.Train, cV.Version.Version})
-	rowResult := VersionsTable{}
-	//TODO: sql.NullString is to pass tests, not for production
-	var s sql.NullString
-	if err := row.Scan(&s, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
-		return types.ComponentVersion{}, err
-	}
-	componentVersion, err := parseDBVersion(rowResult)
-	if err != nil {
-		return types.ComponentVersion{}, err
-	}
-	return componentVersion, nil
-}
-
 // Collection method for VersionFromDB, the actual database/sql.DB implementation
 func (c VersionFromDB) Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error) {
 	rows, err := getDBRecords(db, versionsTableName,
@@ -116,7 +98,7 @@ func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) 
 	if affected == 0 {
 		log.Println("no records updated")
 	} else if affected == 1 {
-		ret, err = c.Get(db, componentVersion)
+		ret, err = GetVersion(db, componentVersion)
 		if err != nil {
 			return types.ComponentVersion{}, err
 		}

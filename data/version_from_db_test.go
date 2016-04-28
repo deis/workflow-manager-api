@@ -35,7 +35,7 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	assert.NoErr(t, err)
 	ver := VersionFromDB{}
 	componentVersion := testComponentVersion()
-	cVerNoExist, err := ver.Get(sqliteDB, componentVersion)
+	cVerNoExist, err := GetVersion(sqliteDB, componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
 	assert.Equal(t, cVerNoExist, types.ComponentVersion{}, "component version")
 	cVerSet, err := ver.Set(sqliteDB, componentVersion)
@@ -44,7 +44,7 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	assert.Equal(t, cVerSet.Version.Version, componentVersion.Version.Version, "version string")
 	assert.Equal(t, cVerSet.Version.Released, componentVersion.Version.Released, "released string")
 	assert.Equal(t, cVerSet.Version.Train, componentVersion.Version.Train, "version train")
-	getCVer, err := ver.Get(sqliteDB, componentVersion)
+	getCVer, err := GetVersion(sqliteDB, componentVersion)
 	assert.NoErr(t, err)
 	assert.Equal(t, getCVer.Component.Name, componentVersion.Component.Name, "component name")
 	assert.Equal(t, getCVer.Version.Version, componentVersion.Version.Version, "version string")

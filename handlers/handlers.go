@@ -85,7 +85,7 @@ func GetVersion(db *sql.DB, v data.Version) http.Handler {
 			Component: types.Component{Name: component},
 			Version:   types.Version{Train: train, Version: version},
 		}
-		componentVersion, err := data.GetVersion(params, db, v)
+		componentVersion, err := data.GetVersion(db, params)
 		if err != nil {
 			log.Printf("data.GetVersion error (%s)", err)
 			http.NotFound(w, r)
