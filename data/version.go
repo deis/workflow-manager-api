@@ -15,8 +15,6 @@ type Version interface {
 	Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error)
 	// Retrieve the most recent Version record that matches a given component + train
 	Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error)
-	// Store/Update a single Version record into a DB
-	Set(*sql.DB, types.ComponentVersion) (types.ComponentVersion, error)
 	// MultiLatest fetches from the DB and returns the latest release for each component/train pair
 	// given in ct. Returns an empty slice and non-nil error on any error communicating with the
 	// database or otherwise if the first returned value is not empty, it's guaranteed to:
@@ -64,11 +62,43 @@ func GetComponentTrainVersions(train string, component string, db *sql.DB, v Ver
 	return componentVersions, nil
 }
 
-// SetVersion is a high level interface for updating a component version record
-func SetVersion(componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
-	ret, err := v.Set(db, componentVersion)
+// SetVersion adds or updates a single version record in the database
+func SetVersion(db *sql.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+	// TODO: this read-modify-write should be done inside a transaction. Also, rename SetVersion to something else.
+	// Both of these TODOs are captured in https://github.com/deis/workflow-manager-api/issues/90
+
+	var ret types.ComponentVersion // return variable
+	row := getDBRecord(db, versionsTableName,
+		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
+		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
+	var result sql.Result
+	rowResult := VersionsTable{}
+	if err := row.Scan(&rowResult.versionID, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
+		result, err = newVersionDBRecord(db, componentVersion)
+		if err != nil {
+			log.Println(err)
+			return types.ComponentVersion{}, err
+		}
+	} else {
+		result, err = updateVersionDBRecord(db, componentVersion)
+		if err != nil {
+			log.Println(err)
+			return types.ComponentVersion{}, err
+		}
+	}
+	affected, err := result.RowsAffected()
 	if err != nil {
-		return types.ComponentVersion{}, err
+		log.Println("failed to get affected row count")
+	}
+	if affected == 0 {
+		log.Println("no records updated")
+	} else if affected == 1 {
+		ret, err = GetVersion(db, componentVersion)
+		if err != nil {
+			return types.ComponentVersion{}, err
+		}
+	} else if affected > 1 {
+		log.Println("updated more than one record with same ID value!")
 	}
 	return ret, nil
 }

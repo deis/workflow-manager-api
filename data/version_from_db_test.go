@@ -33,12 +33,11 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	db, err := VerifyPersistentStorage(memDB)
 	assert.NotNil(t, db, "db")
 	assert.NoErr(t, err)
-	ver := VersionFromDB{}
 	componentVersion := testComponentVersion()
 	cVerNoExist, err := GetVersion(sqliteDB, componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
 	assert.Equal(t, cVerNoExist, types.ComponentVersion{}, "component version")
-	cVerSet, err := ver.Set(sqliteDB, componentVersion)
+	cVerSet, err := SetVersion(sqliteDB, componentVersion)
 	assert.NoErr(t, err)
 	assert.Equal(t, cVerSet.Component.Name, componentVersion.Component.Name, "component name")
 	assert.Equal(t, cVerSet.Version.Version, componentVersion.Version.Version, "version string")
@@ -78,7 +77,7 @@ func TestVersionFromDBLatest(t *testing.T) {
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(released)
 		}
-		if _, setErr := ver.Set(sqliteDB, cv); setErr != nil {
+		if _, setErr := SetVersion(sqliteDB, cv); setErr != nil {
 			t.Fatalf("error setting component version %d (%s)", i, setErr)
 		}
 		componentVersions[i] = cv
@@ -136,7 +135,7 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 				if releaseTimes[ct.String()].Before(cvReleaseTime) {
 					releaseTimes[ct.String()] = cvReleaseTime
 				}
-				if _, setErr := ver.Set(db, cv); setErr != nil {
+				if _, setErr := SetVersion(db, cv); setErr != nil {
 					t.Fatalf("error setting component version %d (%s)", idx, setErr)
 				}
 			}
