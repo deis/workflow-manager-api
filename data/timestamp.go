@@ -21,6 +21,11 @@ type Timestamp struct {
 	Time *time.Time
 }
 
+func nowTimestamp() *Timestamp {
+	t := time.Now()
+	return &Timestamp{Time: &t}
+}
+
 // Scan is the Scanner interface implementation
 func (ts *Timestamp) Scan(value interface{}) error {
 	switch v := value.(type) {

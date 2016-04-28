@@ -16,3 +16,4 @@ import:
 - package: github.com/lib/pq
 - package: github.com/arschles/assert
 - package: github.com/mxk/go-sqlite/sqlite3
+- package: github.com/jinzhu/gorm

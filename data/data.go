@@ -13,8 +13,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
-	"github.com/deis/workflow-manager/components"
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
 	_ "github.com/lib/pq" // Pure Go Postgres driver for database/sql
 )
@@ -83,72 +83,16 @@ type VersionsTable struct {
 
 // DB is an interface for managing a DB instance
 type DB interface {
-	Get() (*sql.DB, error)
+	Get() (*sql.DB, *gorm.DB, error)
 }
 
 // Cluster is an interface for managing a persistent cluster record
 type Cluster interface {
-	Get(*sql.DB, string) (types.Cluster, error)
-	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
 	Checkin(*sql.DB, string, types.Cluster) (sql.Result, error)
 }
 
 // ClusterFromDB fulfills the Cluster interface
 type ClusterFromDB struct{}
-
-// Get method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Get(db *sql.DB, id string) (types.Cluster, error) {
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		return types.Cluster{}, err
-	}
-	cluster, err := components.ParseJSONCluster(rowResult.data)
-	if err != nil {
-		log.Println("error parsing cluster")
-		return types.Cluster{}, err
-	}
-	return cluster, nil
-}
-
-// Set method for ClusterFromDB, the actual database/sql.DB implementation
-func (c ClusterFromDB) Set(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
-	var ret types.Cluster // return variable
-	js, err := json.Marshal(cluster)
-	if err != nil {
-		fmt.Println("error marshaling data")
-	}
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	var result sql.Result
-	// Register the "latest checkin" with the primary cluster record
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		result, err = newClusterDBRecord(db, id, js)
-		if err != nil {
-			log.Println(err)
-		}
-	} else {
-		result, err = updateClusterDBRecord(db, id, js)
-		if err != nil {
-			log.Println(err)
-		}
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		log.Println("failed to get affected row count")
-	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = c.Get(db, id)
-		if err != nil {
-			return types.Cluster{}, err
-		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
-	}
-	return ret, nil
-}
 
 // Checkin method for ClusterFromDB, the actual database/sql.DB implementation
 func (c ClusterFromDB) Checkin(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
@@ -321,53 +265,53 @@ func (c ClusterCount) Get(db *sql.DB) (int, error) {
 type RDSDB struct{}
 
 // Get method for RDSDB
-func (r RDSDB) Get() (*sql.DB, error) {
-	db, err := getRDSDB()
+func (r RDSDB) Get() (*sql.DB, *gorm.DB, error) {
+	db, gdb, err := getRDSDB()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return db, nil
+	return db, gdb, nil
 }
 
 // VerifyPersistentStorage is a high level interace for verifying storage abstractions
-func VerifyPersistentStorage(dbGetter DB) (*sql.DB, error) {
-	db, err := dbGetter.Get()
+func VerifyPersistentStorage(dbGetter DB) (*sql.DB, *gorm.DB, error) {
+	db, gdb, err := dbGetter.Get()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if err := verifyVersionsTable(db); err != nil {
 		log.Println("unable to verify " + versionsTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	count, err := getTableCount(db, versionsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + versionsTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + versionsTableName + " table")
 	err = verifyClustersTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	count, err = getTableCount(db, clustersTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersTableName + " table")
 	err = verifyClustersCheckinsTable(db)
 	if err != nil {
 		log.Println("unable to verify " + clustersCheckinsTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	count, err = getTableCount(db, clustersCheckinsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
-		return db, err
+		return db, gdb, err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
-	return db, nil
+	return db, gdb, nil
 }
 
 // GetClusterCount is a high level interface for retrieving a simple cluster count
@@ -377,15 +321,6 @@ func GetClusterCount(db *sql.DB, c Count) (int, error) {
 		return 0, err
 	}
 	return count, nil
-}
-
-// GetCluster is a high level interface for retrieving a cluster data record
-func GetCluster(id string, db *sql.DB, c Cluster) (types.Cluster, error) {
-	cluster, err := c.Get(db, id)
-	if err != nil {
-		return types.Cluster{}, err
-	}
-	return cluster, nil
 }
 
 // SetCluster is a high level interface for updating a cluster data record
@@ -443,14 +378,14 @@ func getRDSSession() *rds.RDS {
 	return rds.New(session.New(), &aws.Config{Region: aws.String(rDSRegion)})
 }
 
-func getRDSDB() (*sql.DB, error) {
+func getRDSDB() (*sql.DB, *gorm.DB, error) {
 	svc := getRDSSession()
 	dbInstanceIdentifier := new(string)
 	dbInstanceIdentifier = &dBInstance
 	params := rds.DescribeDBInstancesInput{DBInstanceIdentifier: dbInstanceIdentifier}
 	resp, err := svc.DescribeDBInstances(&params)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if len(resp.DBInstances) > 1 {
 		log.Printf("more than one database instance returned for %s, using the 1st one", dBInstance)
@@ -461,13 +396,19 @@ func getRDSDB() (*sql.DB, error) {
 	db, err := sql.Open("postgres", dataSourceName)
 	if err != nil {
 		log.Println("couldn't get a db connection!")
-		return nil, err
+		return nil, nil, err
 	}
 	if err := db.Ping(); err != nil {
 		log.Println("Failed to keep db connection alive")
-		return nil, err
+		return nil, nil, err
 	}
-	return db, nil
+	gdb, err := gorm.Open("postgres", dataSourceName)
+	if err != nil {
+		log.Println("couldn't get a db connection!")
+		return nil, nil, err
+	}
+
+	return db, gdb, nil
 }
 
 func createClustersTable(db *sql.DB) (sql.Result, error) {
