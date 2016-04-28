@@ -107,7 +107,7 @@ func GetComponentTrainVersions(db *sql.DB, v data.Version) http.Handler {
 		routeParams := mux.Vars(r)
 		train := routeParams["train"]
 		component := routeParams["component"]
-		componentVersions, err := data.GetComponentTrainVersions(train, component, db, v)
+		componentVersions, err := data.GetVersionsList(db, train, component)
 		if err != nil {
 			log.Printf("data.GetComponentTrainVersions error (%s)", err)
 			http.NotFound(w, r)

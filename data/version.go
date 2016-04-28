@@ -11,8 +11,6 @@ import (
 
 // Version is an interface for managing a persistent cluster record
 type Version interface {
-	// Retrieve a list of Version records that match a given component + train
-	Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error)
 	// Retrieve the most recent Version record that matches a given component + train
 	Latest(db *sql.DB, train string, component string) (types.ComponentVersion, error)
 	// MultiLatest fetches from the DB and returns the latest release for each component/train pair
@@ -51,15 +49,6 @@ func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) 
 		componentVersion.Version.Version,
 	)
 	return db.Exec(update)
-}
-
-// GetComponentTrainVersions is a high level interface for retrieving component versions for a given "train"
-func GetComponentTrainVersions(train string, component string, db *sql.DB, v Version) ([]types.ComponentVersion, error) {
-	componentVersions, err := v.Collection(db, train, component)
-	if err != nil {
-		return nil, err
-	}
-	return componentVersions, nil
 }
 
 // SetVersion adds or updates a single version record in the database
@@ -151,4 +140,33 @@ func GetVersion(db *sql.DB, cV types.ComponentVersion) (types.ComponentVersion, 
 		return types.ComponentVersion{}, err
 	}
 	return componentVersion, nil
+}
+
+// GetVersionsList retrieves a list of version records from the DB that match a given train & component
+func GetVersionsList(db *sql.DB, train string, component string) ([]types.ComponentVersion, error) {
+	rows, err := getDBRecords(db, versionsTableName,
+		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
+		[]string{train, component})
+	if err != nil {
+		return nil, err
+	}
+	rowsResult := []VersionsTable{}
+	var row VersionsTable
+	defer rows.Close()
+	for rows.Next() {
+		//TODO: sql.NullString is to pass tests, not for production
+		var s sql.NullString
+		err = rows.Scan(&s, &row.componentName,
+			&row.train, &row.version, &row.releaseTimestamp, &row.data)
+		if err != nil {
+			return nil, err
+		}
+		rowsResult = append(rowsResult, row)
+	}
+	componentVersions, err := parseDBVersions(rowsResult)
+	if err != nil {
+		log.Println("error parsing DB versions data")
+		return nil, err
+	}
+	return componentVersions, nil
 }
