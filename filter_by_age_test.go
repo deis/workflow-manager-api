@@ -46,7 +46,7 @@ func TestFilterByClusterAge(t *testing.T) {
 	assert.NoErr(t, err)
 	c := data.ClusterFromDB{}
 	cluster := types.Cluster{ID: uuid.New()}
-	srv := newServer(memDB, data.VersionFromDB{}, data.ClusterCount{}, c)
+	srv := newServer(memDB, data.VersionFromDB{}, c)
 	defer srv.Close()
 	_, setErr := c.Set(db, cluster.ID, cluster)
 	assert.NoErr(t, setErr)
