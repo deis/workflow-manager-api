@@ -11,8 +11,6 @@ import (
 
 // Version is an interface for managing a persistent cluster record
 type Version interface {
-	// Retrieve a single Version record from a DB matching the unique property values in a ComponentVersion struct
-	Get(*sql.DB, types.ComponentVersion) (types.ComponentVersion, error)
 	// Retrieve a list of Version records that match a given component + train
 	Collection(db *sql.DB, train string, component string) ([]types.ComponentVersion, error)
 	// Retrieve the most recent Version record that matches a given component + train
@@ -107,9 +105,18 @@ func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sq
 	return db.Exec(insert)
 }
 
-// GetVersion is a high level interface for retrieving a version data record
-func GetVersion(componentVersion types.ComponentVersion, db *sql.DB, v Version) (types.ComponentVersion, error) {
-	componentVersion, err := v.Get(db, componentVersion)
+// GetVersion gets a single version record from a DB matching the unique property values in a ComponentVersion struct
+func GetVersion(db *sql.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
+	row := getDBRecord(db, versionsTableName,
+		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
+		[]string{cV.Component.Name, cV.Version.Train, cV.Version.Version})
+	rowResult := VersionsTable{}
+	//TODO: sql.NullString is to pass tests, not for production
+	var s sql.NullString
+	if err := row.Scan(&s, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
+		return types.ComponentVersion{}, err
+	}
+	componentVersion, err := parseDBVersion(rowResult)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
