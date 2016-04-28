@@ -70,44 +70,6 @@ func (c VersionFromDB) Latest(db *sql.DB, train string, component string) (types
 	return types.ComponentVersion{}, errNoMoreRows{tableName: versionsTableName}
 }
 
-// Set method for VersionFromDB, the actual database/sql.DB implementation
-func (c VersionFromDB) Set(db *sql.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
-	var ret types.ComponentVersion // return variable
-	row := getDBRecord(db, versionsTableName,
-		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
-		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
-	var result sql.Result
-	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.versionID, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
-		result, err = newVersionDBRecord(db, componentVersion)
-		if err != nil {
-			log.Println(err)
-			return types.ComponentVersion{}, err
-		}
-	} else {
-		result, err = updateVersionDBRecord(db, componentVersion)
-		if err != nil {
-			log.Println(err)
-			return types.ComponentVersion{}, err
-		}
-	}
-	affected, err := result.RowsAffected()
-	if err != nil {
-		log.Println("failed to get affected row count")
-	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = GetVersion(db, componentVersion)
-		if err != nil {
-			return types.ComponentVersion{}, err
-		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
-	}
-	return ret, nil
-}
-
 // MultiLatest is the Version interface implementation
 func (c VersionFromDB) MultiLatest(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error) {
 	componentsList := []string{}

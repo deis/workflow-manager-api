@@ -46,10 +46,10 @@ func TestGetLatestVersions(t *testing.T) {
 			},
 		}
 
-		if _, err := versionFromDB.Set(db, cv1); err != nil {
+		if _, err := data.SetVersion(db, cv1); err != nil {
 			t.Fatalf("Error setting component %d (%s)", i, err)
 		}
-		if _, err := versionFromDB.Set(db, cv2); err != nil {
+		if _, err := data.SetVersion(db, cv2); err != nil {
 			t.Fatalf("Error setting component %d (%s)", i, err)
 		}
 		components[cv2.Component.Name] = cv2
