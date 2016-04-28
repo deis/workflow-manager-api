@@ -27,13 +27,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	r := getRoutes(db, data.VersionFromDB{}, data.ClusterCount{}, data.ClusterFromDB{})
+	r := getRoutes(db, data.VersionFromDB{}, data.ClusterFromDB{})
 	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.Cluster) *mux.Router {
+func getRoutes(db *sql.DB, version data.Version, cluster data.Cluster) *mux.Router {
 	r := mux.NewRouter()
 	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
@@ -45,7 +45,7 @@ func getRoutes(db *sql.DB, version data.Version, count data.Count, cluster data.
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db, version)).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
-	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db, count)).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db, cluster)).Methods("GET").
 		Queries(
 			rest.CheckedInBeforeQueryStringKey,
