@@ -41,7 +41,7 @@ type ComponentVersionsJSONWrapper struct {
 }
 
 // GetLatestVersions is the handler for the POST /{apiVersion}/versions/latest endpoint
-func GetLatestVersions(db *sql.DB, versions data.Version) http.Handler {
+func GetLatestVersions(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqStruct := new(SparseComponentAndTrainInfoJSONWrapper)
 		if err := json.NewDecoder(r.Body).Decode(reqStruct); err != nil {
@@ -57,7 +57,7 @@ func GetLatestVersions(db *sql.DB, versions data.Version) http.Handler {
 			}
 		}
 
-		componentVersions, err := versions.MultiLatest(db, componentAndTrainSlice)
+		componentVersions, err := data.GetLatestVersions(db, componentAndTrainSlice)
 		if err != nil {
 			http.Error(w, "database error", http.StatusInternalServerError)
 			return

@@ -30,23 +30,23 @@ func main() {
 	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	r := getRoutes(rdsDB, data.VersionFromDB{})
+	r := getRoutes(rdsDB)
 	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func getRoutes(db *sql.DB, version data.Version) *mux.Router {
+func getRoutes(db *sql.DB) *mux.Router {
 	r := mux.NewRouter()
-	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db, version)).Methods("POST").
+	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
-	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db, version)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db)).Methods("GET")
 	// Note: the following route must go before the route that ends with {version}, so that
 	// Gorilla mux always routes the static "latest" route to the appropriate handler, and "latest"
 	// doesn't get interpreted as a {version}
-	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db, version)).Methods("GET")
-	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db, version)).Methods("GET")
-	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST").
+	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db)).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db)).Methods("GET").

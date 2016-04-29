@@ -22,9 +22,9 @@ const (
 	releaseTimeFormat = "2006-01-02T15:04:05Z"
 )
 
-func newServer(db *sql.DB, ver data.Version) *httptest.Server {
+func newServer(db *sql.DB) *httptest.Server {
 	// Routes consist of a path and a handler function.
-	return httptest.NewServer(getRoutes(db, ver))
+	return httptest.NewServer(getRoutes(db))
 }
 
 func urlPath(ver int, remainder ...string) string {
@@ -36,8 +36,7 @@ func TestGetVersion(t *testing.T) {
 	db, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(db))
-	versionFromDB := data.VersionFromDB{}
-	srv := newServer(db, versionFromDB)
+	srv := newServer(db)
 	defer srv.Close()
 	componentVer := types.ComponentVersion{
 		Component: types.Component{Name: componentName},
@@ -61,8 +60,7 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
-	versionFromDB := data.VersionFromDB{}
-	srv := newServer(memDB, versionFromDB)
+	srv := newServer(memDB)
 	defer srv.Close()
 	componentVers := []types.ComponentVersion{}
 	componentVer1 := types.ComponentVersion{
@@ -100,8 +98,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
-	ver := data.VersionFromDB{}
-	srv := newServer(memDB, ver)
+	srv := newServer(memDB)
 	defer srv.Close()
 
 	const numCVs = 4
@@ -150,8 +147,7 @@ func TestPostVersions(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	assert.NoErr(t, err)
-	versionFromDB := data.VersionFromDB{}
-	srv := newServer(memDB, versionFromDB)
+	srv := newServer(memDB)
 	defer srv.Close()
 	train := "beta"
 	version := "2.0.0-beta-2"
@@ -183,7 +179,7 @@ func TestGetClusters(t *testing.T) {
 		t.Fatalf("error creating new in-memory DB (%s)", err)
 	}
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
-	server := newServer(memDB, data.VersionFromDB{})
+	server := newServer(memDB)
 	defer server.Close()
 	resp, err := httpGet(server, urlPath(1, "clusters", "count"))
 	if err != nil {
@@ -200,7 +196,7 @@ func TestGetClusterByID(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
-	srv := newServer(memDB, data.VersionFromDB{})
+	srv := newServer(memDB)
 	defer srv.Close()
 	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
 	newCluster, err := data.CheckInAndSetCluster(memDB, clusterID, cluster)
@@ -220,7 +216,7 @@ func TestPostClusters(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	jsonData := `{"Components": [{"Component": {"Name": "component-a"}, "Version": {"Version": "1.0"}}]}`
-	server := newServer(memDB, data.VersionFromDB{})
+	server := newServer(memDB)
 	defer server.Close()
 	resp, err := httpPost(server, urlPath(1, "clusters", clusterID), jsonData)
 	if err != nil {
