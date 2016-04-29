@@ -90,7 +90,6 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 	memDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, VerifyPersistentStorage(memDB))
-	ver := VersionFromDB{}
 	componentNames := []string{"component1", "component2", "component3"}
 	trains := []string{"train1", "train2", "train3"}
 	componentAndTrainSlice := make([]ComponentAndTrain, len(componentNames)*len(trains))
@@ -129,7 +128,7 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 		}
 	}
 
-	componentVersions, err := ver.MultiLatest(memDB, componentAndTrainSlice)
+	componentVersions, err := GetLatestVersions(memDB, componentAndTrainSlice)
 	assert.NoErr(t, err)
 	assert.Equal(t, len(componentVersions), len(releaseTimes), "number of returned components")
 	for _, componentVersion := range componentVersions {

@@ -12,7 +12,7 @@ import (
 
 // GetLatestComponentTrainVersion returns the handler for the
 // GET /:apiVersion/versions/:train/:component/latest endpoint
-func GetLatestComponentTrainVersion(db *sql.DB, ver data.Version) http.Handler {
+func GetLatestComponentTrainVersion(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		vars := mux.Vars(r)
 		train := vars[TrainPathKey]

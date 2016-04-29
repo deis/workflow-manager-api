@@ -75,7 +75,7 @@ func ClusterCheckin(db *sql.DB) http.Handler {
 }
 
 // GetVersion route handler
-func GetVersion(db *sql.DB, v data.Version) http.Handler {
+func GetVersion(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		routeParams := mux.Vars(r)
 		train := routeParams["train"]
@@ -102,7 +102,7 @@ func GetVersion(db *sql.DB, v data.Version) http.Handler {
 }
 
 // GetComponentTrainVersions route handler
-func GetComponentTrainVersions(db *sql.DB, v data.Version) http.Handler {
+func GetComponentTrainVersions(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		routeParams := mux.Vars(r)
 		train := routeParams["train"]
@@ -124,7 +124,7 @@ func GetComponentTrainVersions(db *sql.DB, v data.Version) http.Handler {
 }
 
 // PublishVersion route handler
-func PublishVersion(db *sql.DB, v data.Version) http.Handler {
+func PublishVersion(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		componentVersion := types.ComponentVersion{}
 		err := json.NewDecoder(r.Body).Decode(&componentVersion)
