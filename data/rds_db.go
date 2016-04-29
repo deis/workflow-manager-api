@@ -20,17 +20,15 @@ var (
 	rDSRegion = os.Getenv(rDSRegionKey)
 )
 
-// RDSDB fulfills the DB interface
-type RDSDB struct{}
-
-// Get method for RDSDB
-func (r RDSDB) Get() (*sql.DB, error) {
+// NewRDSDB attempts to discover and connect to a postgres database managed by Amazon RDS
+func NewRDSDB() (*sql.DB, error) {
 	db, err := getRDSDB()
 	if err != nil {
 		return nil, err
 	}
 	return db, nil
 }
+
 func getRDSSession() *rds.RDS {
 	return rds.New(session.New(), &aws.Config{Region: aws.String(rDSRegion)})
 }

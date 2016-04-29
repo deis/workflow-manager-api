@@ -42,15 +42,14 @@ func TestFilterByClusterAge(t *testing.T) {
 	}
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
-	db, err := data.VerifyPersistentStorage(memDB)
-	assert.NoErr(t, err)
+	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	c := data.ClusterFromDB{}
 	cluster := types.Cluster{ID: uuid.New()}
 	srv := newServer(memDB, data.VersionFromDB{}, c)
 	defer srv.Close()
-	_, setErr := c.Set(db, cluster.ID, cluster)
+	_, setErr := c.Set(memDB, cluster.ID, cluster)
 	assert.NoErr(t, setErr)
-	_, checkInErr := data.CheckInCluster(db, cluster.ID, cluster)
+	_, checkInErr := data.CheckInCluster(memDB, cluster.ID, cluster)
 	assert.NoErr(t, checkInErr)
 	queryPairsMap := map[string]string{
 		rest.CheckedInBeforeQueryStringKey: filter.CheckedInBefore.Format(data.StdTimestampFmt),

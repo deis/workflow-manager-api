@@ -22,13 +22,13 @@ func (e errInvalidNumSet) Error() string {
 	return fmt.Sprintf("invalid num set: %d", e.num)
 }
 
+// creates a new DB and calls VerifyPersistentStorage on it to set it up
 func newDB() (*sql.DB, error) {
-	memDB, err := NewMemDB()
+	db, err := NewMemDB()
 	if err != nil {
 		return nil, err
 	}
-	db, err := VerifyPersistentStorage(memDB)
-	if err != nil {
+	if err := VerifyPersistentStorage(db); err != nil {
 		return nil, err
 	}
 	return db, nil

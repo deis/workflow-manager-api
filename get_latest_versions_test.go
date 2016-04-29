@@ -17,7 +17,7 @@ import (
 func TestGetLatestVersions(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
-	db, err := data.VerifyPersistentStorage(memDB)
+	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	assert.NoErr(t, err)
 	versionFromDB := data.VersionFromDB{}
 	srv := newServer(memDB, versionFromDB, data.ClusterFromDB{})
@@ -46,10 +46,10 @@ func TestGetLatestVersions(t *testing.T) {
 			},
 		}
 
-		if _, err := data.SetVersion(db, cv1); err != nil {
+		if _, err := data.SetVersion(memDB, cv1); err != nil {
 			t.Fatalf("Error setting component %d (%s)", i, err)
 		}
-		if _, err := data.SetVersion(db, cv2); err != nil {
+		if _, err := data.SetVersion(memDB, cv2); err != nil {
 			t.Fatalf("Error setting component %d (%s)", i, err)
 		}
 		components[cv2.Component.Name] = cv2
