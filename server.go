@@ -30,13 +30,13 @@ func main() {
 	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	r := getRoutes(rdsDB, data.VersionFromDB{}, data.ClusterFromDB{})
+	r := getRoutes(rdsDB, data.VersionFromDB{})
 	if err := http.ListenAndServe(":"+listenPort, r); err != nil {
 		log.Fatal("ListenAndServe: ", err)
 	}
 }
 
-func getRoutes(db *sql.DB, version data.Version, cluster data.Cluster) *mux.Router {
+func getRoutes(db *sql.DB, version data.Version) *mux.Router {
 	r := mux.NewRouter()
 	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
@@ -49,7 +49,7 @@ func getRoutes(db *sql.DB, version data.Version, cluster data.Cluster) *mux.Rout
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db, version)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db, cluster)).Methods("GET").
+	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db)).Methods("GET").
 		Queries(
 			rest.CheckedInBeforeQueryStringKey,
 			"",
@@ -60,8 +60,8 @@ func getRoutes(db *sql.DB, version data.Version, cluster data.Cluster) *mux.Rout
 			rest.CreatedAfterQueryStringKey,
 			"",
 		)
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db, cluster)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db, cluster)).Methods("POST").
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db)).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	return r
 }

@@ -28,7 +28,7 @@ func ClustersCount(db *sql.DB) http.Handler {
 }
 
 // GetCluster route handler
-func GetCluster(db *sql.DB, c data.Cluster) http.Handler {
+func GetCluster(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		cluster, err := data.GetCluster(db, id)
@@ -48,7 +48,7 @@ func GetCluster(db *sql.DB, c data.Cluster) http.Handler {
 }
 
 // ClusterCheckin route handler
-func ClusterCheckin(db *sql.DB, c data.Cluster) http.Handler {
+func ClusterCheckin(db *sql.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		cluster := types.Cluster{}
@@ -58,7 +58,7 @@ func ClusterCheckin(db *sql.DB, c data.Cluster) http.Handler {
 			return
 		}
 		var result types.Cluster
-		result, err = data.SetCluster(id, cluster, db, c)
+		result, err = data.CheckInAndSetCluster(db, id, cluster)
 		if err != nil {
 			log.Printf("data.SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)

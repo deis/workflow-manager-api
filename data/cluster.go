@@ -10,11 +10,6 @@ import (
 	"github.com/deis/workflow-manager/types"
 )
 
-// Cluster is an interface for managing a persistent cluster record
-type Cluster interface {
-	Set(*sql.DB, string, types.Cluster) (types.Cluster, error)
-}
-
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
 	update := fmt.Sprintf("UPDATE %s SET data='%s' WHERE cluster_id='%s'", clustersTableName, string(data), id)
 	return db.Exec(update)
@@ -35,16 +30,45 @@ func GetCluster(db *sql.DB, id string) (types.Cluster, error) {
 	return cluster, nil
 }
 
-// SetCluster is a high level interface for updating a cluster data record
-func SetCluster(id string, cluster types.Cluster, db *sql.DB, c Cluster) (types.Cluster, error) {
+// CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
+func CheckInAndSetCluster(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	// Check in
 	if _, err := CheckInCluster(db, id, cluster); err != nil {
 		return types.Cluster{}, err
 	}
-	// Update cluster record
-	ret, err := c.Set(db, id, cluster)
+	var ret types.Cluster // return variable
+	js, err := json.Marshal(cluster)
 	if err != nil {
-		return types.Cluster{}, err
+		fmt.Println("error marshaling data")
+	}
+	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
+	var result sql.Result
+	// Register the "latest checkin" with the primary cluster record
+	rowResult := ClustersTable{}
+	if scanErr := row.Scan(&rowResult.clusterID, &rowResult.data); scanErr != nil {
+		result, err = newClusterDBRecord(db, id, js)
+		if err != nil {
+			log.Println(err)
+		}
+	} else {
+		result, err = updateClusterDBRecord(db, id, js)
+		if err != nil {
+			log.Println(err)
+		}
+	}
+	affected, err := result.RowsAffected()
+	if err != nil {
+		log.Println("failed to get affected row count")
+	}
+	if affected == 0 {
+		log.Println("no records updated")
+	} else if affected == 1 {
+		ret, err = GetCluster(db, id)
+		if err != nil {
+			return types.Cluster{}, err
+		}
+	} else if affected > 1 {
+		log.Println("updated more than one record with same ID value!")
 	}
 	return ret, nil
 }

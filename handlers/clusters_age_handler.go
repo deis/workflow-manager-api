@@ -12,7 +12,7 @@ import (
 )
 
 // ClustersAge is the handler for the GET /{apiVersion}/clusters/age endpoint
-func ClustersAge(db *sql.DB, cluster data.Cluster) http.Handler {
+func ClustersAge(db *sql.DB) http.Handler {
 	type clustersAgeResp struct {
 		Data []types.Cluster `json:"data"`
 	}
