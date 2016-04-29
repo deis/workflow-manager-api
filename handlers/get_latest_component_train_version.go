@@ -25,7 +25,7 @@ func GetLatestComponentTrainVersion(db *sql.DB, ver data.Version) http.Handler {
 			http.Error(w, "component is required", http.StatusBadRequest)
 			return
 		}
-		cv, err := ver.Latest(db, train, component)
+		cv, err := data.GetLatestVersion(db, train, component)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("error getting component (%s)", err), http.StatusInternalServerError)
 			return

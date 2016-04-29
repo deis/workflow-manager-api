@@ -59,7 +59,6 @@ func TestVersionFromDBLatest(t *testing.T) {
 	db, err := VerifyPersistentStorage(memDB)
 	assert.NotNil(t, db, "db")
 	assert.NoErr(t, err)
-	ver := VersionFromDB{}
 
 	const numCVs = 4
 	const latestCVIdx = 2
@@ -82,7 +81,7 @@ func TestVersionFromDBLatest(t *testing.T) {
 		}
 		componentVersions[i] = cv
 	}
-	cv, err := ver.Latest(sqliteDB, train, componentName)
+	cv, err := GetLatestVersion(sqliteDB, train, componentName)
 	assert.NoErr(t, err)
 	exCV := componentVersions[latestCVIdx]
 	assert.Equal(t, cv.Component.Name, exCV.Component.Name, "component name")
