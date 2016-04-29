@@ -20,7 +20,7 @@ func TestGetLatestVersions(t *testing.T) {
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	assert.NoErr(t, err)
 	versionFromDB := data.VersionFromDB{}
-	srv := newServer(memDB, versionFromDB, data.ClusterFromDB{})
+	srv := newServer(memDB, versionFromDB)
 	defer srv.Close()
 	const numComponentVersions = 6
 	components := make(map[string]types.ComponentVersion)

@@ -147,7 +147,6 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 				return
 			}
 
-			c := ClusterFromDB{}
 			db, err := newDB()
 			if err != nil {
 				t.Errorf("error creating new DB in case %d (%s)", i, err)
@@ -155,7 +154,12 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 			}
 
 			// create cluster in the DB
-			if _, setErr := c.Set(db, cluster.ID, cluster); setErr != nil {
+			clusterJSON, err := json.Marshal(cluster)
+			if err != nil {
+				t.Errorf("error JSON serializing cluster %d (%s)", i, err)
+				return
+			}
+			if _, setErr := newClusterDBRecord(db, cluster.ID, clusterJSON); setErr != nil {
 				t.Errorf("error creating cluster %s in DB (%s)", cluster.ID, setErr)
 				return
 			}
