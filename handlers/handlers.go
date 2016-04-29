@@ -12,6 +12,7 @@ import (
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager/types"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 )
 
 // ClustersCount route handler
@@ -75,7 +76,7 @@ func ClusterCheckin(db *sql.DB) http.Handler {
 }
 
 // GetVersion route handler
-func GetVersion(db *sql.DB) http.Handler {
+func GetVersion(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		routeParams := mux.Vars(r)
 		train := routeParams["train"]
@@ -124,7 +125,7 @@ func GetComponentTrainVersions(db *sql.DB) http.Handler {
 }
 
 // PublishVersion route handler
-func PublishVersion(db *sql.DB) http.Handler {
+func PublishVersion(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		componentVersion := types.ComponentVersion{}
 		err := json.NewDecoder(r.Body).Decode(&componentVersion)

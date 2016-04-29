@@ -1,13 +1,13 @@
 package data
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"testing"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 )
 
 var (
@@ -23,7 +23,7 @@ func (e errInvalidNumSet) Error() string {
 }
 
 // creates a new DB and calls VerifyPersistentStorage on it to set it up
-func newDB() (*sql.DB, error) {
+func newDB() (*gorm.DB, error) {
 	db, err := NewMemDB()
 	if err != nil {
 		return nil, err
@@ -44,22 +44,22 @@ func testCluster() types.Cluster {
 func TestClusterFromDBRoundTrip(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
-	cluster, err := GetCluster(sqliteDB, clusterID)
+	cluster, err := GetCluster(sqliteDB.DB(), clusterID)
 	assert.True(t, err != nil, "error not returned when expected")
 	assert.Equal(t, cluster, types.Cluster{}, "returned cluster")
 	expectedCluster := testCluster()
 	// the first time we invoke .CheckInAndSetCluster() it will create a new record
-	newCluster, err := CheckInAndSetCluster(sqliteDB, clusterID, expectedCluster)
+	newCluster, err := CheckInAndSetCluster(sqliteDB.DB(), clusterID, expectedCluster)
 	assert.NoErr(t, err)
 	assert.Equal(t, newCluster.ID, expectedCluster.ID, "cluster ID property")
 	assert.Equal(t, newCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
 	// modify the cluster object
 	expectedCluster.Components[0].Component.Description = "new description"
 	// the next time we invoke .CheckInAndSetCluster() it should update the existing record we just created
-	updatedCluster, err := CheckInAndSetCluster(sqliteDB, clusterID, expectedCluster)
+	updatedCluster, err := CheckInAndSetCluster(sqliteDB.DB(), clusterID, expectedCluster)
 	assert.NoErr(t, err)
 	assert.Equal(t, updatedCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
-	getCluster, err := GetCluster(sqliteDB, clusterID)
+	getCluster, err := GetCluster(sqliteDB.DB(), clusterID)
 	assert.NoErr(t, err)
 	assert.Equal(t, getCluster, updatedCluster, "cluster")
 }
@@ -67,7 +67,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 func TestClusterFromDBCheckin(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
-	res, err := CheckInCluster(sqliteDB, clusterID, testCluster())
+	res, err := CheckInCluster(sqliteDB.DB(), clusterID, testCluster())
 	assert.NoErr(t, err)
 	rowsAffected, err := res.RowsAffected()
 	assert.NoErr(t, err)

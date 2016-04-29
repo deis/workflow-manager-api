@@ -159,19 +159,19 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 				t.Errorf("error JSON serializing cluster %d (%s)", i, err)
 				return
 			}
-			if _, setErr := newClusterDBRecord(db, cluster.ID, clusterJSON); setErr != nil {
+			if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
 				t.Errorf("error creating cluster %s in DB (%s)", cluster.ID, setErr)
 				return
 			}
 
 			// check in the cluster
-			if cErr := createCheckin(db, cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
+			if cErr := createCheckin(db.DB(), cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
 				t.Errorf("error creating checkin for case %d (%s)", i, cErr)
 				return
 			}
 
 			// filter the cluster & test results
-			filteredClusters, filterErr := FilterClustersByAge(db, &fca.filter)
+			filteredClusters, filterErr := FilterClustersByAge(db.DB(), &fca.filter)
 			if filterErr != nil {
 				t.Errorf("error filtering for case %d (%s)", i, filterErr)
 				return
@@ -189,7 +189,7 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 				t.Errorf("error creating new DB in case %d (%s)", i, err)
 				return
 			}
-			filteredClusters, filterErr = FilterClustersByAge(db, &fca.filter)
+			filteredClusters, filterErr = FilterClustersByAge(db.DB(), &fca.filter)
 			if filterErr != nil {
 				t.Errorf("error filtering for case %d (%s)", i, filterErr)
 				return

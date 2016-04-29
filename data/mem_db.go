@@ -3,8 +3,8 @@
 package data
 
 import (
-	"database/sql"
 	// this import registers "sqlite3" as a name you can provide to sql.Open
+	"github.com/jinzhu/gorm"
 	_ "github.com/mxk/go-sqlite/sqlite3"
 )
 
@@ -31,8 +31,8 @@ const (
 
 // NewMemDB returns a DB implementation that stores all data in-memory. The initial database
 // is empty, and is best used for testing.
-func NewMemDB() (*sql.DB, error) {
-	db, err := sql.Open(sqlite3Str, memStr)
+func NewMemDB() (*gorm.DB, error) {
+	db, err := gorm.Open(sqlite3Str, memStr)
 	if err != nil {
 		return nil, err
 	}

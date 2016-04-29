@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"os"
@@ -10,6 +9,7 @@ import (
 	"github.com/deis/workflow-manager-api/handlers"
 	"github.com/deis/workflow-manager-api/rest"
 	"github.com/gorilla/mux"
+	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq"
 )
 
@@ -36,20 +36,20 @@ func main() {
 	}
 }
 
-func getRoutes(db *sql.DB) *mux.Router {
+func getRoutes(db *gorm.DB) *mux.Router {
 	r := mux.NewRouter()
-	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db)).Methods("POST").
+	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db.DB())).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
-	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db.DB())).Methods("GET")
 	// Note: the following route must go before the route that ends with {version}, so that
 	// Gorilla mux always routes the static "latest" route to the appropriate handler, and "latest"
 	// doesn't get interpreted as a {version}
-	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db.DB())).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db)).Methods("GET")
 	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
-	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db)).Methods("GET").
+	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db.DB())).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db.DB())).Methods("GET").
 		Queries(
 			rest.CheckedInBeforeQueryStringKey,
 			"",
@@ -60,8 +60,8 @@ func getRoutes(db *sql.DB) *mux.Router {
 			rest.CreatedAfterQueryStringKey,
 			"",
 		)
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db)).Methods("POST").
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db.DB())).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db.DB())).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	return r
 }
