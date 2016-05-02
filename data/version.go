@@ -82,32 +82,19 @@ func SetVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.Com
 }
 
 // GetLatestVersion gets the latest version from the DB for the given train & component
-func GetLatestVersion(db *sql.DB, train string, component string) (types.ComponentVersion, error) {
-	rows, err := getOrderedDBRecords(
-		db,
-		versionsTableName,
-		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
-		[]string{train, component},
-		newOrderBy(versionsTableReleaseTimeStampKey, "desc"),
-	)
+func GetLatestVersion(db *gorm.DB, train string, component string) (types.ComponentVersion, error) {
+	resTable := new(versionsTable)
+	query := versionsTable{ComponentName: component, Train: train}
+	resDB := db.Where(query).Order("release_timestamp desc").First(resTable)
+	if resDB.Error != nil {
+		return types.ComponentVersion{}, resDB.Error
+	}
+
+	componentVersion, err := parseDBVersion(*resTable)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
-	defer rows.Close()
-	for rows.Next() {
-		var row versionsTable
-		//TODO: sql.NullString is to pass tests, not for production
-		var s sql.NullString
-		if err = rows.Scan(&s, &row.ComponentName, &row.Train, &row.Version, &row.ReleaseTimestamp, &row.Data); err != nil {
-			return types.ComponentVersion{}, err
-		}
-		cv, err := parseDBVersion(row)
-		if err != nil {
-			return types.ComponentVersion{}, err
-		}
-		return cv, nil
-	}
-	return types.ComponentVersion{}, errNoMoreRows{tableName: versionsTableName}
+	return componentVersion, nil
 }
 
 // GetLatestVersions fetches from the DB and returns the latest versions for each component/train pair
