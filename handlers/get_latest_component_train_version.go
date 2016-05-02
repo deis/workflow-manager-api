@@ -1,8 +1,8 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/data"
@@ -30,9 +30,8 @@ func GetLatestComponentTrainVersion(db *gorm.DB) http.Handler {
 			http.Error(w, fmt.Sprintf("error getting component (%s)", err), http.StatusInternalServerError)
 			return
 		}
-		if json.NewEncoder(w).Encode(cv); err != nil {
-			http.Error(w, fmt.Sprintf("rrror getting latest component version (%s)", err), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, cv); err != nil {
+			log.Printf("GetLatestComponentTrainVersion json marshal error (%s)", err)
 		}
 	})
 }

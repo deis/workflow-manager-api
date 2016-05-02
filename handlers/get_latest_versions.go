@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/data"
@@ -64,9 +65,8 @@ func GetLatestVersions(db *sql.DB) http.Handler {
 		}
 
 		ret := ComponentVersionsJSONWrapper{Data: componentVersions}
-		if err := json.NewEncoder(w).Encode(ret); err != nil {
-			http.Error(w, "error encoding JSON", http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, ret); err != nil {
+			log.Printf("GetLatestVersions json marshal failed (%s)", err)
 		}
 	})
 }

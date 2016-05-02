@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"database/sql"
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 
@@ -30,11 +28,8 @@ func ClustersAge(db *sql.DB) http.Handler {
 			return
 		}
 		ret := clustersAgeResp{Data: clusters}
-		if err := json.NewEncoder(w).Encode(ret); err != nil {
-			log.Printf("Error json-encoding clusters (%s)", err)
-			http.Error(w, fmt.Sprintf("error encoding clusters (%s)", err), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, ret); err != nil {
+			log.Printf("ClustersAge json marshal error (%s)", err)
 		}
-
 	})
 }
