@@ -73,7 +73,7 @@ func TestVersionFromDBLatest(t *testing.T) {
 		}
 		componentVersions[i] = cv
 	}
-	cv, err := GetLatestVersion(sqliteDB, train, componentName)
+	cv, err := GetLatestVersion(sqliteDB.DB(), train, componentName)
 	assert.NoErr(t, err)
 	exCV := componentVersions[latestCVIdx]
 	assert.Equal(t, cv.Component.Name, exCV.Component.Name, "component name")
@@ -128,7 +128,7 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 		}
 	}
 
-	componentVersions, err := GetLatestVersions(memDB, componentAndTrainSlice)
+	componentVersions, err := GetLatestVersions(memDB.DB(), componentAndTrainSlice)
 	assert.NoErr(t, err)
 	assert.Equal(t, len(componentVersions), len(releaseTimes), "number of returned components")
 	for _, componentVersion := range componentVersions {

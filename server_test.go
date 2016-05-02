@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -14,6 +13,7 @@ import (
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 )
 
 const (
@@ -22,7 +22,7 @@ const (
 	releaseTimeFormat = "2006-01-02T15:04:05Z"
 )
 
-func newServer(db *sql.DB) *httptest.Server {
+func newServer(db *gorm.DB) *httptest.Server {
 	// Routes consist of a path and a handler function.
 	return httptest.NewServer(getRoutes(db))
 }
@@ -199,7 +199,7 @@ func TestGetClusterByID(t *testing.T) {
 	srv := newServer(memDB)
 	defer srv.Close()
 	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
-	newCluster, err := data.CheckInAndSetCluster(memDB, clusterID, cluster)
+	newCluster, err := data.CheckInAndSetCluster(memDB.DB(), clusterID, cluster)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)

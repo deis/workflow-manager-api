@@ -1,12 +1,13 @@
 package data
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
 	"strconv"
 
-	"database/sql"
+	"github.com/jinzhu/gorm"
 )
 
 const (
@@ -21,13 +22,6 @@ const (
 	clustersCheckinsTableClusterIDKey        = "cluster_id"
 	clustersCheckinsTableClusterCreatedAtKey = "created_at"
 	clustersCheckinsTableDataKey             = "data"
-	versionsTableName                        = "versions"
-	versionsTableIDKey                       = "version_id"
-	versionsTableComponentNameKey            = "component_name"
-	versionsTableTrainKey                    = "train"
-	versionsTableVersionKey                  = "version"
-	versionsTableReleaseTimeStampKey         = "release_timestamp"
-	versionsTableDataKey                     = "data"
 )
 
 var (
@@ -45,34 +39,34 @@ func (e errNoMoreRows) Error() string {
 }
 
 // VerifyPersistentStorage is a high level interace for verifying storage abstractions
-func VerifyPersistentStorage(db *sql.DB) error {
-	if err := verifyVersionsTable(db); err != nil {
+func VerifyPersistentStorage(db *gorm.DB) error {
+	if _, err := createOrUpdateVersionsTable(db); err != nil {
 		log.Println("unable to verify " + versionsTableName + " table")
 		return err
 	}
-	count, err := getTableCount(db, versionsTableName)
+	count, err := getTableCount(db.DB(), versionsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + versionsTableName + " table")
 		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + versionsTableName + " table")
-	err = verifyClustersTable(db)
+	err = verifyClustersTable(db.DB())
 	if err != nil {
 		log.Println("unable to verify " + clustersTableName + " table")
 		return err
 	}
-	count, err = getTableCount(db, clustersTableName)
+	count, err = getTableCount(db.DB(), clustersTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersTableName + " table")
 		return err
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersTableName + " table")
-	err = verifyClustersCheckinsTable(db)
+	err = verifyClustersCheckinsTable(db.DB())
 	if err != nil {
 		log.Println("unable to verify " + clustersCheckinsTableName + " table")
 		return err
 	}
-	count, err = getTableCount(db, clustersCheckinsTableName)
+	count, err = getTableCount(db.DB(), clustersCheckinsTableName)
 	if err != nil {
 		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
 		return err

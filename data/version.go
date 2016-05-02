@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 )
 
 func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
@@ -40,24 +41,24 @@ func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) 
 }
 
 // SetVersion adds or updates a single version record in the database
-func SetVersion(db *sql.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+func SetVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
 	// TODO: this read-modify-write should be done inside a transaction. Also, rename SetVersion to something else.
 	// Both of these TODOs are captured in https://github.com/deis/workflow-manager-api/issues/90
 
 	var ret types.ComponentVersion // return variable
-	row := getDBRecord(db, versionsTableName,
+	row := getDBRecord(db.DB(), versionsTableName,
 		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
 		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
 	var result sql.Result
-	rowResult := VersionsTable{}
-	if err := row.Scan(&rowResult.versionID, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
-		result, err = newVersionDBRecord(db, componentVersion)
+	rowResult := versionsTable{}
+	if err := row.Scan(&rowResult.VersionID, &rowResult.ComponentName, &rowResult.Train, &rowResult.Version, &rowResult.ReleaseTimestamp, &rowResult.Data); err != nil {
+		result, err = newVersionDBRecord(db.DB(), componentVersion)
 		if err != nil {
 			log.Println(err)
 			return types.ComponentVersion{}, err
 		}
 	} else {
-		result, err = updateVersionDBRecord(db, componentVersion)
+		result, err = updateVersionDBRecord(db.DB(), componentVersion)
 		if err != nil {
 			log.Println(err)
 			return types.ComponentVersion{}, err
@@ -94,10 +95,10 @@ func GetLatestVersion(db *sql.DB, train string, component string) (types.Compone
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var row VersionsTable
+		var row versionsTable
 		//TODO: sql.NullString is to pass tests, not for production
 		var s sql.NullString
-		if err = rows.Scan(&s, &row.componentName, &row.train, &row.version, &row.releaseTimestamp, &row.data); err != nil {
+		if err = rows.Scan(&s, &row.ComponentName, &row.Train, &row.Version, &row.ReleaseTimestamp, &row.Data); err != nil {
 			return types.ComponentVersion{}, err
 		}
 		cv, err := parseDBVersion(row)
@@ -146,20 +147,20 @@ func GetLatestVersions(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVer
 		return nil, err
 	}
 
-	rowsResult := []VersionsTable{}
+	rowsResult := []versionsTable{}
 	defer rows.Close()
 	for rows.Next() {
-		var row VersionsTable
+		var row versionsTable
 		// note that we have to pass in a *sql.NullString as the first and last arg to ignore the
 		// primary key and the final release timestamp returned from the MAX aggregate function
 		// in the above SQL
 		if err = rows.Scan(
 			&sql.NullString{},
-			&row.componentName,
-			&row.train,
-			&row.version,
-			&row.releaseTimestamp,
-			&row.data,
+			&row.ComponentName,
+			&row.Train,
+			&row.Version,
+			&row.ReleaseTimestamp,
+			&row.Data,
 			&sql.NullString{},
 		); err != nil {
 			return nil, err
@@ -197,17 +198,18 @@ func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sq
 }
 
 // GetVersion gets a single version record from a DB matching the unique property values in a ComponentVersion struct
-func GetVersion(db *sql.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
-	row := getDBRecord(db, versionsTableName,
-		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
-		[]string{cV.Component.Name, cV.Version.Train, cV.Version.Version})
-	rowResult := VersionsTable{}
-	//TODO: sql.NullString is to pass tests, not for production
-	var s sql.NullString
-	if err := row.Scan(&s, &rowResult.componentName, &rowResult.train, &rowResult.version, &rowResult.releaseTimestamp, &rowResult.data); err != nil {
-		return types.ComponentVersion{}, err
+func GetVersion(db *gorm.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
+	resTable := new(versionsTable)
+	resDB := db.Where(versionsTable{
+		ComponentName: cV.Component.Name,
+		Train:         cV.Version.Train,
+		Version:       cV.Version.Version,
+	}).First(resTable)
+	if resDB.Error != nil {
+		return types.ComponentVersion{}, resDB.Error
 	}
-	componentVersion, err := parseDBVersion(rowResult)
+
+	componentVersion, err := parseDBVersion(*resTable)
 	if err != nil {
 		return types.ComponentVersion{}, err
 	}
@@ -222,14 +224,14 @@ func GetVersionsList(db *sql.DB, train string, component string) ([]types.Compon
 	if err != nil {
 		return nil, err
 	}
-	rowsResult := []VersionsTable{}
-	var row VersionsTable
+	rowsResult := []versionsTable{}
+	var row versionsTable
 	defer rows.Close()
 	for rows.Next() {
 		//TODO: sql.NullString is to pass tests, not for production
 		var s sql.NullString
-		err = rows.Scan(&s, &row.componentName,
-			&row.train, &row.version, &row.releaseTimestamp, &row.data)
+		err = rows.Scan(&s, &row.ComponentName,
+			&row.Train, &row.Version, &row.ReleaseTimestamp, &row.Data)
 		if err != nil {
 			return nil, err
 		}

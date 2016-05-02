@@ -19,3 +19,4 @@ import:
   subpackages:
   - sqlite3
 - package: github.com/pborman/uuid
+- package: github.com/jinzhu/gorm

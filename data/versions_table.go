@@ -3,22 +3,36 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"log"
 
+	"github.com/jinzhu/gorm"
 	"github.com/jmoiron/sqlx/types"
 )
 
+const (
+	versionsTableName                = "versions"
+	versionsTableIDKey               = "version_id"
+	versionsTableComponentNameKey    = "component_name"
+	versionsTableTrainKey            = "train"
+	versionsTableVersionKey          = "version"
+	versionsTableReleaseTimeStampKey = "release_timestamp"
+	versionsTableDataKey             = "data"
+)
+
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
-type VersionsTable struct {
-	versionID        string // PRIMARY KEY
-	componentName    string // indexed
-	train            string // indexed
-	version          string // indexed
-	releaseTimestamp *Timestamp
-	data             types.JSONText
+type versionsTable struct {
+	VersionID        string         `gorm:"primary_key;type:uuid;column:version_id"`
+	ComponentName    string         `gorm:"column:component_name;index;unique"`
+	Train            string         `gorm:"column:train;index;unique"`
+	Version          string         `gorm:"column:version;index;unique"`
+	ReleaseTimestamp *Timestamp     `gorm:"column:release_timestamp;type:timestamp"`
+	Data             types.JSONText `gorm:"column:data;type:json"`
 }
 
-func createVersionsTable(db *sql.DB) (sql.Result, error) {
+func (v versionsTable) TableName() string {
+	return "versions"
+}
+
+func createOrUpdateVersionsTable(db *gorm.DB) (sql.Result, error) {
 	query := fmt.Sprintf(
 		"CREATE TABLE IF NOT EXISTS %s ( %s bigserial PRIMARY KEY, %s varchar(32), %s varchar(24), %s varchar(32), %s timestamp, %s json, unique (%s, %s, %s) )",
 		versionsTableName,
@@ -32,13 +46,5 @@ func createVersionsTable(db *sql.DB) (sql.Result, error) {
 		versionsTableTrainKey,
 		versionsTableVersionKey,
 	)
-	return db.Exec(query)
-}
-
-func verifyVersionsTable(db *sql.DB) error {
-	if _, err := createVersionsTable(db); err != nil {
-		log.Println("unable to verify versions table exists")
-		return err
-	}
-	return nil
+	return db.DB().Exec(query)
 }
