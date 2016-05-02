@@ -38,13 +38,9 @@ func GetCluster(db *sql.DB) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		js, err := json.Marshal(cluster)
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, cluster); err != nil {
+			log.Printf("GetCluster json marshal failed (%s)", err)
 		}
-		writeJSON(js, w)
 	})
 }
 
@@ -64,14 +60,9 @@ func ClusterCheckin(db *sql.DB) http.Handler {
 			log.Printf("data.SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		data, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, fmt.Sprintf("JSON marshaling failed (%s)", err), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, result); err != nil {
+			log.Printf("ClusterCheckin json marshal error (%s)", err)
 		}
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(data))
 	})
 }
 
@@ -92,13 +83,9 @@ func GetVersion(db *gorm.DB) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		js, err := json.Marshal(componentVersion)
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, componentVersion); err != nil {
+			log.Printf("GetVersion json marshal failed (%s)", err)
 		}
-		writeJSON(js, w)
 	})
 }
 
@@ -114,13 +101,9 @@ func GetComponentTrainVersions(db *sql.DB) http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		js, err := json.Marshal(componentVersions)
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+		if err := writeJSON(w, componentVersions); err != nil {
+			log.Printf("GetComponentTrainVersions json marshal failed (%s)", err)
 		}
-		writeJSON(js, w)
 	})
 }
 
@@ -144,19 +127,21 @@ func PublishVersion(db *gorm.DB) http.Handler {
 			log.Printf("data.SetVersion error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-		data, err := json.MarshalIndent(result, "", "  ")
-		if err != nil {
-			log.Printf("JSON marshaling failed (%s)", err)
+		if err := writeJSON(w, result); err != nil {
+			log.Printf("PublishVersion json marshal error (%s)", err)
 		}
-		w.Header().Set("Content-Type", "text/plain")
-		w.Write([]byte(data))
 	})
 }
 
 // writeJSON is a helper function for writing HTTP JSON data
-func writeJSON(json []byte, w http.ResponseWriter) {
+func writeJSON(w http.ResponseWriter, data interface{}) error {
 	w.Header().Set("Content-Type", "application/json")
-	w.Write(json)
+	if err := json.NewEncoder(w).Encode(data); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(fmt.Sprintf(`{"error":"%s","error_type":"json"}`, err)))
+		return err
+	}
+	return nil
 }
 
 // writePlainText is a helper function for writing HTTP text data
