@@ -26,7 +26,7 @@ type clustersTable struct {
 }
 
 func (c clustersTable) TableName() string {
-	return "clusters"
+	return clustersTableName
 }
 
 func createClustersTable(db *sql.DB) (sql.Result, error) {
