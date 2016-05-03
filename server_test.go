@@ -199,7 +199,7 @@ func TestGetClusterByID(t *testing.T) {
 	srv := newServer(memDB)
 	defer srv.Close()
 	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
-	newCluster, err := data.CheckInAndSetCluster(memDB.DB(), clusterID, cluster)
+	newCluster, err := data.CheckInAndSetCluster(memDB, clusterID, cluster)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)

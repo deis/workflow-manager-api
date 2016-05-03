@@ -11,17 +11,9 @@ import (
 )
 
 const (
-	dBInstanceKey                            = "WORKFLOW_MANAGER_API_DBINSTANCE"
-	dBUserKey                                = "WORKFLOW_MANAGER_API_DBUSER"
-	dBPassKey                                = "WORKFLOW_MANAGER_API_DBPASS"
-	clustersTableName                        = "clusters"
-	clustersTableIDKey                       = "cluster_id"
-	clustersTableDataKey                     = "data"
-	clustersCheckinsTableName                = "clusters_checkins"
-	clustersCheckinsTableIDKey               = "checkins_id"
-	clustersCheckinsTableClusterIDKey        = "cluster_id"
-	clustersCheckinsTableClusterCreatedAtKey = "created_at"
-	clustersCheckinsTableDataKey             = "data"
+	dBInstanceKey = "WORKFLOW_MANAGER_API_DBINSTANCE"
+	dBUserKey     = "WORKFLOW_MANAGER_API_DBUSER"
+	dBPassKey     = "WORKFLOW_MANAGER_API_DBPASS"
 )
 
 var (

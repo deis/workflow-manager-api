@@ -29,7 +29,7 @@ func ClustersCount(db *sql.DB) http.Handler {
 }
 
 // GetCluster route handler
-func GetCluster(db *sql.DB) http.Handler {
+func GetCluster(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		cluster, err := data.GetCluster(db, id)
@@ -45,7 +45,7 @@ func GetCluster(db *sql.DB) http.Handler {
 }
 
 // ClusterCheckin route handler
-func ClusterCheckin(db *sql.DB) http.Handler {
+func ClusterCheckin(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
 		cluster := types.Cluster{}
