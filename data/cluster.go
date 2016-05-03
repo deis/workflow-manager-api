@@ -8,6 +8,7 @@ import (
 
 	"github.com/deis/workflow-manager/components"
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 )
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
@@ -15,25 +16,32 @@ func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, erro
 	return db.Exec(update)
 }
 
+type errParsingCluster struct {
+	origErr error
+}
+
+func (e errParsingCluster) Error() string {
+	return fmt.Sprintf("Error parsing cluster (%s)", e.origErr)
+}
+
 // GetCluster gets the cluster from the DB with the given cluster ID
-func GetCluster(db *sql.DB, id string) (types.Cluster, error) {
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
-	rowResult := ClustersTable{}
-	if err := row.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
-		return types.Cluster{}, err
+func GetCluster(db *gorm.DB, id string) (types.Cluster, error) {
+	ret := &clustersTable{}
+	resDB := db.Where(&clustersTable{ClusterID: id}).First(ret)
+	if resDB.Error != nil {
+		return types.Cluster{}, resDB.Error
 	}
-	cluster, err := components.ParseJSONCluster(rowResult.data)
+	cluster, err := components.ParseJSONCluster(ret.Data)
 	if err != nil {
-		log.Println("error parsing cluster")
-		return types.Cluster{}, err
+		return types.Cluster{}, errParsingCluster{origErr: err}
 	}
 	return cluster, nil
 }
 
 // CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
-func CheckInAndSetCluster(db *sql.DB, id string, cluster types.Cluster) (types.Cluster, error) {
+func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	// Check in
-	if _, err := CheckInCluster(db, id, cluster); err != nil {
+	if _, err := CheckInCluster(db.DB(), id, cluster); err != nil {
 		return types.Cluster{}, err
 	}
 	var ret types.Cluster // return variable
@@ -41,17 +49,17 @@ func CheckInAndSetCluster(db *sql.DB, id string, cluster types.Cluster) (types.C
 	if err != nil {
 		fmt.Println("error marshaling data")
 	}
-	row := getDBRecord(db, clustersTableName, []string{clustersTableIDKey}, []string{id})
+	row := getDBRecord(db.DB(), clustersTableName, []string{clustersTableIDKey}, []string{id})
 	var result sql.Result
 	// Register the "latest checkin" with the primary cluster record
-	rowResult := ClustersTable{}
-	if scanErr := row.Scan(&rowResult.clusterID, &rowResult.data); scanErr != nil {
-		result, err = newClusterDBRecord(db, id, js)
+	rowResult := clustersTable{}
+	if scanErr := row.Scan(&rowResult.ClusterID, &rowResult.Data); scanErr != nil {
+		result, err = newClusterDBRecord(db.DB(), id, js)
 		if err != nil {
 			log.Println(err)
 		}
 	} else {
-		result, err = updateClusterDBRecord(db, id, js)
+		result, err = updateClusterDBRecord(db.DB(), id, js)
 		if err != nil {
 			log.Println(err)
 		}
@@ -111,11 +119,11 @@ func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster,
 
 	clusters := []types.Cluster{}
 	for rows.Next() {
-		rowResult := ClustersTable{}
-		if err := rows.Scan(&rowResult.clusterID, &rowResult.data); err != nil {
+		rowResult := clustersTable{}
+		if err := rows.Scan(&rowResult.ClusterID, &rowResult.Data); err != nil {
 			return nil, err
 		}
-		cluster, err := components.ParseJSONCluster(rowResult.data)
+		cluster, err := components.ParseJSONCluster(rowResult.Data)
 		if err != nil {
 			return nil, err
 		}

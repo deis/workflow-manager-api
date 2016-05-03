@@ -46,7 +46,7 @@ func TestFilterByClusterAge(t *testing.T) {
 	cluster := types.Cluster{ID: uuid.New()}
 	srv := newServer(memDB)
 	defer srv.Close()
-	_, setErr := data.CheckInAndSetCluster(memDB.DB(), cluster.ID, cluster)
+	_, setErr := data.CheckInAndSetCluster(memDB, cluster.ID, cluster)
 	assert.NoErr(t, setErr)
 	_, checkInErr := data.CheckInCluster(memDB.DB(), cluster.ID, cluster)
 	assert.NoErr(t, checkInErr)

@@ -60,8 +60,8 @@ func getRoutes(db *gorm.DB) *mux.Router {
 			rest.CreatedAfterQueryStringKey,
 			"",
 		)
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db.DB())).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db.DB())).Methods("POST").
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.GetCluster(db)).Methods("GET")
+	r.Handle("/{apiVersion}/clusters/{id}", handlers.ClusterCheckin(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	return r
 }
