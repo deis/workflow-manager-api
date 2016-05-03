@@ -23,6 +23,9 @@ BINDIR := ./rootfs
 
 DEIS_REGISTRY ?= ${DEV_REGISTRY}/
 
+DEIS_BINARY_NAME ?= ./deis
+
+
 all:
 	@echo "Use a Makefile to control top-level building of the project."
 
@@ -46,5 +49,10 @@ test:
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
 	docker tag ${IMAGE} ${MUTABLE_IMAGE}
+
+deploy-to-deis:
+	${DEIS_BINARY_NAME} pull ${IMAGE} -a ${DEIS_APP_NAME}
+
+
 
 .PHONY: all build docker-compile kube-up kube-down deploy
