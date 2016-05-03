@@ -90,10 +90,10 @@ func CheckInCluster(db *sql.DB, id string, cluster types.Cluster) (sql.Result, e
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
 func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster, error) {
-	query := fmt.Sprintf(`SELECT DISTINCT clusters.*
+	query := fmt.Sprintf(`SELECT clusters.*
 		FROM clusters, clusters_checkins
 		WHERE clusters_checkins.cluster_id = clusters.cluster_id
-		GROUP BY clusters_checkins.cluster_id
+		GROUP BY clusters_checkins.cluster_id, clusters.cluster_id
 		HAVING MIN(clusters_checkins.created_at) > '%s'
 		AND MIN(clusters_checkins.created_at) < '%s'
 		AND MIN(clusters_checkins.created_at) > '%s'

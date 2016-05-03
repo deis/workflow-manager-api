@@ -3,32 +3,42 @@ package data
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 	"github.com/pborman/uuid"
 )
 
 var (
-	validClusterAgeFilter = ClusterAgeFilter{
-		CheckedInBefore: timeFuture().Add(2 * time.Hour),
-		CheckedInAfter:  timePast(),
-		CreatedAfter:    timePast().Add(-1 * time.Hour),
-		CreatedBefore:   timeFuture(),
+	validClusterAgeFilters = []ClusterAgeFilter{
+		ClusterAgeFilter{
+			CheckedInBefore: timeFuture().Add(2 * time.Hour),
+			CheckedInAfter:  timePast(),
+			CreatedAfter:    timePast().Add(-1 * time.Hour),
+			CreatedBefore:   timeFuture(),
+		},
+		ClusterAgeFilter{
+			CheckedInBefore: timeFuture().Add(3 * time.Hour),
+			CheckedInAfter:  timePast(),
+			CreatedAfter:    timePast().Add(-1 * time.Hour),
+			CreatedBefore:   timeFuture(),
+		},
 	}
 	validCreatedAtTime = timeNow()
 
 	invalidCreatedAtTimes = []time.Time{
 		// after the checked_in_before constraint
-		validClusterAgeFilter.CheckedInBefore.Add(1 * time.Hour),
+		validClusterAgeFilters[0].CheckedInBefore.Add(1 * time.Hour),
 		// before the checked_in_after constraint
-		validClusterAgeFilter.CheckedInAfter.Add(-1 * time.Hour),
+		validClusterAgeFilters[0].CheckedInAfter.Add(-1 * time.Hour),
 		// before the created_after constraint
-		validClusterAgeFilter.CreatedAfter.Add(-1 * time.Hour),
+		validClusterAgeFilters[0].CreatedAfter.Add(-1 * time.Hour),
 		// after the created_before constraint
-		validClusterAgeFilter.CreatedBefore.Add(1 * time.Hour),
+		validClusterAgeFilters[0].CreatedBefore.Add(1 * time.Hour),
 	}
 )
 
@@ -93,16 +103,17 @@ type filterAndCreatedAt struct {
 }
 
 func createFilters() []filterAndCreatedAt {
-	ret := []filterAndCreatedAt{
-		filterAndCreatedAt{
+	ret := []filterAndCreatedAt{}
+	for _, validClusterAgeFilter := range validClusterAgeFilters {
+		ret = append(ret, filterAndCreatedAt{
 			filter:    validClusterAgeFilter,
 			createdAt: validCreatedAtTime,
 			expected:  true,
-		},
+		})
 	}
 	for _, invalidCreatedAtTime := range invalidCreatedAtTimes {
 		ret = append(ret, filterAndCreatedAt{
-			filter:    validClusterAgeFilter,
+			filter:    validClusterAgeFilters[0],
 			createdAt: invalidCreatedAtTime,
 			expected:  false,
 		})
@@ -128,9 +139,27 @@ func createCheckin(db *sql.DB, cl types.Cluster, createdAt *Timestamp) error {
 	return nil
 }
 
+func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca filterAndCreatedAt) error {
+	// create and check in clusters in the DB
+	for clusterNum := 0; clusterNum < totalNumClusters; clusterNum++ {
+		cluster := testCluster()
+		cluster.ID = uuid.New()
+		clusterJSON, marshalErr := json.Marshal(cluster)
+		if marshalErr != nil {
+			return fmt.Errorf("error JSON serializing cluster %d for filter %d (%s)", clusterNum, filterNum, marshalErr)
+		}
+		if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
+			return fmt.Errorf("error creating cluster %s for filter %d in DB (%s)", cluster.ID, filterNum, setErr)
+		}
+		if cErr := createCheckin(db.DB(), cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
+			return fmt.Errorf("error creating checkin for cluster %d, filter %d (%s)", clusterNum, filterNum, cErr)
+		}
+	}
+	return nil
+}
+
 func TestClusterFromDBFilterByAge(t *testing.T) {
-	cluster := testCluster()
-	cluster.ID = uuid.New()
+	const numClusters = 4
 
 	// generate all combinations of filters
 	filters := createFilters()
@@ -153,20 +182,8 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 				return
 			}
 
-			// create cluster in the DB
-			clusterJSON, err := json.Marshal(cluster)
-			if err != nil {
-				t.Errorf("error JSON serializing cluster %d (%s)", i, err)
-				return
-			}
-			if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
-				t.Errorf("error creating cluster %s in DB (%s)", cluster.ID, setErr)
-				return
-			}
-
-			// check in the cluster
-			if cErr := createCheckin(db.DB(), cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
-				t.Errorf("error creating checkin for case %d (%s)", i, cErr)
+			if ccErr := createAndCheckinClusters(db, numClusters, i, fca); ccErr != nil {
+				t.Errorf("Error creating and checking in clusters (%s)", ccErr)
 				return
 			}
 
@@ -176,7 +193,7 @@ func TestClusterFromDBFilterByAge(t *testing.T) {
 				t.Errorf("error filtering for case %d (%s)", i, filterErr)
 				return
 			}
-			if fca.expected && len(filteredClusters) != 1 {
+			if fca.expected && len(filteredClusters) != numClusters {
 				t.Errorf("expected %d filtered cluster(s) on filter %d, got %d", 1, i, len(filteredClusters))
 				return
 			} else if !fca.expected && len(filteredClusters) > 0 {
