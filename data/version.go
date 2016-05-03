@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
-	"strings"
 
 	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
@@ -103,39 +102,32 @@ func GetLatestVersion(db *gorm.DB, train string, component string) (types.Compon
 //
 // - Be the same length as ct
 // - Have the same ordering as ct, with respect to the component name
-func GetLatestVersions(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error) {
+func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error) {
 	componentsList := []string{}
 	listedComponents := make(map[string]struct{})
 	trainsList := []string{}
 	listedTrains := make(map[string]struct{})
 	for _, c := range ct {
 		if _, componentListed := listedComponents[c.ComponentName]; !componentListed {
-			componentsList = append(componentsList, fmt.Sprintf("'%s'", c.ComponentName))
+			componentsList = append(componentsList, c.ComponentName)
 			listedComponents[c.ComponentName] = struct{}{}
 		}
 		if _, trainListed := listedTrains[c.Train]; !trainListed {
-			trainsList = append(trainsList, fmt.Sprintf("'%s'", c.Train))
+			trainsList = append(trainsList, c.Train)
 			listedTrains[c.Train] = struct{}{}
 		}
 	}
-	query := fmt.Sprintf(
-		"SELECT *, MAX(%s) FROM %s WHERE %s IN (%s) AND %s IN (%s) GROUP BY %s, %s",
-		versionsTableReleaseTimeStampKey,
-		versionsTableName,
-		versionsTableComponentNameKey,
-		strings.Join(componentsList, ","),
-		versionsTableTrainKey,
-		strings.Join(trainsList, ","),
-		versionsTableComponentNameKey,
-		versionsTableTrainKey,
-	)
-	rows, err := db.Query(query)
+
+	rows, err := db.
+		Table("versions").
+		Select("*, MAX(release_timestamp)").
+		Where("component_name IN (?) AND train IN (?)", componentsList, trainsList).
+		Group("component_name, train").
+		Rows()
 	if err != nil {
 		return nil, err
 	}
-
 	rowsResult := []versionsTable{}
-	defer rows.Close()
 	for rows.Next() {
 		var row versionsTable
 		// note that we have to pass in a *sql.NullString as the first and last arg to ignore the
@@ -154,6 +146,10 @@ func GetLatestVersions(db *sql.DB, ct []ComponentAndTrain) ([]types.ComponentVer
 		}
 		rowsResult = append(rowsResult, row)
 	}
+	if rErr := rows.Err(); rErr != nil {
+		return nil, rErr
+	}
+
 	componentVersions, err := parseDBVersions(rowsResult)
 	if err != nil {
 		return []types.ComponentVersion{}, err
@@ -230,4 +226,34 @@ func GetVersionsList(db *sql.DB, train string, component string) ([]types.Compon
 		return nil, err
 	}
 	return componentVersions, nil
+}
+
+func parseDBVersions(versions []versionsTable) ([]types.ComponentVersion, error) {
+	componentVersions := make([]types.ComponentVersion, len(versions))
+	for i, version := range versions {
+		cver, err := parseDBVersion(version)
+		if err != nil {
+			return nil, err
+		}
+		componentVersions[i] = cver
+	}
+	return componentVersions, nil
+}
+
+func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
+	data := make(map[string]interface{})
+	if err := json.Unmarshal(version.Data, &data); err != nil {
+		return types.ComponentVersion{}, err
+	}
+	return types.ComponentVersion{
+		Component: types.Component{
+			Name: version.ComponentName,
+		},
+		Version: types.Version{
+			Train:    version.Train,
+			Version:  version.Version,
+			Released: version.ReleaseTimestamp.String(),
+			Data:     data,
+		},
+	}, nil
 }

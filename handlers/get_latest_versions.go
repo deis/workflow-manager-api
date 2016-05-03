@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -9,6 +8,7 @@ import (
 
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager/types"
+	"github.com/jinzhu/gorm"
 )
 
 // SparseComponentInfo is the JSON compatible struct that holds limited data about a component
@@ -42,7 +42,7 @@ type ComponentVersionsJSONWrapper struct {
 }
 
 // GetLatestVersions is the handler for the POST /{apiVersion}/versions/latest endpoint
-func GetLatestVersions(db *sql.DB) http.Handler {
+func GetLatestVersions(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		reqStruct := new(SparseComponentAndTrainInfoJSONWrapper)
 		if err := json.NewDecoder(r.Body).Decode(reqStruct); err != nil {
