@@ -53,7 +53,7 @@ func (ts *Timestamp) Value() (driver.Value, error) {
 }
 
 // String is the fmt.Stringer interface implementation
-func (ts *Timestamp) String() string {
+func (ts Timestamp) String() string {
 	return ts.Time.Format(StdTimestampFmt)
 }
 
