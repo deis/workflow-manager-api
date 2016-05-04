@@ -93,11 +93,7 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster types
 	if err != nil {
 		fmt.Println("error marshaling data")
 	}
-	record := clustersCheckinsTable{
-		Data:      js,
-		CreatedAt: &Timestamp{Time: &checkinTime},
-		ClusterID: id,
-	}
+	record := newClustersCheckinsTable("", id, checkinTime, js)
 	createdDB := db.Create(&record)
 	if createdDB.Error != nil {
 		log.Println("cluster checkin db record not created", createdDB.Error)
