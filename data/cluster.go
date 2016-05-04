@@ -3,12 +3,18 @@ package data
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/deis/workflow-manager/components"
 	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
+)
+
+var (
+	errNoRowsAffected = errors.New("No rows affected")
 )
 
 func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
@@ -41,7 +47,7 @@ func GetCluster(db *gorm.DB, id string) (types.Cluster, error) {
 // CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
 func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.Cluster, error) {
 	// Check in
-	if _, err := CheckInCluster(db.DB(), id, cluster); err != nil {
+	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
 		return types.Cluster{}, err
 	}
 	var ret types.Cluster // return variable
@@ -82,17 +88,25 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.
 }
 
 // CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
-func CheckInCluster(db *sql.DB, id string, cluster types.Cluster) (sql.Result, error) {
+func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster types.Cluster) error {
 	js, err := json.Marshal(cluster)
 	if err != nil {
 		fmt.Println("error marshaling data")
 	}
-	result, err := newClusterCheckinsDBRecord(db, id, now(), js)
-	if err != nil {
-		log.Println("cluster checkin db record not created", err)
-		return nil, err
+	record := clustersCheckinsTable{
+		Data:      js,
+		CreatedAt: &Timestamp{Time: &checkinTime},
+		ClusterID: id,
 	}
-	return result, nil
+	createdDB := db.Create(&record)
+	if createdDB.Error != nil {
+		log.Println("cluster checkin db record not created", createdDB.Error)
+		return createdDB.Error
+	}
+	if createdDB.RowsAffected != 1 {
+		return errNoRowsAffected
+	}
+	return nil
 }
 
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements

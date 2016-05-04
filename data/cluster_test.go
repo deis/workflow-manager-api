@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager/types"
@@ -67,9 +68,5 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 func TestClusterFromDBCheckin(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
-	res, err := CheckInCluster(sqliteDB.DB(), clusterID, testCluster())
-	assert.NoErr(t, err)
-	rowsAffected, err := res.RowsAffected()
-	assert.NoErr(t, err)
-	assert.Equal(t, rowsAffected, int64(1), "number of rows affected")
+	assert.NoErr(t, CheckInCluster(sqliteDB, clusterID, time.Now(), testCluster()))
 }

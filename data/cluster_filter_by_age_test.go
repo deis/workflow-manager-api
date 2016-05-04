@@ -1,7 +1,6 @@
 package data
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"sync"
@@ -128,12 +127,8 @@ func createFilters() []filterAndCreatedAt {
 	return ret
 }
 
-func createCheckin(db *sql.DB, cl types.Cluster, createdAt *Timestamp) error {
-	data, err := json.Marshal(cl)
-	if err != nil {
-		return err
-	}
-	if _, err = newClusterCheckinsDBRecord(db, cl.ID, createdAt, data); err != nil {
+func createCheckin(db *gorm.DB, cl types.Cluster, createdAt *Timestamp) error {
+	if err := CheckInCluster(db, cl.ID, *createdAt.Time, cl); err != nil {
 		return err
 	}
 	return nil
@@ -151,7 +146,7 @@ func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca 
 		if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
 			return fmt.Errorf("error creating cluster %s for filter %d in DB (%s)", cluster.ID, filterNum, setErr)
 		}
-		if cErr := createCheckin(db.DB(), cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
+		if cErr := createCheckin(db, cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
 			return fmt.Errorf("error creating checkin for cluster %d, filter %d (%s)", clusterNum, filterNum, cErr)
 		}
 	}
