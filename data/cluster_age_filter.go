@@ -73,6 +73,16 @@ func NewClusterAgeFilter(
 	return &candidate, nil
 }
 
+func (c ClusterAgeFilter) String() string {
+	return fmt.Sprintf(
+		"created_before %s, created_after %s, checked_in_before %s, checked_in_after %s",
+		c.CreatedBefore,
+		c.CreatedAfter,
+		c.CheckedInBefore,
+		c.CheckedInAfter,
+	)
+}
+
 func (c ClusterAgeFilter) checkValid() error {
 	if c.CreatedBefore.After(c.CheckedInBefore) {
 		// you can't have clusters that were checked in before they were created
