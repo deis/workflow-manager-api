@@ -40,13 +40,13 @@ func getRoutes(db *gorm.DB) *mux.Router {
 	r := mux.NewRouter()
 	r.Handle("/{apiVersion}/versions/latest", handlers.GetLatestVersions(db.DB())).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
-	r.Handle("/{apiVersion}/versions/{train}/{component}", handlers.GetComponentTrainVersions(db.DB())).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{component}/{train}", handlers.GetComponentTrainVersions(db.DB())).Methods("GET")
 	// Note: the following route must go before the route that ends with {version}, so that
 	// Gorilla mux always routes the static "latest" route to the appropriate handler, and "latest"
 	// doesn't get interpreted as a {version}
-	r.Handle("/{apiVersion}/versions/{train}/{component}/latest", handlers.GetLatestComponentTrainVersion(db)).Methods("GET")
-	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.GetVersion(db)).Methods("GET")
-	r.Handle("/{apiVersion}/versions/{train}/{component}/{version}", handlers.PublishVersion(db)).Methods("POST").
+	r.Handle("/{apiVersion}/versions/{component}/{train}/latest", handlers.GetLatestComponentTrainVersion(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{component}/{train}/{version}", handlers.GetVersion(db)).Methods("GET")
+	r.Handle("/{apiVersion}/versions/{component}/{train}/{version}", handlers.PublishVersion(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db.DB())).Methods("GET")
 	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db.DB())).Methods("GET").

@@ -46,7 +46,7 @@ func TestGetVersion(t *testing.T) {
 	}
 	_, err = data.SetVersion(db, componentVer)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath(1, "versions", componentVer.Version.Train, componentVer.Component.Name, componentVer.Version.Version))
+	resp, err := httpGet(srv, urlPath(1, "versions", componentVer.Component.Name, componentVer.Version.Train, componentVer.Version.Version))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -81,7 +81,7 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	assert.NoErr(t, err)
 	_, err = data.SetVersion(memDB, componentVers[1])
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath(1, "versions", componentVer1.Version.Train, componentVer1.Component.Name))
+	resp, err := httpGet(srv, urlPath(1, "versions", componentVer1.Component.Name, componentVer1.Version.Train))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -123,7 +123,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		componentVersions[i] = cv
 	}
 
-	resp, err := httpGet(srv, urlPath(2, "versions", train, componentName, "latest"))
+	resp, err := httpGet(srv, urlPath(2, "versions", componentName, train, "latest"))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -159,7 +159,7 @@ func TestPostVersions(t *testing.T) {
 	}
 	body := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
-	resp, err := httpPost(srv, urlPath(2, "versions", train, componentName, version), string(body.Bytes()))
+	resp, err := httpPost(srv, urlPath(2, "versions", componentName, train, version), string(body.Bytes()))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
