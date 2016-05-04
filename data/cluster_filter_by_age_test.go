@@ -127,8 +127,8 @@ func createFilters() []filterAndCreatedAt {
 	return ret
 }
 
-func createCheckin(db *gorm.DB, cl types.Cluster, createdAt *Timestamp) error {
-	if err := CheckInCluster(db, cl.ID, *createdAt.Time, cl); err != nil {
+func createCheckin(db *gorm.DB, cl types.Cluster, createdAt time.Time) error {
+	if err := CheckInCluster(db, cl.ID, createdAt, cl); err != nil {
 		return err
 	}
 	return nil
@@ -146,14 +146,14 @@ func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca 
 		if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
 			return fmt.Errorf("error creating cluster %s for filter %d in DB (%s)", cluster.ID, filterNum, setErr)
 		}
-		if cErr := createCheckin(db, cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
+		if cErr := createCheckin(db, cluster, fca.createdAt); cErr != nil {
 			return fmt.Errorf("error creating checkin for cluster %d, filter %d (%s)", clusterNum, filterNum, cErr)
 		}
 	}
 	return nil
 }
 
-func TestClusterFromDBFilterByAge(t *testing.T) {
+func TestClusterFilterByAge(t *testing.T) {
 	const numClusters = 4
 
 	// generate all combinations of filters
