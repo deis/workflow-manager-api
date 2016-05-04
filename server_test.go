@@ -198,14 +198,16 @@ func TestGetClusterByID(t *testing.T) {
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
 	srv := newServer(memDB)
 	defer srv.Close()
-	cluster := types.Cluster{ID: clusterID, FirstSeen: time.Now(), LastSeen: time.Now().Add(1 * time.Minute), Components: nil}
+	cluster := data.ClusterStateful{}
+	cluster.ID = clusterID
+	cluster.Components = nil
 	newCluster, err := data.CheckInAndSetCluster(memDB, clusterID, cluster)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, 200, "response code")
-	decodedCluster := new(types.Cluster)
+	decodedCluster := new(data.ClusterStateful)
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(decodedCluster))
 	assert.Equal(t, *decodedCluster, newCluster, "returned cluster")
 }
@@ -233,7 +235,7 @@ func TestPostClusters(t *testing.T) {
 	if resp.StatusCode != 200 {
 		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	cluster := new(types.Cluster)
+	cluster := new(data.ClusterStateful)
 	if err := json.NewDecoder(resp.Body).Decode(cluster); err != nil {
 		t.Fatalf("error reading response body (%s)", err)
 	}

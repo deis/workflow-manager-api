@@ -6,13 +6,12 @@ import (
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/data"
-	"github.com/deis/workflow-manager/types"
 )
 
 // ClustersAge is the handler for the GET /{apiVersion}/clusters/age endpoint
 func ClustersAge(db *sql.DB) http.Handler {
 	type clustersAgeResp struct {
-		Data []types.Cluster `json:"data"`
+		Data []data.ClusterStateful `json:"data"`
 	}
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		clusterAgeFilter, err := parseAgeQueryKeys(r)

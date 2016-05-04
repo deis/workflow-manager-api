@@ -11,7 +11,6 @@ import (
 	"github.com/arschles/assert"
 	"github.com/deis/workflow-manager-api/data"
 	"github.com/deis/workflow-manager-api/rest"
-	"github.com/deis/workflow-manager/types"
 	"github.com/pborman/uuid"
 )
 
@@ -43,7 +42,8 @@ func TestFilterByClusterAge(t *testing.T) {
 	memDB, err := data.NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
-	cluster := types.Cluster{ID: uuid.New()}
+	cluster := data.ClusterStateful{}
+	cluster.ID = uuid.New()
 	srv := newServer(memDB)
 	defer srv.Close()
 	_, setErr := data.CheckInAndSetCluster(memDB, cluster.ID, cluster)
@@ -69,7 +69,7 @@ func TestFilterByClusterAge(t *testing.T) {
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
 	var respEnvelope struct {
-		Data []types.Cluster `json:"data"`
+		Data []data.ClusterStateful `json:"data"`
 	}
 	assert.NoErr(t, json.NewDecoder(resp.Body).Decode(&respEnvelope))
 	assert.Equal(t, len(respEnvelope.Data), 1, "length of the clusters list")
