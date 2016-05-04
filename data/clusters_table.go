@@ -9,14 +9,9 @@ import (
 )
 
 const (
-	clustersTableName                        = "clusters"
-	clustersTableIDKey                       = "cluster_id"
-	clustersTableDataKey                     = "data"
-	clustersCheckinsTableName                = "clusters_checkins"
-	clustersCheckinsTableIDKey               = "checkins_id"
-	clustersCheckinsTableClusterIDKey        = "cluster_id"
-	clustersCheckinsTableClusterCreatedAtKey = "created_at"
-	clustersCheckinsTableDataKey             = "data"
+	clustersTableName    = "clusters"
+	clustersTableIDKey   = "cluster_id"
+	clustersTableDataKey = "data"
 )
 
 // ClustersTable type that expresses the `clusters` postgres table schema

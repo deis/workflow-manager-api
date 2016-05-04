@@ -46,6 +46,14 @@ func (ts *Timestamp) Scan(value interface{}) error {
 	}
 }
 
+func newTimestampFromStr(tstr string) (*Timestamp, error) {
+	t, err := time.Parse(StdTimestampFmt, tstr)
+	if err != nil {
+		return nil, err
+	}
+	return &Timestamp{Time: &t}, nil
+}
+
 // Value is the Valuer interface implementation
 func (ts *Timestamp) Value() (driver.Value, error) {
 	str := ts.Time.Format(StdTimestampFmt)
@@ -53,7 +61,7 @@ func (ts *Timestamp) Value() (driver.Value, error) {
 }
 
 // String is the fmt.Stringer interface implementation
-func (ts *Timestamp) String() string {
+func (ts Timestamp) String() string {
 	return ts.Time.Format(StdTimestampFmt)
 }
 

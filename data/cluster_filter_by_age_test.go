@@ -1,14 +1,12 @@
 package data
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"sync"
 	"testing"
 	"time"
 
-	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
 	"github.com/pborman/uuid"
 )
@@ -29,17 +27,6 @@ var (
 		},
 	}
 	validCreatedAtTime = timeNow()
-
-	invalidCreatedAtTimes = []time.Time{
-		// after the checked_in_before constraint
-		validClusterAgeFilters[0].CheckedInBefore.Add(1 * time.Hour),
-		// before the checked_in_after constraint
-		validClusterAgeFilters[0].CheckedInAfter.Add(-1 * time.Hour),
-		// before the created_after constraint
-		validClusterAgeFilters[0].CreatedAfter.Add(-1 * time.Hour),
-		// after the created_before constraint
-		validClusterAgeFilters[0].CreatedBefore.Add(1 * time.Hour),
-	}
 )
 
 func invalidClusterAgeFilters() []ClusterAgeFilter {
@@ -104,6 +91,8 @@ type filterAndCreatedAt struct {
 
 func createFilters() []filterAndCreatedAt {
 	ret := []filterAndCreatedAt{}
+
+	// valid cluster filters and created time
 	for _, validClusterAgeFilter := range validClusterAgeFilters {
 		ret = append(ret, filterAndCreatedAt{
 			filter:    validClusterAgeFilter,
@@ -111,32 +100,25 @@ func createFilters() []filterAndCreatedAt {
 			expected:  true,
 		})
 	}
-	for _, invalidCreatedAtTime := range invalidCreatedAtTimes {
+
+	// valid cluster filters and created time that's guaranteed to return no clusters
+	for _, validClusterAgeFilter := range validClusterAgeFilters {
 		ret = append(ret, filterAndCreatedAt{
-			filter:    validClusterAgeFilters[0],
-			createdAt: invalidCreatedAtTime,
+			filter:    validClusterAgeFilter,
+			createdAt: validClusterAgeFilter.CreatedBefore.Add(20 * time.Hour),
 			expected:  false,
 		})
 	}
+
+	// invalid cluster filters and a created time that's 1 hour before the filter's created before time
 	for _, filter := range invalidClusterAgeFilters() {
 		ret = append(ret, filterAndCreatedAt{
 			filter:    filter,
-			createdAt: validCreatedAtTime,
+			createdAt: filter.CreatedBefore.Add(-1 * time.Hour),
 			expected:  false,
 		})
 	}
 	return ret
-}
-
-func createCheckin(db *sql.DB, cl types.Cluster, createdAt *Timestamp) error {
-	data, err := json.Marshal(cl)
-	if err != nil {
-		return err
-	}
-	if _, err = newClusterCheckinsDBRecord(db, cl.ID, createdAt, data); err != nil {
-		return err
-	}
-	return nil
 }
 
 func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca filterAndCreatedAt) error {
@@ -151,14 +133,14 @@ func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca 
 		if _, setErr := newClusterDBRecord(db.DB(), cluster.ID, clusterJSON); setErr != nil {
 			return fmt.Errorf("error creating cluster %s for filter %d in DB (%s)", cluster.ID, filterNum, setErr)
 		}
-		if cErr := createCheckin(db.DB(), cluster, &Timestamp{Time: &fca.createdAt}); cErr != nil {
+		if cErr := CheckInCluster(db, cluster.ID, fca.createdAt, cluster); cErr != nil {
 			return fmt.Errorf("error creating checkin for cluster %d, filter %d (%s)", clusterNum, filterNum, cErr)
 		}
 	}
 	return nil
 }
 
-func TestClusterFromDBFilterByAge(t *testing.T) {
+func TestClusterFilterByAge(t *testing.T) {
 	const numClusters = 4
 
 	// generate all combinations of filters
