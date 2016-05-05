@@ -1,15 +1,15 @@
 package handlers
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/data"
+	"github.com/jinzhu/gorm"
 )
 
 // ClustersAge is the handler for the GET /{apiVersion}/clusters/age endpoint
-func ClustersAge(db *sql.DB) http.Handler {
+func ClustersAge(db *gorm.DB) http.Handler {
 	type clustersAgeResp struct {
 		Data []data.ClusterStateful `json:"data"`
 	}

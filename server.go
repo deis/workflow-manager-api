@@ -49,7 +49,7 @@ func getRoutes(db *gorm.DB) *mux.Router {
 	r.Handle("/{apiVersion}/versions/{component}/{train}/{version}", handlers.PublishVersion(db)).Methods("POST").
 		Headers(handlers.ContentTypeHeaderKey, handlers.JSONContentType)
 	r.Handle("/{apiVersion}/clusters/count", handlers.ClustersCount(db)).Methods("GET")
-	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db.DB())).Methods("GET").
+	r.Handle("/{apiVersion}/clusters/age", handlers.ClustersAge(db)).Methods("GET").
 		Queries(
 			rest.CheckedInBeforeQueryStringKey,
 			"",

@@ -170,7 +170,7 @@ func TestClusterFilterByAge(t *testing.T) {
 			}
 
 			// filter the cluster & test results
-			filteredClusters, filterErr := FilterClustersByAge(db.DB(), &fca.filter)
+			filteredClusters, filterErr := FilterClustersByAge(db, &fca.filter)
 			if filterErr != nil {
 				t.Errorf("error filtering for case %d (%s)", i, filterErr)
 				return
@@ -188,7 +188,7 @@ func TestClusterFilterByAge(t *testing.T) {
 				t.Errorf("error creating new DB in case %d (%s)", i, err)
 				return
 			}
-			filteredClusters, filterErr = FilterClustersByAge(db.DB(), &fca.filter)
+			filteredClusters, filterErr = FilterClustersByAge(db, &fca.filter)
 			if filterErr != nil {
 				t.Errorf("error filtering for case %d (%s)", i, filterErr)
 				return
