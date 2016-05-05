@@ -3,13 +3,16 @@ package data
 import (
 	"database/sql"
 	"fmt"
+
+	"github.com/jinzhu/gorm"
 )
 
 // GetClusterCount returns the total number of clusters in the database
-func GetClusterCount(db *sql.DB) (int, error) {
-	count, err := getTableCount(db, clustersTableName)
-	if err != nil {
-		return 0, err
+func GetClusterCount(db *gorm.DB) (int, error) {
+	count := 0
+	countDB := db.Model(&clustersTable{}).Count(&count)
+	if countDB.Error != nil {
+		return 0, countDB.Error
 	}
 	return count, nil
 }
