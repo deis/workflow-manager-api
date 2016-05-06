@@ -35,11 +35,11 @@ func newDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-func testCluster() types.Cluster {
-	return types.Cluster{
-		ID:         clusterID,
-		Components: []types.ComponentVersion{testComponentVersion()},
-	}
+func testCluster() ClusterStateful {
+	cluster := ClusterStateful{}
+	cluster.ID = clusterID
+	cluster.Components = []types.ComponentVersion{testComponentVersion()}
+	return cluster
 }
 
 func TestClusterFromDBRoundTrip(t *testing.T) {
@@ -47,7 +47,7 @@ func TestClusterFromDBRoundTrip(t *testing.T) {
 	assert.NoErr(t, err)
 	cluster, err := GetCluster(sqliteDB, clusterID)
 	assert.True(t, err != nil, "error not returned when expected")
-	assert.Equal(t, cluster, types.Cluster{}, "returned cluster")
+	assert.Equal(t, cluster, ClusterStateful{}, "returned cluster")
 	expectedCluster := testCluster()
 	// the first time we invoke .CheckInAndSetCluster() it will create a new record
 	newCluster, err := CheckInAndSetCluster(sqliteDB, clusterID, expectedCluster)

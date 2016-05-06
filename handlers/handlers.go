@@ -48,13 +48,13 @@ func GetCluster(db *gorm.DB) http.Handler {
 func ClusterCheckin(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		id := mux.Vars(r)["id"]
-		cluster := types.Cluster{}
+		cluster := data.ClusterStateful{}
 		err := json.NewDecoder(r.Body).Decode(&cluster)
 		if err != nil {
 			log.Printf("Error decoding POST body JSON data (%s)", err)
 			return
 		}
-		var result types.Cluster
+		var result data.ClusterStateful
 		result, err = data.CheckInAndSetCluster(db, id, cluster)
 		if err != nil {
 			log.Printf("data.SetCluster error (%s)", err)

@@ -8,7 +8,6 @@ import (
 	"log"
 	"time"
 
-	"github.com/deis/workflow-manager/components"
 	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
 )
@@ -30,27 +29,37 @@ func (e errParsingCluster) Error() string {
 	return fmt.Sprintf("Error parsing cluster (%s)", e.origErr)
 }
 
+// ClusterStateful definition
+// This is a wrapper around a cluster object to include properties for use in stateful contexts
+type ClusterStateful struct {
+	// FirstSeen and/or LastSeen suggests a Cluster object in a lifecycle context,
+	// i.e., for use in business logic which needs to determine a cluster's "freshness" or "staleness"
+	FirstSeen time.Time `json:"firstSeen"`
+	LastSeen  time.Time `json:"lastSeen"`
+	types.Cluster
+}
+
 // GetCluster gets the cluster from the DB with the given cluster ID
-func GetCluster(db *gorm.DB, id string) (types.Cluster, error) {
+func GetCluster(db *gorm.DB, id string) (ClusterStateful, error) {
 	ret := &clustersTable{}
 	resDB := db.Where(&clustersTable{ClusterID: id}).First(ret)
 	if resDB.Error != nil {
-		return types.Cluster{}, resDB.Error
+		return ClusterStateful{}, resDB.Error
 	}
-	cluster, err := components.ParseJSONCluster(ret.Data)
+	cluster, err := parseJSONCluster(ret.Data)
 	if err != nil {
-		return types.Cluster{}, errParsingCluster{origErr: err}
+		return ClusterStateful{}, errParsingCluster{origErr: err}
 	}
 	return cluster, nil
 }
 
 // CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
-func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.Cluster, error) {
+func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
 	// Check in
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
-		return types.Cluster{}, err
+		return ClusterStateful{}, err
 	}
-	var ret types.Cluster // return variable
+	var ret ClusterStateful // return variable
 	js, err := json.Marshal(cluster)
 	if err != nil {
 		fmt.Println("error marshaling data")
@@ -79,7 +88,7 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.
 	} else if affected == 1 {
 		ret, err = GetCluster(db, id)
 		if err != nil {
-			return types.Cluster{}, err
+			return ClusterStateful{}, err
 		}
 	} else if affected > 1 {
 		log.Println("updated more than one record with same ID value!")
@@ -88,7 +97,7 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster types.Cluster) (types.
 }
 
 // CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
-func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster types.Cluster) error {
+func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster ClusterStateful) error {
 	js, err := json.Marshal(cluster)
 	if err != nil {
 		fmt.Println("error marshaling data")
@@ -107,7 +116,7 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster types
 
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
-func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster, error) {
+func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
 	query := fmt.Sprintf(`SELECT clusters.*
 		FROM clusters, clusters_checkins
 		WHERE clusters_checkins.cluster_id = clusters.cluster_id
@@ -127,13 +136,13 @@ func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]types.Cluster,
 		return nil, err
 	}
 
-	clusters := []types.Cluster{}
+	clusters := []ClusterStateful{}
 	for rows.Next() {
 		rowResult := clustersTable{}
 		if err := rows.Scan(&rowResult.ClusterID, &rowResult.Data); err != nil {
 			return nil, err
 		}
-		cluster, err := components.ParseJSONCluster(rowResult.Data)
+		cluster, err := parseJSONCluster(rowResult.Data)
 		if err != nil {
 			return nil, err
 		}
