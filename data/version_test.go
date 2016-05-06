@@ -25,7 +25,7 @@ func testComponentVersion() types.ComponentVersion {
 	}
 }
 
-func TestVersionFromDBRoundTrip(t *testing.T) {
+func TestVersionRoundTrip(t *testing.T) {
 	sqliteDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, VerifyPersistentStorage(sqliteDB))
@@ -47,7 +47,7 @@ func TestVersionFromDBRoundTrip(t *testing.T) {
 	assert.Equal(t, getCVer.Version.Train, componentVersion.Version.Train, "version train")
 }
 
-func TestVersionFromDBLatest(t *testing.T) {
+func TestGetLatestVersion(t *testing.T) {
 	sqliteDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, VerifyPersistentStorage(sqliteDB))
@@ -86,7 +86,7 @@ func TestVersionFromDBLatest(t *testing.T) {
 	assert.Equal(t, cv.Version.Data, exCV.Version.Data, "component version data")
 }
 
-func TestVersionFromDBMultiLatest(t *testing.T) {
+func TestGetLatestVersions(t *testing.T) {
 	memDB, err := NewMemDB()
 	assert.NoErr(t, err)
 	assert.NoErr(t, VerifyPersistentStorage(memDB))
@@ -128,7 +128,16 @@ func TestVersionFromDBMultiLatest(t *testing.T) {
 		}
 	}
 
-	componentVersions, err := GetLatestVersions(memDB.DB(), componentAndTrainSlice)
+	// now add a component & train that we aren't gonna filter for
+	cv := testComponentVersion()
+	cv.Component.Name = "invalid"
+	cv.Version.Train = "invalid"
+	cv.Version.Version = "invalid"
+	cv.Version.Released = time.Now().Format(released)
+	_, setErr := SetVersion(memDB, cv)
+	assert.NoErr(t, setErr)
+
+	componentVersions, err := GetLatestVersions(memDB, componentAndTrainSlice)
 	assert.NoErr(t, err)
 	assert.Equal(t, len(componentVersions), len(releaseTimes), "number of returned components")
 	for _, componentVersion := range componentVersions {
