@@ -83,21 +83,6 @@ func getDBRecord(db *sql.DB, table string, keys []string, vals []string) *sql.Ro
 	return db.QueryRow(query)
 }
 
-// getDBRecords is a convenience that executes a simple "SELECT *" SQL query against
-// a passed-in db reference, accepting an arbitrary number of keys(table fields)/vals
-func getDBRecords(db *sql.DB, table string, keys []string, vals []string) (*sql.Rows, error) {
-	sliceEqualize(&keys, &vals)
-	query := fmt.Sprintf("SELECT * FROM %s", table)
-	for i, key := range keys {
-		if i == 0 {
-			query += fmt.Sprintf(" WHERE %s = '%s'", key, vals[i])
-		} else {
-			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
-		}
-	}
-	return db.Query(query)
-}
-
 // sliceEqualize is a convenience that ensures two slices of strings have equal lengths
 // if not, the larger slice's elements that exceed the boundary of the smaller are stripped
 func sliceEqualize(slice1 *[]string, slice2 *[]string) {

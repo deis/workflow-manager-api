@@ -2,7 +2,6 @@ package handlers
 
 // handler echoes the HTTP request.
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -90,7 +89,7 @@ func GetVersion(db *gorm.DB) http.Handler {
 }
 
 // GetComponentTrainVersions route handler
-func GetComponentTrainVersions(db *sql.DB) http.Handler {
+func GetComponentTrainVersions(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		routeParams := mux.Vars(r)
 		train := routeParams["train"]
