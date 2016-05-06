@@ -200,25 +200,11 @@ func GetVersion(db *gorm.DB, cV types.ComponentVersion) (types.ComponentVersion,
 }
 
 // GetVersionsList retrieves a list of version records from the DB that match a given train & component
-func GetVersionsList(db *sql.DB, train string, component string) ([]types.ComponentVersion, error) {
-	rows, err := getDBRecords(db, versionsTableName,
-		[]string{versionsTableTrainKey, versionsTableComponentNameKey},
-		[]string{train, component})
-	if err != nil {
-		return nil, err
-	}
-	rowsResult := []versionsTable{}
-	var row versionsTable
-	defer rows.Close()
-	for rows.Next() {
-		//TODO: sql.NullString is to pass tests, not for production
-		var s sql.NullString
-		err = rows.Scan(&s, &row.ComponentName,
-			&row.Train, &row.Version, &row.ReleaseTimestamp, &row.Data)
-		if err != nil {
-			return nil, err
-		}
-		rowsResult = append(rowsResult, row)
+func GetVersionsList(db *gorm.DB, train string, component string) ([]types.ComponentVersion, error) {
+	var rowsResult []versionsTable
+	resDB := db.Where(&versionsTable{Train: train, ComponentName: component}).Find(&rowsResult)
+	if resDB.Error != nil {
+		return nil, resDB.Error
 	}
 	componentVersions, err := parseDBVersions(rowsResult)
 	if err != nil {
