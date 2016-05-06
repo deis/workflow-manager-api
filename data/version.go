@@ -3,7 +3,6 @@ package data
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 	"time"
 
@@ -134,29 +133,6 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVe
 		return []types.ComponentVersion{}, err
 	}
 	return componentVersions, nil
-}
-
-func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
-	data, err := json.Marshal(componentVersion.Version.Data)
-	if err != nil {
-		log.Printf("JSON marshaling failed (%s)", err)
-		return nil, err
-	}
-	insert := fmt.Sprintf(
-		"INSERT INTO %s (%s, %s, %s, %s, %s) VALUES('%s', '%s', '%s', '%s', '%s')",
-		versionsTableName,
-		versionsTableComponentNameKey,
-		versionsTableTrainKey,
-		versionsTableVersionKey,
-		versionsTableReleaseTimeStampKey,
-		versionsTableDataKey,
-		componentVersion.Component.Name,
-		componentVersion.Version.Train,
-		componentVersion.Version.Version,
-		componentVersion.Version.Released,
-		string(data),
-	)
-	return db.Exec(insert)
 }
 
 // GetVersion gets a single version record from a DB matching the unique property values in a ComponentVersion struct
