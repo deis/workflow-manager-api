@@ -41,7 +41,7 @@ func newVersionsTable(versionID, componentName, train, version string, releaseTi
 }
 
 func (v versionsTable) TableName() string {
-	return "versions"
+	return versionsTableName
 }
 
 func createOrUpdateVersionsTable(db *gorm.DB) (sql.Result, error) {

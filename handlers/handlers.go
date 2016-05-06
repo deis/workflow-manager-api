@@ -121,7 +121,7 @@ func PublishVersion(db *gorm.DB) http.Handler {
 		componentVersion.Component.Name = routeParams["component"]
 		componentVersion.Version.Train = routeParams["train"]
 		componentVersion.Version.Version = routeParams["version"]
-		result, err := data.SetVersion(db, componentVersion)
+		result, err := data.UpsertVersion(db, componentVersion)
 		if err != nil {
 			log.Printf("data.SetVersion error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
