@@ -16,7 +16,7 @@ import (
 )
 
 // ClustersCount route handler
-func ClustersCount(db *sql.DB) http.Handler {
+func ClustersCount(db *gorm.DB) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		count, err := data.GetClusterCount(db)
 		if err != nil {
