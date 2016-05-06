@@ -7,7 +7,7 @@ import (
 
 func upsertVersion(db *gorm.DB, queryExisting versionsTable, setNew versionsTable) (*types.ComponentVersion, error) {
 	var count int
-	countDB := db.Where(&queryExisting).Count(&count)
+	countDB := db.Model(&versionsTable{}).Where(&queryExisting).Count(&count)
 	if countDB.Error != nil {
 		return nil, countDB.Error
 	}

@@ -20,12 +20,12 @@ const (
 
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
 type versionsTable struct {
-	VersionID        string         `gorm:"primary_key;type:uuid;column:version_id"`
-	ComponentName    string         `gorm:"column:component_name;index;unique"`
-	Train            string         `gorm:"column:train;index;unique"`
-	Version          string         `gorm:"column:version;index;unique"`
-	ReleaseTimestamp *Timestamp     `gorm:"column:release_timestamp;type:timestamp"`
-	Data             types.JSONText `gorm:"column:data;type:json"`
+	VersionID        string `gorm:"primary_key;type:uuid;column:version_id"`
+	ComponentName    string `gorm:"column:component_name;index;unique"`
+	Train            string `gorm:"column:train;index;unique"`
+	Version          string `gorm:"column:version;index;unique"`
+	ReleaseTimestamp string `gorm:"column:release_timestamp;type:timestamp"`
+	Data             string `gorm:"column:data;type:json"`
 }
 
 func newJSONText(b []byte) types.JSONText {

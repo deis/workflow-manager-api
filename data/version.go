@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
-	"time"
 
 	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
@@ -23,24 +22,20 @@ func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.
 	}
 
 	// the query used to find the original version
-	queryVsn := newVersionsTable(
-		"",
-		componentVersion.Component.Name,
-		componentVersion.Version.Train,
-		componentVersion.Version.Version,
-		time.Time{},
-		nil,
-	)
+	queryVsn := versionsTable{
+		ComponentName: componentVersion.Component.Name,
+		Train:         componentVersion.Version.Train,
+		Version:       componentVersion.Version.Version,
+	}
 
 	// the new version
-	newVsn := newVersionsTable(
-		"",
-		componentVersion.Component.Name,
-		componentVersion.Version.Train,
-		componentVersion.Version.Version,
-		*releaseTimestamp.Time,
-		js,
-	)
+	newVsn := versionsTable{
+		ComponentName:    componentVersion.Component.Name,
+		Train:            componentVersion.Version.Train,
+		Version:          componentVersion.Version.Version,
+		ReleaseTimestamp: releaseTimestamp.String(),
+		Data:             string(js),
+	}
 
 	tx := db.Begin()
 	cvPtr, err := upsertVersion(tx, queryVsn, newVsn)
@@ -53,6 +48,7 @@ func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.
 	}
 	commitDB := tx.Commit()
 	if commitDB.Error != nil {
+		log.Println("6")
 		return types.ComponentVersion{}, txErr{op: "commit", orig: nil, err: commitDB.Error}
 	}
 	return *cvPtr, nil
@@ -183,7 +179,7 @@ func parseDBVersions(versions []versionsTable) ([]types.ComponentVersion, error)
 
 func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
 	data := make(map[string]interface{})
-	if err := json.Unmarshal(version.Data, &data); err != nil {
+	if err := json.Unmarshal([]byte(version.Data), &data); err != nil {
 		return types.ComponentVersion{}, err
 	}
 	return types.ComponentVersion{
@@ -193,7 +189,7 @@ func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
 		Version: types.Version{
 			Train:    version.Train,
 			Version:  version.Version,
-			Released: version.ReleaseTimestamp.String(),
+			Released: version.ReleaseTimestamp,
 			Data:     data,
 		},
 	}, nil
