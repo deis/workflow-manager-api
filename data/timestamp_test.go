@@ -54,29 +54,29 @@ func TestTimestampScan(t *testing.T) {
 		if testCase.expectedErr && err != nil {
 			continue
 		}
-		if ts.Time == nil {
-			t.Errorf("test case %d expected non-nil time", i+1)
+		if ts.Time.IsZero() {
+			t.Errorf("test case %d expected non-zero time", i+1)
 			continue
 		}
-		if !fuzzyTimeEqual(testCase.expectedTime, *ts.Time) {
-			t.Errorf("test case %d expected time %s doesn't match actual %s", i+1, testCase.expectedTime, *ts.Time)
+		if !fuzzyTimeEqual(testCase.expectedTime, ts.Time) {
+			t.Errorf("test case %d expected time %s doesn't match actual %s", i+1, testCase.expectedTime, ts.Time)
 			continue
 		}
 	}
 }
 
 func TestTimestampNow(t *testing.T) {
-	n := now()
+	ts := Timestamp{Time: time.Now()}
 	nowTime := time.Now()
-	if n.Time.After(nowTime) {
-		t.Fatalf("Returned time %s was after the current time %s", n.Time, nowTime)
+	if ts.Time.After(nowTime) {
+		t.Fatalf("Returned time %s was after the current time %s", ts.Time, nowTime)
 	}
 }
 
 func TestTimestampString(t *testing.T) {
 	now := time.Now()
 	ts := new(Timestamp)
-	ts.Time = &now
+	ts.Time = now
 	if _, err := time.Parse(StdTimestampFmt, ts.String()); err != nil {
 		t.Fatal(err)
 	}
@@ -85,7 +85,7 @@ func TestTimestampString(t *testing.T) {
 func TestTimestampValue(t *testing.T) {
 	now := time.Now()
 	ts := new(Timestamp)
-	ts.Time = &now
+	ts.Time = now
 	val, err := ts.Value()
 	if err != nil {
 		t.Fatal(err)

@@ -33,7 +33,7 @@ func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.
 		ComponentName:    componentVersion.Component.Name,
 		Train:            componentVersion.Version.Train,
 		Version:          componentVersion.Version.Version,
-		ReleaseTimestamp: releaseTimestamp.String(),
+		ReleaseTimestamp: releaseTimestamp,
 		Data:             string(js),
 	}
 
@@ -189,7 +189,7 @@ func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
 		Version: types.Version{
 			Train:    version.Train,
 			Version:  version.Version,
-			Released: version.ReleaseTimestamp,
+			Released: version.ReleaseTimestamp.String(),
 			Data:     data,
 		},
 	}, nil

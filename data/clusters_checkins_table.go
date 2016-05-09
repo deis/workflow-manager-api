@@ -29,7 +29,7 @@ func newClustersCheckinsTable(checkinID, clusterID string, createdAt time.Time, 
 	return clustersCheckinsTable{
 		CheckinID: checkinID,
 		ClusterID: clusterID,
-		CreatedAt: Timestamp{Time: &createdAt}.String(),
+		CreatedAt: Timestamp{Time: createdAt}.String(),
 		Data:      types.JSONText(clusterData),
 	}
 }
