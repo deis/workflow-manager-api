@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	// StdTimestampFmt is the standard format of timestamps used to store times in the database
+	// and accept and send timestamps over the wire
 	StdTimestampFmt = time.RFC3339
 )
 
