@@ -44,7 +44,7 @@ func TestGetVersion(t *testing.T) {
 			"notes": "release notes",
 		}},
 	}
-	_, err = data.SetVersion(db, componentVer)
+	_, err = data.UpsertVersion(db, componentVer)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "versions", componentVer.Component.Name, componentVer.Version.Train, componentVer.Version.Version))
 	assert.NoErr(t, err)
@@ -77,9 +77,9 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	}
 	componentVers = append(componentVers, componentVer1)
 	componentVers = append(componentVers, componentVer2)
-	_, err = data.SetVersion(memDB, componentVers[0])
+	_, err = data.UpsertVersion(memDB, componentVers[0])
 	assert.NoErr(t, err)
-	_, err = data.SetVersion(memDB, componentVers[1])
+	_, err = data.UpsertVersion(memDB, componentVers[1])
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "versions", componentVer1.Component.Name, componentVer1.Version.Train))
 	assert.NoErr(t, err)
@@ -117,7 +117,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(releaseTimeFormat)
 		}
-		if _, setErr := data.SetVersion(memDB, cv); setErr != nil {
+		if _, setErr := data.UpsertVersion(memDB, cv); setErr != nil {
 			t.Fatalf("error setting component version %d (%s)", i, setErr)
 		}
 		componentVersions[i] = cv

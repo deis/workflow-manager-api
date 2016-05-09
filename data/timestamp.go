@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	// StdTimestampFmt is the standard format of timestamps used to store times in the database
+	// and accept and send timestamps over the wire
 	StdTimestampFmt = time.RFC3339
 )
 
@@ -18,44 +20,44 @@ var (
 // time.Time values into and out of a database. This implementation was inspired heavily from
 // https://groups.google.com/forum/#!topic/golang-nuts/P6Wrm_uVvJ0
 type Timestamp struct {
-	Time *time.Time
+	Time time.Time
 }
 
 // Scan is the Scanner interface implementation
 func (ts *Timestamp) Scan(value interface{}) error {
 	switch v := value.(type) {
 	case time.Time:
-		ts.Time = &v
+		ts.Time = v
 		return nil
 	case string:
 		t, err := time.Parse(StdTimestampFmt, v)
 		if err != nil {
 			return err
 		}
-		ts.Time = &t
+		ts.Time = t
 		return nil
 	case []byte:
 		t, err := time.Parse(StdTimestampFmt, string(v))
 		if err != nil {
 			return err
 		}
-		ts.Time = &t
+		ts.Time = t
 		return nil
 	default:
 		return errInvalidType
 	}
 }
 
-func newTimestampFromStr(tstr string) (*Timestamp, error) {
+func newTimestampFromStr(tstr string) (Timestamp, error) {
 	t, err := time.Parse(StdTimestampFmt, tstr)
 	if err != nil {
-		return nil, err
+		return Timestamp{}, err
 	}
-	return &Timestamp{Time: &t}, nil
+	return Timestamp{Time: t}, nil
 }
 
 // Value is the Valuer interface implementation
-func (ts *Timestamp) Value() (driver.Value, error) {
+func (ts Timestamp) Value() (driver.Value, error) {
 	str := ts.Time.Format(StdTimestampFmt)
 	return str, nil
 }
@@ -63,9 +65,4 @@ func (ts *Timestamp) Value() (driver.Value, error) {
 // String is the fmt.Stringer interface implementation
 func (ts Timestamp) String() string {
 	return ts.Time.Format(StdTimestampFmt)
-}
-
-func now() *Timestamp {
-	t := time.Now()
-	return &Timestamp{Time: &t}
 }

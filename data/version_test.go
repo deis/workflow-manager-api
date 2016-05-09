@@ -33,7 +33,7 @@ func TestVersionRoundTrip(t *testing.T) {
 	cVerNoExist, err := GetVersion(sqliteDB, componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
 	assert.Equal(t, cVerNoExist, types.ComponentVersion{}, "component version")
-	cVerSet, err := SetVersion(sqliteDB, componentVersion)
+	cVerSet, err := UpsertVersion(sqliteDB, componentVersion)
 	assert.NoErr(t, err)
 	assert.Equal(t, cVerSet.Component.Name, componentVersion.Component.Name, "component name")
 	assert.Equal(t, cVerSet.Version.Version, componentVersion.Version.Version, "version string")
@@ -68,7 +68,7 @@ func TestGetLatestVersion(t *testing.T) {
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(released)
 		}
-		if _, setErr := SetVersion(sqliteDB, cv); setErr != nil {
+		if _, setErr := UpsertVersion(sqliteDB, cv); setErr != nil {
 			t.Fatalf("error setting component version %d (%s)", i, setErr)
 		}
 		componentVersions[i] = cv
@@ -121,7 +121,7 @@ func TestGetLatestVersions(t *testing.T) {
 				if releaseTimes[ct.String()].Before(cvReleaseTime) {
 					releaseTimes[ct.String()] = cvReleaseTime
 				}
-				if _, setErr := SetVersion(memDB, cv); setErr != nil {
+				if _, setErr := UpsertVersion(memDB, cv); setErr != nil {
 					t.Fatalf("error setting component version %d (%s)", idx, setErr)
 				}
 			}
@@ -134,7 +134,7 @@ func TestGetLatestVersions(t *testing.T) {
 	cv.Version.Train = "invalid"
 	cv.Version.Version = "invalid"
 	cv.Version.Released = time.Now().Format(released)
-	_, setErr := SetVersion(memDB, cv)
+	_, setErr := UpsertVersion(memDB, cv)
 	assert.NoErr(t, setErr)
 
 	componentVersions, err := GetLatestVersions(memDB, componentAndTrainSlice)

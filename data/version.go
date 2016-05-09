@@ -3,81 +3,55 @@ package data
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"log"
 
 	"github.com/deis/workflow-manager/types"
 	"github.com/jinzhu/gorm"
 )
 
-func updateVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
-	data, err := json.Marshal(componentVersion.Version.Data)
+// UpsertVersion adds or updates a single version record in the database
+func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+	releaseTimestamp, err := newTimestampFromStr(componentVersion.Version.Released)
 	if err != nil {
-		log.Printf("JSON marshaling failed (%s)", err)
-		return nil, err
+		return types.ComponentVersion{}, err
 	}
-	update := fmt.Sprintf(
-		"UPDATE %s SET %s='%s', %s='%s', %s='%s', %s='%s', %s='%s' WHERE %s='%s' AND %s='%s' AND %s='%s'",
-		versionsTableName,
-		versionsTableComponentNameKey,
-		componentVersion.Component.Name,
-		versionsTableTrainKey,
-		componentVersion.Version.Train,
-		versionsTableVersionKey,
-		componentVersion.Version.Version,
-		versionsTableReleaseTimeStampKey,
-		componentVersion.Version.Released,
-		versionsTableDataKey,
-		string(data),
-		versionsTableComponentNameKey,
-		componentVersion.Component.Name,
-		versionsTableTrainKey,
-		componentVersion.Version.Train,
-		versionsTableVersionKey,
-		componentVersion.Version.Version,
-	)
-	return db.Exec(update)
-}
 
-// SetVersion adds or updates a single version record in the database
-func SetVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
-	// TODO: this read-modify-write should be done inside a transaction. Also, rename SetVersion to something else.
-	// Both of these TODOs are captured in https://github.com/deis/workflow-manager-api/issues/90
-
-	var ret types.ComponentVersion // return variable
-	row := getDBRecord(db.DB(), versionsTableName,
-		[]string{versionsTableComponentNameKey, versionsTableTrainKey, versionsTableVersionKey},
-		[]string{componentVersion.Component.Name, componentVersion.Version.Train, componentVersion.Version.Version})
-	var result sql.Result
-	rowResult := versionsTable{}
-	if err := row.Scan(&rowResult.VersionID, &rowResult.ComponentName, &rowResult.Train, &rowResult.Version, &rowResult.ReleaseTimestamp, &rowResult.Data); err != nil {
-		result, err = newVersionDBRecord(db.DB(), componentVersion)
-		if err != nil {
-			log.Println(err)
-			return types.ComponentVersion{}, err
-		}
-	} else {
-		result, err = updateVersionDBRecord(db.DB(), componentVersion)
-		if err != nil {
-			log.Println(err)
-			return types.ComponentVersion{}, err
-		}
-	}
-	affected, err := result.RowsAffected()
+	js, err := json.Marshal(componentVersion.Version.Data)
 	if err != nil {
-		log.Println("failed to get affected row count")
+		return types.ComponentVersion{}, err
 	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = GetVersion(db, componentVersion)
-		if err != nil {
-			return types.ComponentVersion{}, err
+
+	// the query used to find the original version
+	queryVsn := versionsTable{
+		ComponentName: componentVersion.Component.Name,
+		Train:         componentVersion.Version.Train,
+		Version:       componentVersion.Version.Version,
+	}
+
+	// the new version
+	newVsn := versionsTable{
+		ComponentName:    componentVersion.Component.Name,
+		Train:            componentVersion.Version.Train,
+		Version:          componentVersion.Version.Version,
+		ReleaseTimestamp: releaseTimestamp,
+		Data:             string(js),
+	}
+
+	tx := db.Begin()
+	cvPtr, err := upsertVersion(tx, queryVsn, newVsn)
+	if err != nil {
+		rollbackDB := tx.Rollback()
+		if rollbackDB.Error != nil {
+			return types.ComponentVersion{}, txErr{op: "rollback", orig: err, err: rollbackDB.Error}
 		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
+		return types.ComponentVersion{}, err
 	}
-	return ret, nil
+	commitDB := tx.Commit()
+	if commitDB.Error != nil {
+		log.Println("6")
+		return types.ComponentVersion{}, txErr{op: "commit", orig: nil, err: commitDB.Error}
+	}
+	return *cvPtr, nil
 }
 
 // GetLatestVersion gets the latest version from the DB for the given train & component
@@ -157,29 +131,6 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVe
 	return componentVersions, nil
 }
 
-func newVersionDBRecord(db *sql.DB, componentVersion types.ComponentVersion) (sql.Result, error) {
-	data, err := json.Marshal(componentVersion.Version.Data)
-	if err != nil {
-		log.Printf("JSON marshaling failed (%s)", err)
-		return nil, err
-	}
-	insert := fmt.Sprintf(
-		"INSERT INTO %s (%s, %s, %s, %s, %s) VALUES('%s', '%s', '%s', '%s', '%s')",
-		versionsTableName,
-		versionsTableComponentNameKey,
-		versionsTableTrainKey,
-		versionsTableVersionKey,
-		versionsTableReleaseTimeStampKey,
-		versionsTableDataKey,
-		componentVersion.Component.Name,
-		componentVersion.Version.Train,
-		componentVersion.Version.Version,
-		componentVersion.Version.Released,
-		string(data),
-	)
-	return db.Exec(insert)
-}
-
 // GetVersion gets a single version record from a DB matching the unique property values in a ComponentVersion struct
 func GetVersion(db *gorm.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
 	resTable := new(versionsTable)
@@ -228,7 +179,7 @@ func parseDBVersions(versions []versionsTable) ([]types.ComponentVersion, error)
 
 func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
 	data := make(map[string]interface{})
-	if err := json.Unmarshal(version.Data, &data); err != nil {
+	if err := json.Unmarshal([]byte(version.Data), &data); err != nil {
 		return types.ComponentVersion{}, err
 	}
 	return types.ComponentVersion{

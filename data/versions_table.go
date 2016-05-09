@@ -3,10 +3,8 @@ package data
 import (
 	"database/sql"
 	"fmt"
-	"time"
 
 	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx/types"
 )
 
 const (
@@ -21,27 +19,16 @@ const (
 
 // VersionsTable type that expresses the `deis_component_versions` postgres table schema
 type versionsTable struct {
-	VersionID        string         `gorm:"primary_key;type:uuid;column:version_id"`
-	ComponentName    string         `gorm:"column:component_name;index;unique"`
-	Train            string         `gorm:"column:train;index;unique"`
-	Version          string         `gorm:"column:version;index;unique"`
-	ReleaseTimestamp *Timestamp     `gorm:"column:release_timestamp;type:timestamp"`
-	Data             types.JSONText `gorm:"column:data;type:json"`
-}
-
-func newVersionsTable(versionID, componentName, train, version string, releaseTime time.Time, data []byte) versionsTable {
-	return versionsTable{
-		VersionID:        versionID,
-		ComponentName:    componentName,
-		Train:            train,
-		Version:          version,
-		ReleaseTimestamp: &Timestamp{Time: &releaseTime},
-		Data:             types.JSONText(data),
-	}
+	VersionID        string    `gorm:"primary_key;type:uuid;column:version_id"`
+	ComponentName    string    `gorm:"column:component_name;index;unique"`
+	Train            string    `gorm:"column:train;index;unique"`
+	Version          string    `gorm:"column:version;index;unique"`
+	ReleaseTimestamp Timestamp `gorm:"column:release_timestamp;type:timestamp"`
+	Data             string    `gorm:"column:data;type:json"`
 }
 
 func (v versionsTable) TableName() string {
-	return "versions"
+	return versionsTableName
 }
 
 func createOrUpdateVersionsTable(db *gorm.DB) (sql.Result, error) {
