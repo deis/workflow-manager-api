@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/jinzhu/gorm"
-	"github.com/jmoiron/sqlx/types"
 )
 
 const (
@@ -26,10 +25,6 @@ type versionsTable struct {
 	Version          string    `gorm:"column:version;index;unique"`
 	ReleaseTimestamp Timestamp `gorm:"column:release_timestamp;type:timestamp"`
 	Data             string    `gorm:"column:data;type:json"`
-}
-
-func newJSONText(b []byte) types.JSONText {
-	return types.JSONText(b)
 }
 
 func (v versionsTable) TableName() string {
