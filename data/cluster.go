@@ -63,7 +63,6 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (Clus
 	query := clustersTable{ClusterID: id}
 	countDB := db.Model(&clustersTable{}).Where(&query).Count(&numExisting)
 	if countDB.Error != nil {
-		log.Printf("ERROR1 (%s)", countDB.Error)
 		return ClusterStateful{}, countDB.Error
 	}
 	var resDB *gorm.DB
@@ -71,14 +70,12 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (Clus
 		// no existing clusters, so create one
 		createDB := db.Create(&clustersTable{ClusterID: id, Data: js})
 		if createDB.Error != nil {
-			log.Printf("ERROR2 (%s)", createDB.Error)
 			return ClusterStateful{}, createDB.Error
 		}
 		resDB = createDB
 	} else {
 		updateDB := db.Save(&clustersTable{ClusterID: id, Data: js})
 		if updateDB.Error != nil {
-			log.Printf("ERROR3 (%s)", updateDB.Error)
 			return ClusterStateful{}, updateDB.Error
 		}
 		resDB = updateDB
@@ -88,7 +85,6 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (Clus
 	}
 	retCluster, err := GetCluster(db, id)
 	if err != nil {
-		log.Printf("ERROR4 (%s)", err)
 		return ClusterStateful{}, err
 	}
 	return retCluster, nil
