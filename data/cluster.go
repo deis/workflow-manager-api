@@ -59,41 +59,43 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (Clus
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
 		return ClusterStateful{}, err
 	}
-	var ret ClusterStateful // return variable
 	js, err := json.Marshal(cluster)
 	if err != nil {
-		fmt.Println("error marshaling data")
+		return ClusterStateful{}, err
 	}
-	row := getDBRecord(db.DB(), clustersTableName, []string{clustersTableIDKey}, []string{id})
-	var result sql.Result
-	// Register the "latest checkin" with the primary cluster record
-	rowResult := clustersTable{}
-	if scanErr := row.Scan(&rowResult.ClusterID, &rowResult.Data); scanErr != nil {
-		result, err = newClusterDBRecord(db.DB(), id, js)
-		if err != nil {
-			log.Println(err)
+	var numExisting int
+	query := clustersTable{ClusterID: id}
+	countDB := db.Model(&clustersTable{}).Where(&query).Count(&numExisting)
+	if countDB.Error != nil {
+		log.Printf("ERROR1 (%s)", countDB.Error)
+		return ClusterStateful{}, countDB.Error
+	}
+	var resDB *gorm.DB
+	if numExisting == 0 {
+		// no existing clusters, so create one
+		createDB := db.Create(&clustersTable{ClusterID: id, Data: js})
+		if createDB.Error != nil {
+			log.Printf("ERROR2 (%s)", createDB.Error)
+			return ClusterStateful{}, createDB.Error
 		}
+		resDB = createDB
 	} else {
-		result, err = updateClusterDBRecord(db.DB(), id, js)
-		if err != nil {
-			log.Println(err)
+		updateDB := db.Save(&clustersTable{ClusterID: id, Data: js})
+		if updateDB.Error != nil {
+			log.Printf("ERROR3 (%s)", updateDB.Error)
+			return ClusterStateful{}, updateDB.Error
 		}
+		resDB = updateDB
 	}
-	affected, err := result.RowsAffected()
+	if resDB.RowsAffected != 1 {
+		return ClusterStateful{}, fmt.Errorf("%d rows were affected, but expected only 1", resDB.RowsAffected)
+	}
+	retCluster, err := GetCluster(db, id)
 	if err != nil {
-		log.Println("failed to get affected row count")
+		log.Printf("ERROR4 (%s)", err)
+		return ClusterStateful{}, err
 	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = GetCluster(db, id)
-		if err != nil {
-			return ClusterStateful{}, err
-		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
-	}
-	return ret, nil
+	return retCluster, nil
 }
 
 // CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
