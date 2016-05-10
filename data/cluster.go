@@ -53,7 +53,8 @@ func GetCluster(db *gorm.DB, id string) (ClusterStateful, error) {
 	return cluster, nil
 }
 
-// CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
+// CheckInAndSetCluster creates or updates the cluster with the given ID.
+// TODO: rename this function to better reflect what it does (https://github.com/deis/workflow-manager-api/issues/128)
 func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
 	// Check in
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
