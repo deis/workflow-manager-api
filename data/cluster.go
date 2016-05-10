@@ -116,37 +116,36 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster Clust
 
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
-func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
-	query := fmt.Sprintf(`SELECT clusters.*
+func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
+	var rows []clustersTable
+
+	// we have to make a raw query here b/c gorm doesn't do multi-table queries.
+	// could convert this to a JOIN later to take advantage of gorm's query builder, but I don't
+	// think it's necessary
+	resDB := db.Exec(`SELECT clusters.*
 		FROM clusters, clusters_checkins
 		WHERE clusters_checkins.cluster_id = clusters.cluster_id
 		GROUP BY clusters_checkins.cluster_id, clusters.cluster_id
-		HAVING MIN(clusters_checkins.created_at) > '%s'
-		AND MIN(clusters_checkins.created_at) < '%s'
-		AND MIN(clusters_checkins.created_at) > '%s'
-		AND MAX(clusters_checkins.created_at) < '%s'`,
+		HAVING MIN(clusters_checkins.created_at) > ?
+		AND MIN(clusters_checkins.created_at) < ?
+		AND MIN(clusters_checkins.created_at) > ?
+		AND MAX(clusters_checkins.created_at) < ?`,
 		filter.createdAfterTimestamp(),
 		filter.createdBeforeTimestamp(),
 		filter.checkedInAfterTimestamp(),
 		filter.checkedInBeforeTimestamp(),
-	)
-
-	rows, err := db.Query(query)
-	if err != nil {
-		return nil, err
+	).Find(&rows)
+	if resDB.Error != nil {
+		return nil, resDB.Error
 	}
 
-	clusters := []ClusterStateful{}
-	for rows.Next() {
-		rowResult := clustersTable{}
-		if err := rows.Scan(&rowResult.ClusterID, &rowResult.Data); err != nil {
-			return nil, err
-		}
-		cluster, err := parseJSONCluster(rowResult.Data)
+	clusters := make([]ClusterStateful, len(rows))
+	for i, row := range rows {
+		cluster, err := parseJSONCluster(row.Data)
 		if err != nil {
 			return nil, err
 		}
-		clusters = append(clusters, cluster)
+		clusters[i] = cluster
 	}
 	return clusters, nil
 }
