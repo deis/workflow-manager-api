@@ -48,9 +48,7 @@ func GetCluster(db *gorm.DB, id string) (ClusterStateful, error) {
 	return cluster, nil
 }
 
-// CheckInAndSetCluster creates or updates the cluster with the given ID.
-// TODO: rename this function to better reflect what it does (https://github.com/deis/workflow-manager-api/issues/128)
-func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+func upsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
 	// Check in
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
 		return ClusterStateful{}, err
@@ -88,6 +86,28 @@ func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (Clus
 		return ClusterStateful{}, err
 	}
 	return retCluster, nil
+}
+
+// CheckInAndSetCluster creates or updates the cluster with the given ID.
+// TODO: rename this function to better reflect what it does (https://github.com/deis/workflow-manager-api/issues/128)
+func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+	txn := db.Begin()
+	if txn.Error != nil {
+		return ClusterStateful{}, txErr{orig: nil, err: txn.Error, op: "begin"}
+	}
+	ret, err := upsertCluster(txn, id, cluster)
+	if err != nil {
+		rbDB := txn.Rollback()
+		if rbDB.Error != nil {
+			return ClusterStateful{}, txErr{orig: err, err: rbDB.Error, op: "rollback"}
+		}
+		return ClusterStateful{}, err
+	}
+	comDB := txn.Commit()
+	if comDB.Error != nil {
+		return ClusterStateful{}, txErr{orig: nil, err: comDB.Error, op: "commit"}
+	}
+	return ret, nil
 }
 
 // CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
