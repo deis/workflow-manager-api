@@ -148,8 +148,3 @@ func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStatefu
 	}
 	return clusters, nil
 }
-
-func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, data) VALUES('%s', '%s')", clustersTableName, id, string(data))
-	return db.Exec(insert)
-}
