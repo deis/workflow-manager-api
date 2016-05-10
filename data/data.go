@@ -1,7 +1,6 @@
 package data
 
 import (
-	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -65,32 +64,4 @@ func VerifyPersistentStorage(db *gorm.DB) error {
 	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
 	return nil
-}
-
-// getDBRecord is a convenience that executes a simple "SELECT *" SQL query against
-// a passed-in db reference, accepting an arbitrary number of keys(table fields)/vals
-// assumes a single record response
-func getDBRecord(db *sql.DB, table string, keys []string, vals []string) *sql.Row {
-	sliceEqualize(&keys, &vals)
-	query := fmt.Sprintf("SELECT * FROM %s", table)
-	for i, key := range keys {
-		if i == 0 {
-			query += fmt.Sprintf(" WHERE %s = '%s'", key, vals[i])
-		} else {
-			query += fmt.Sprintf(" AND %s = '%s'", key, vals[i])
-		}
-	}
-	return db.QueryRow(query)
-}
-
-// sliceEqualize is a convenience that ensures two slices of strings have equal lengths
-// if not, the larger slice's elements that exceed the boundary of the smaller are stripped
-func sliceEqualize(slice1 *[]string, slice2 *[]string) {
-	if len(*slice1) != len(*slice2) {
-		if len(*slice1) > len(*slice2) {
-			*slice1 = (*slice1)[:len(*slice2)]
-		} else {
-			*slice2 = (*slice2)[:len(*slice1)]
-		}
-	}
 }
