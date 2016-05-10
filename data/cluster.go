@@ -117,21 +117,19 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster Clust
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
 func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
-	query := fmt.Sprintf(`SELECT clusters.*
+	rows, err := db.Query(`SELECT clusters.*
 		FROM clusters, clusters_checkins
 		WHERE clusters_checkins.cluster_id = clusters.cluster_id
 		GROUP BY clusters_checkins.cluster_id, clusters.cluster_id
-		HAVING MIN(clusters_checkins.created_at) > '%s'
-		AND MIN(clusters_checkins.created_at) < '%s'
-		AND MIN(clusters_checkins.created_at) > '%s'
-		AND MAX(clusters_checkins.created_at) < '%s'`,
-		filter.createdAfterTimestamp(),
-		filter.createdBeforeTimestamp(),
-		filter.checkedInAfterTimestamp(),
-		filter.checkedInBeforeTimestamp(),
+		HAVING MIN(clusters_checkins.created_at) > ?
+		AND MIN(clusters_checkins.created_at) < ?
+		AND MIN(clusters_checkins.created_at) > ?
+		AND MAX(clusters_checkins.created_at) < ?`,
+		Timestamp{Time: filter.CreatedAfter},    // 	filter.createdAfterTimestamp(),
+		Timestamp{Time: filter.CreatedBefore},   // 	filter.createdBeforeTimestamp(),
+		Timestamp{Time: filter.CheckedInAfter},  // 	filter.checkedInAfterTimestamp(),
+		Timestamp{Time: filter.CheckedInBefore}, // 	filter.checkedInBeforeTimestamp(),
 	)
-
-	rows, err := db.Query(query)
 	if err != nil {
 		return nil, err
 	}
