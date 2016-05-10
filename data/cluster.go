@@ -116,8 +116,9 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster Clust
 
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
-func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
-	rows, err := db.Query(`SELECT clusters.*
+func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
+	var rows []clustersTable
+	execDB := db.Raw(`SELECT clusters.*
 		FROM clusters, clusters_checkins
 		WHERE clusters_checkins.cluster_id = clusters.cluster_id
 		GROUP BY clusters_checkins.cluster_id, clusters.cluster_id
@@ -125,26 +126,22 @@ func FilterClustersByAge(db *sql.DB, filter *ClusterAgeFilter) ([]ClusterStatefu
 		AND MIN(clusters_checkins.created_at) < ?
 		AND MIN(clusters_checkins.created_at) > ?
 		AND MAX(clusters_checkins.created_at) < ?`,
-		Timestamp{Time: filter.CreatedAfter},    // 	filter.createdAfterTimestamp(),
-		Timestamp{Time: filter.CreatedBefore},   // 	filter.createdBeforeTimestamp(),
-		Timestamp{Time: filter.CheckedInAfter},  // 	filter.checkedInAfterTimestamp(),
-		Timestamp{Time: filter.CheckedInBefore}, // 	filter.checkedInBeforeTimestamp(),
-	)
-	if err != nil {
-		return nil, err
+		Timestamp{Time: filter.CreatedAfter},
+		Timestamp{Time: filter.CreatedBefore},
+		Timestamp{Time: filter.CheckedInAfter},
+		Timestamp{Time: filter.CheckedInBefore},
+	).Find(&rows)
+	if execDB.Error != nil {
+		return nil, execDB.Error
 	}
 
-	clusters := []ClusterStateful{}
-	for rows.Next() {
-		rowResult := clustersTable{}
-		if err := rows.Scan(&rowResult.ClusterID, &rowResult.Data); err != nil {
-			return nil, err
-		}
-		cluster, err := parseJSONCluster(rowResult.Data)
+	clusters := make([]ClusterStateful, len(rows))
+	for i, row := range rows {
+		cluster, err := parseJSONCluster(row.Data)
 		if err != nil {
 			return nil, err
 		}
-		clusters = append(clusters, cluster)
+		clusters[i] = cluster
 	}
 	return clusters, nil
 }

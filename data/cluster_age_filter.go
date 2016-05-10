@@ -142,19 +142,3 @@ func (c ClusterAgeFilter) checkValid() error {
 	}
 	return nil
 }
-
-func (c ClusterAgeFilter) checkedInBeforeTimestamp() string {
-	return c.CheckedInBefore.Format(StdTimestampFmt)
-}
-
-func (c ClusterAgeFilter) checkedInAfterTimestamp() string {
-	return c.CheckedInAfter.Format(StdTimestampFmt)
-}
-
-func (c ClusterAgeFilter) createdBeforeTimestamp() string {
-	return c.CreatedBefore.Format(StdTimestampFmt)
-}
-
-func (c ClusterAgeFilter) createdAfterTimestamp() string {
-	return c.CreatedAfter.Format(StdTimestampFmt)
-}
