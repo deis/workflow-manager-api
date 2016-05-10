@@ -16,11 +16,6 @@ var (
 	errNoRowsAffected = errors.New("No rows affected")
 )
 
-func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("UPDATE %s SET data='%s' WHERE cluster_id='%s'", clustersTableName, string(data), id)
-	return db.Exec(update)
-}
-
 type errParsingCluster struct {
 	origErr error
 }
