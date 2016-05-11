@@ -20,9 +20,9 @@ As we try to grow and scale the Deis business, we are constantly in the dark as 
   - Annotations, container images, (whatever makes sense here)
 - See a large banner if deis workflow components are out of date
   - Poll a hosted releases API off-cluster for release information at least every 12 hours
-- Should be able to disable, via pod environment variables, to:
-  - Disable update checks (default: on)
-  - Enable anonymous data collection (default: OFF)
+- Should be able to toggle the following behavior via pod environment variables:
+  - Update checks (default: on)
+  - Anonymous data collection (default: off)
 - **Be able to opt-in to sending anonymous & anonymized usage data:**
   - `k describe node <node>`
     - total cpu / memory / disk
