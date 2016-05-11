@@ -46,6 +46,9 @@ build:
 test:
 	${DEV_ENV_CMD} sh -c 'go test -tags testonly $$(glide nv)'
 
+test-native:
+	go test -tags=testonly $$(glide nv)
+
 docker-build:
 	docker build --rm -t ${IMAGE} rootfs
 	docker tag ${IMAGE} ${MUTABLE_IMAGE}
