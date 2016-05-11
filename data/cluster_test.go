@@ -42,7 +42,7 @@ func testCluster() ClusterStateful {
 	return cluster
 }
 
-func TestClusterFromDBRoundTrip(t *testing.T) {
+func TestClusterRoundTrip(t *testing.T) {
 	sqliteDB, err := newDB()
 	assert.NoErr(t, err)
 	cluster, err := GetCluster(sqliteDB, clusterID)

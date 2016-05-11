@@ -16,11 +16,6 @@ var (
 	errNoRowsAffected = errors.New("No rows affected")
 )
 
-func updateClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	update := fmt.Sprintf("UPDATE %s SET data='%s' WHERE cluster_id='%s'", clustersTableName, string(data), id)
-	return db.Exec(update)
-}
-
 type errParsingCluster struct {
 	origErr error
 }
@@ -53,45 +48,64 @@ func GetCluster(db *gorm.DB, id string) (ClusterStateful, error) {
 	return cluster, nil
 }
 
-// CheckInAndSetCluster checks the cluster with the given ID in, and then updates it
-func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+func upsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
 	// Check in
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
 		return ClusterStateful{}, err
 	}
-	var ret ClusterStateful // return variable
 	js, err := json.Marshal(cluster)
 	if err != nil {
-		fmt.Println("error marshaling data")
+		return ClusterStateful{}, err
 	}
-	row := getDBRecord(db.DB(), clustersTableName, []string{clustersTableIDKey}, []string{id})
-	var result sql.Result
-	// Register the "latest checkin" with the primary cluster record
-	rowResult := clustersTable{}
-	if scanErr := row.Scan(&rowResult.ClusterID, &rowResult.Data); scanErr != nil {
-		result, err = newClusterDBRecord(db.DB(), id, js)
-		if err != nil {
-			log.Println(err)
+	var numExisting int
+	query := clustersTable{ClusterID: id}
+	countDB := db.Model(&clustersTable{}).Where(&query).Count(&numExisting)
+	if countDB.Error != nil {
+		return ClusterStateful{}, countDB.Error
+	}
+	var resDB *gorm.DB
+	if numExisting == 0 {
+		// no existing clusters, so create one
+		createDB := db.Create(&clustersTable{ClusterID: id, Data: js})
+		if createDB.Error != nil {
+			return ClusterStateful{}, createDB.Error
 		}
+		resDB = createDB
 	} else {
-		result, err = updateClusterDBRecord(db.DB(), id, js)
-		if err != nil {
-			log.Println(err)
+		updateDB := db.Save(&clustersTable{ClusterID: id, Data: js})
+		if updateDB.Error != nil {
+			return ClusterStateful{}, updateDB.Error
 		}
+		resDB = updateDB
 	}
-	affected, err := result.RowsAffected()
+	if resDB.RowsAffected != 1 {
+		return ClusterStateful{}, fmt.Errorf("%d rows were affected, but expected only 1", resDB.RowsAffected)
+	}
+	retCluster, err := GetCluster(db, id)
 	if err != nil {
-		log.Println("failed to get affected row count")
+		return ClusterStateful{}, err
 	}
-	if affected == 0 {
-		log.Println("no records updated")
-	} else if affected == 1 {
-		ret, err = GetCluster(db, id)
-		if err != nil {
-			return ClusterStateful{}, err
+	return retCluster, nil
+}
+
+// CheckInAndSetCluster creates or updates the cluster with the given ID.
+// TODO: rename this function to better reflect what it does (https://github.com/deis/workflow-manager-api/issues/128)
+func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+	txn := db.Begin()
+	if txn.Error != nil {
+		return ClusterStateful{}, txErr{orig: nil, err: txn.Error, op: "begin"}
+	}
+	ret, err := upsertCluster(txn, id, cluster)
+	if err != nil {
+		rbDB := txn.Rollback()
+		if rbDB.Error != nil {
+			return ClusterStateful{}, txErr{orig: err, err: rbDB.Error, op: "rollback"}
 		}
-	} else if affected > 1 {
-		log.Println("updated more than one record with same ID value!")
+		return ClusterStateful{}, err
+	}
+	comDB := txn.Commit()
+	if comDB.Error != nil {
+		return ClusterStateful{}, txErr{orig: nil, err: comDB.Error, op: "commit"}
 	}
 	return ret, nil
 }
@@ -144,9 +158,4 @@ func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]ClusterStatef
 		clusters[i] = cluster
 	}
 	return clusters, nil
-}
-
-func newClusterDBRecord(db *sql.DB, id string, data []byte) (sql.Result, error) {
-	insert := fmt.Sprintf("INSERT INTO %s (cluster_id, data) VALUES('%s', '%s')", clustersTableName, id, string(data))
-	return db.Exec(insert)
 }
