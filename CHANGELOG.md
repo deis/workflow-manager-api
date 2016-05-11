@@ -1,3 +1,22 @@
+### v2.0.0-beta3 -> v2.0.0-beta4
+
+#### Features
+
+ - [`8df8999`](https://github.com/deis/workflow-manager-api/commit/8df89991d9f4ef16e2c762a79d2962e373dafef1) _scripts/deploy.sh,Makefile: add auto-deployment to the staging deis cluster
+ - [`f205e13`](https://github.com/deis/workflow-manager-api/commit/f205e13813fe0649d1f8de0234b31d71c3f69941) server.go,handlers/clusters_age_handler.go: design the cluster age REST API interface
+
+#### Fixes
+
+ - [`f5daff4`](https://github.com/deis/workflow-manager-api/commit/f5daff46fa9688b4a519e83cd8c92109496ebd25) data: fix the cluster age filter
+
+#### Documentation
+
+ - [`a2f321d`](https://github.com/deis/workflow-manager-api/commit/a2f321d0170fd8a6eb954debd99b2ed275d5db93) CHANGELOG.md: update for v2.0.0-beta3
+
+#### Maintenance
+
+ - [`e5757f4`](https://github.com/deis/workflow-manager-api/commit/e5757f426e913f9905f51e83aefc525ed9153774) glide: remove obsolete deps
+
 ### v2.0.0-beta3
 
 #### Features
