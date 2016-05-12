@@ -1,7 +1,6 @@
 package data
 
 import (
-	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -88,9 +87,8 @@ func upsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStat
 	return retCluster, nil
 }
 
-// CheckInAndSetCluster creates or updates the cluster with the given ID.
-// TODO: rename this function to better reflect what it does (https://github.com/deis/workflow-manager-api/issues/128)
-func CheckInAndSetCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+// UpsertCluster creates or updates the cluster with the given ID.
+func UpsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
 	txn := db.Begin()
 	if txn.Error != nil {
 		return ClusterStateful{}, txErr{orig: nil, err: txn.Error, op: "begin"}

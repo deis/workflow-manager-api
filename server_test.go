@@ -201,7 +201,7 @@ func TestGetClusterByID(t *testing.T) {
 	cluster := data.ClusterStateful{}
 	cluster.ID = clusterID
 	cluster.Components = nil
-	newCluster, err := data.CheckInAndSetCluster(memDB, clusterID, cluster)
+	newCluster, err := data.UpsertCluster(memDB, clusterID, cluster)
 	assert.NoErr(t, err)
 	resp, err := httpGet(srv, urlPath(1, "clusters", clusterID))
 	assert.NoErr(t, err)

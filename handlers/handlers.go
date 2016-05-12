@@ -54,7 +54,7 @@ func ClusterCheckin(db *gorm.DB) http.Handler {
 			return
 		}
 		var result data.ClusterStateful
-		result, err = data.CheckInAndSetCluster(db, id, cluster)
+		result, err = data.UpsertCluster(db, id, cluster)
 		if err != nil {
 			log.Printf("data.SetCluster error (%s)", err)
 			http.Error(w, err.Error(), http.StatusInternalServerError)
