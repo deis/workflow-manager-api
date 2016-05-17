@@ -3,11 +3,11 @@ package restapi
 import (
 	"net/http"
 
+	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	errors "github.com/go-swagger/go-swagger/errors"
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
-
-	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 )
 
 // This file is safe to edit. Once it exists it will not be overwritten
@@ -17,6 +17,13 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 }
 
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
+	rdsDB, err := data.NewRDSDB()
+	if err != nil {
+		log.Fatalf("unable to create connection to RDS DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+		log.Fatalf("unable to verify persistent storage\n%s", err)
+	}
 	// configure the api here
 	api.ServeError = errors.ServeError
 

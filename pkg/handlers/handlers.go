@@ -6,25 +6,24 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	"github.com/deis/workflow-manager/types"
+	"github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )
 
 // ClustersCount route handler
-func ClustersCount(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		count, err := data.GetClusterCount(db)
-		if err != nil {
-			log.Printf("data.GetClusterCount error (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		writePlainText(strconv.Itoa(count), w)
-	})
+func ClustersCount(db *gorm.DB) middleware.Responder {
+	count, err := data.GetClusterCount(db)
+	if err != nil {
+		log.Printf("data.GetClusterCount error (%s)", err)
+		return operations.NewGetClustersCountDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewGetClustersCountOK().WithPayload(int64(count))
 }
 
 // GetCluster route handler
