@@ -18,7 +18,7 @@ swagger:response getClusterByIdOK
 type GetClusterByIDOK struct {
 
 	// In: body
-	Payload *models.ClusterDetail `json:"body,omitempty"`
+	Payload *models.Cluster `json:"body,omitempty"`
 }
 
 // NewGetClusterByIDOK creates GetClusterByIDOK with default headers values
@@ -27,13 +27,13 @@ func NewGetClusterByIDOK() *GetClusterByIDOK {
 }
 
 // WithPayload adds the payload to the get cluster by id o k response
-func (o *GetClusterByIDOK) WithPayload(payload *models.ClusterDetail) *GetClusterByIDOK {
+func (o *GetClusterByIDOK) WithPayload(payload *models.Cluster) *GetClusterByIDOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the get cluster by id o k response
-func (o *GetClusterByIDOK) SetPayload(payload *models.ClusterDetail) {
+func (o *GetClusterByIDOK) SetPayload(payload *models.Cluster) {
 	o.Payload = payload
 }
 

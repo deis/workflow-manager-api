@@ -18,7 +18,7 @@ swagger:response getComponentByLatestReleaseOK
 type GetComponentByLatestReleaseOK struct {
 
 	// In: body
-	Payload *models.ComponentDetail `json:"body,omitempty"`
+	Payload *models.ComponentVersion `json:"body,omitempty"`
 }
 
 // NewGetComponentByLatestReleaseOK creates GetComponentByLatestReleaseOK with default headers values
@@ -27,13 +27,13 @@ func NewGetComponentByLatestReleaseOK() *GetComponentByLatestReleaseOK {
 }
 
 // WithPayload adds the payload to the get component by latest release o k response
-func (o *GetComponentByLatestReleaseOK) WithPayload(payload *models.ComponentDetail) *GetComponentByLatestReleaseOK {
+func (o *GetComponentByLatestReleaseOK) WithPayload(payload *models.ComponentVersion) *GetComponentByLatestReleaseOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the get component by latest release o k response
-func (o *GetComponentByLatestReleaseOK) SetPayload(payload *models.ComponentDetail) {
+func (o *GetComponentByLatestReleaseOK) SetPayload(payload *models.ComponentVersion) {
 	o.Payload = payload
 }
 

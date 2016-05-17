@@ -1,8 +1,8 @@
 /*Package restapi Workflow Manager
 
     Schemes:
-      https
       http
+      https
     Host: localhost
     BasePath: /
     Version: 1.0.0

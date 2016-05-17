@@ -18,7 +18,7 @@ swagger:response publishComponentReleaseOK
 type PublishComponentReleaseOK struct {
 
 	// In: body
-	Payload *models.ComponentDetail `json:"body,omitempty"`
+	Payload *models.ComponentVersion `json:"body,omitempty"`
 }
 
 // NewPublishComponentReleaseOK creates PublishComponentReleaseOK with default headers values
@@ -27,13 +27,13 @@ func NewPublishComponentReleaseOK() *PublishComponentReleaseOK {
 }
 
 // WithPayload adds the payload to the publish component release o k response
-func (o *PublishComponentReleaseOK) WithPayload(payload *models.ComponentDetail) *PublishComponentReleaseOK {
+func (o *PublishComponentReleaseOK) WithPayload(payload *models.ComponentVersion) *PublishComponentReleaseOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the publish component release o k response
-func (o *PublishComponentReleaseOK) SetPayload(payload *models.ComponentDetail) {
+func (o *PublishComponentReleaseOK) SetPayload(payload *models.ComponentVersion) {
 	o.Payload = payload
 }
 

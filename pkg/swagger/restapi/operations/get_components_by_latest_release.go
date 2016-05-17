@@ -65,7 +65,7 @@ type GetComponentsByLatestReleaseBody struct {
 
 	/* data
 	 */
-	Data []*models.ComponentDetail `json:"data,omitempty"`
+	Data []*models.ComponentVersion `json:"data,omitempty"`
 }
 
 // Validate validates this get components by latest release body
@@ -113,7 +113,7 @@ type GetComponentsByLatestReleaseOKBodyBody struct {
 
 	Required: true
 	*/
-	Data []*models.ComponentDetail `json:"data"`
+	Data []*models.ComponentVersion `json:"data"`
 }
 
 // Validate validates this get components by latest release o k body body
