@@ -9,9 +9,11 @@ export GO15VENDOREXPERIMENT=1
 # dockerized development environment variables
 REPO_PATH := github.com/deis/${SHORT_NAME}
 DEV_ENV_IMAGE := quay.io/deis/go-dev:0.9.1
+SWAGGER_IMAGE := quay.io/goswagger/swagger:0.5.0
 DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
 DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
 DEV_ENV_CMD := ${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE}
+SWAGGER_CMD := docker run --rm -e GOPATH=/go -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR} ${SWAGGER_IMAGE}
 
 # SemVer with build information is defined in the SemVer 2 spec, but Docker
 # doesn't allow +, so we use -.
@@ -42,6 +44,9 @@ build:
 	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/${SHORT_NAME} *.go || exit 1
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/${SHORT_NAME})
 	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} goupx --strip-binary -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
+
+swagger-serverstub:
+	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/swagger/api/swagger-spec/swagger.yml
 
 test:
 	${DEV_ENV_CMD} sh -c 'go test -tags testonly $$(glide nv)'
