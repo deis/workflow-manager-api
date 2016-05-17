@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/deis/workflow-manager-api/data"
-	"github.com/deis/workflow-manager-api/handlers"
+	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/handlers"
 	"github.com/deis/workflow-manager-api/rest"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
