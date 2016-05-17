@@ -46,7 +46,7 @@ build:
 	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} goupx --strip-binary -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
 
 swagger-serverstub:
-	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/swagger/api/swagger-spec/swagger.yml
+	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/master/api/swagger-spec/swagger.yml
 
 test:
 	${DEV_ENV_CMD} sh -c 'go test -tags testonly $$(glide nv)'
