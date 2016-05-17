@@ -29,7 +29,7 @@ type PublishComponentReleaseParams struct {
 	/*
 	  In: body
 	*/
-	Body *models.ComponentDetail
+	Body *models.ComponentVersion
 	/*A component is a single deis component, e.g., deis-router
 	  Required: true
 	  In: path
@@ -53,7 +53,7 @@ func (o *PublishComponentReleaseParams) BindRequest(r *http.Request, route *midd
 	var res []error
 
 	defer r.Body.Close()
-	var body models.ComponentDetail
+	var body models.ComponentVersion
 	if err := route.Consumer.Consume(r.Body, &body); err != nil {
 		res = append(res, errors.NewParseError("body", "body", "", err))
 	} else {

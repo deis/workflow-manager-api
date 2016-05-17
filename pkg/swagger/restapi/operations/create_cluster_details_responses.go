@@ -18,7 +18,7 @@ swagger:response createClusterDetailsOK
 type CreateClusterDetailsOK struct {
 
 	// In: body
-	Payload *models.ClusterDetail `json:"body,omitempty"`
+	Payload *models.Cluster `json:"body,omitempty"`
 }
 
 // NewCreateClusterDetailsOK creates CreateClusterDetailsOK with default headers values
@@ -27,13 +27,13 @@ func NewCreateClusterDetailsOK() *CreateClusterDetailsOK {
 }
 
 // WithPayload adds the payload to the create cluster details o k response
-func (o *CreateClusterDetailsOK) WithPayload(payload *models.ClusterDetail) *CreateClusterDetailsOK {
+func (o *CreateClusterDetailsOK) WithPayload(payload *models.Cluster) *CreateClusterDetailsOK {
 	o.Payload = payload
 	return o
 }
 
 // SetPayload sets the payload to the create cluster details o k response
-func (o *CreateClusterDetailsOK) SetPayload(payload *models.ClusterDetail) {
+func (o *CreateClusterDetailsOK) SetPayload(payload *models.Cluster) {
 	o.Payload = payload
 }
 
