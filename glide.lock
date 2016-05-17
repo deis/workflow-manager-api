@@ -1,8 +1,11 @@
-hash: e3a90fb19b6ccfcb231c44f0b2e41ed792304f46d1a8f566a78393ede44782c5
-updated: 2016-05-06T12:00:02.597792828-07:00
+hash: 87688108091a46d0de1c50e7a28b5b79dd6a6b61abe1b59256aa21b335e4a222
+updated: 2016-05-16T19:28:55.640318115-06:00
 imports:
 - name: github.com/arschles/assert
   version: 5c22e2eba944d89ddd5c81b2c4175e64ee828503
+- name: github.com/asaskevich/govalidator
+  version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
+  repo: https://github.com/asaskevich/govalidator
 - name: github.com/aws/aws-sdk-go
   version: d85fa529a99a833067e11c0a838b9db7a5d5ea71
   subpackages:
@@ -34,10 +37,27 @@ imports:
   - types
 - name: github.com/go-ini/ini
   version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
+- name: github.com/go-swagger/go-swagger
+  version: ff42df2bf231f6a12383b36332f8364254ea86d6
+  subpackages:
+  - spec
+  - errors
+  - httpkit/validate
+  - strfmt
+  - httpkit
+  - httpkit/middleware
+  - jsonpointer
+  - jsonreference
+  - swag
+  - httpkit/middleware/header
+  - httpkit/middleware/untyped
+  - internal/validate
 - name: github.com/gorilla/context
   version: a8d44e7d8e4d532b6a27a02dd82abb31cc1b01bd
 - name: github.com/gorilla/mux
   version: 9c19ed558d5df4da88e2ade9c8940d742aef0e7e
+- name: github.com/jessevdk/go-flags
+  version: 6b9493b3cb60367edd942144879646604089e3f7
 - name: github.com/jinzhu/gorm
   version: bf413d67d3a25d4eeddb28541283fa6434d1cdb5
 - name: github.com/jinzhu/inflection
@@ -56,6 +76,26 @@ imports:
   version: 167da9432e1f4602e95ea67b67051cfa34412e3f
   subpackages:
   - sqlite3
+- name: github.com/naoina/denco
+  version: 9af2ba0e24214bac003821f4a501b131b2e04c75
+  repo: https://github.com/naoina/denco
+- name: github.com/opennota/urlesc
+  version: 5fa9ff0392746aeae1c4b37fcc42c65afa7a9587
+  repo: https://github.com/opennota/urlesc
 - name: github.com/pborman/uuid
   version: c55201b036063326c5b1b89ccfe45a184973d073
+- name: github.com/PuerkitoBio/purell
+  version: d69616f51cdfcd7514d6a380847a152dfc2a749d
+  repo: https://github.com/PuerkitoBio/purell
+- name: github.com/tylerb/graceful
+  version: 9a3d4236b03bb5d26f7951134d248f9d5510d599
+- name: golang.org/x/net
+  version: e7da8edaa52631091740908acaf2c2d4c9b3ce90
+  repo: https://go.googlesource.com/net
+  subpackages:
+  - context
+  - netutil
+- name: gopkg.in/yaml.v2
+  version: a83829b6f1293c91addabc89d0571c246397bbf4
+  repo: https://gopkg.in/yaml.v2
 devImports: []
