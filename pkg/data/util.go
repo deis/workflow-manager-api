@@ -2,10 +2,10 @@ package data
 
 import (
 	"encoding/json"
-	"log"
-
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/deis/workflow-manager/types"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
+	"log"
 )
 
 func parseJSONComponent(jTxt sqlxTypes.JSONText) (types.ComponentVersion, error) {
@@ -18,11 +18,11 @@ func parseJSONComponent(jTxt sqlxTypes.JSONText) (types.ComponentVersion, error)
 
 // parseJSONCluster converts a JSON representation of a cluster
 // to a ClusterStateful type
-func parseJSONCluster(rawJSON []byte) (ClusterStateful, error) {
-	var cluster ClusterStateful
+func parseJSONCluster(rawJSON []byte) (models.Cluster, error) {
+	var cluster models.Cluster
 	if err := json.Unmarshal(rawJSON, &cluster); err != nil {
 		log.Print(err)
-		return ClusterStateful{}, err
+		return models.Cluster{}, err
 	}
 	return cluster, nil
 }

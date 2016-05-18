@@ -2,36 +2,29 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
-	"github.com/gorilla/mux"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
+	"github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
 )
 
-// GetLatestComponentTrainVersion returns the handler for the
+// GetLatestComponentTrainVersion returns the response for the
 // GET /:apiVersion/versions/:train/:component/latest endpoint
-func GetLatestComponentTrainVersion(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		vars := mux.Vars(r)
-		train := vars[TrainPathKey]
-		component := vars[ComponentPathKey]
-		if train == "" {
-			http.Error(w, "train is required", http.StatusBadRequest)
-			return
-		}
-		if component == "" {
-			http.Error(w, "component is required", http.StatusBadRequest)
-			return
-		}
-		cv, err := data.GetLatestVersion(db, train, component)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("error getting component (%s)", err), http.StatusInternalServerError)
-			return
-		}
-		if err := writeJSON(w, cv); err != nil {
-			log.Printf("GetLatestComponentTrainVersion json marshal error (%s)", err)
-		}
-	})
+func GetLatestComponentTrainVersion(params operations.GetComponentByLatestReleaseParams, db *gorm.DB) middleware.Responder {
+	train := params.Train
+	component := params.Component
+	if train == "" {
+		return operations.NewGetComponentByLatestReleaseDefault(http.StatusBadRequest).WithPayload(&models.Error{Code: http.StatusBadRequest, Message: "train is required"})
+	}
+	if component == "" {
+		return operations.NewGetComponentByLatestReleaseDefault(http.StatusBadRequest).WithPayload(&models.Error{Code: http.StatusBadRequest, Message: "component is required"})
+	}
+	cv, err := data.GetLatestVersion(db, train, component)
+	if err != nil {
+		return operations.NewGetComponentByLatestReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: fmt.Sprintf("error getting component (%s)", err)})
+	}
+	return operations.NewGetComponentByLatestReleaseOK().WithPayload(&cv)
 }

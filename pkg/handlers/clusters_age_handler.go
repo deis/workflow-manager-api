@@ -5,30 +5,23 @@ import (
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
+	"github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
 )
 
 // ClustersAge is the handler for the GET /{apiVersion}/clusters/age endpoint
-func ClustersAge(db *gorm.DB) http.Handler {
-	type clustersAgeResp struct {
-		Data []data.ClusterStateful `json:"data"`
+func ClustersAge(params operations.GetClustersByAgeParams, db *gorm.DB) middleware.Responder {
+	clusterAgeFilter, err := parseAgeQueryKeys(params)
+	if err != nil {
+		return operations.NewGetClustersByAgeDefault(http.StatusBadRequest).WithPayload(&models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 	}
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		clusterAgeFilter, err := parseAgeQueryKeys(r)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
 
-		clusters, err := data.FilterClustersByAge(db, clusterAgeFilter)
-		if err != nil {
-			log.Printf("Error filtering clusters by age (%s)", err)
-			http.Error(w, "database error", http.StatusInternalServerError)
-			return
-		}
-		ret := clustersAgeResp{Data: clusters}
-		if err := writeJSON(w, ret); err != nil {
-			log.Printf("ClustersAge json marshal error (%s)", err)
-		}
-	})
+	clusters, err := data.FilterClustersByAge(db, clusterAgeFilter)
+	if err != nil {
+		log.Printf("Error filtering clusters by age (%s)", err)
+		return operations.NewGetClustersByAgeDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewGetClustersByAgeOK().WithPayload(operations.GetClustersByAgeOKBodyBody{Data: clusters})
 }

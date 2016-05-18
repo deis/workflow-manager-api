@@ -4,11 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
+	"github.com/jinzhu/gorm"
 	"log"
 	"time"
-
-	"github.com/deis/workflow-manager/types"
-	"github.com/jinzhu/gorm"
 )
 
 var (
@@ -23,93 +22,83 @@ func (e errParsingCluster) Error() string {
 	return fmt.Sprintf("Error parsing cluster (%s)", e.origErr)
 }
 
-// ClusterStateful definition
-// This is a wrapper around a cluster object to include properties for use in stateful contexts
-type ClusterStateful struct {
-	// FirstSeen and/or LastSeen suggests a Cluster object in a lifecycle context,
-	// i.e., for use in business logic which needs to determine a cluster's "freshness" or "staleness"
-	FirstSeen time.Time `json:"firstSeen"`
-	LastSeen  time.Time `json:"lastSeen"`
-	types.Cluster
-}
-
 // GetCluster gets the cluster from the DB with the given cluster ID
-func GetCluster(db *gorm.DB, id string) (ClusterStateful, error) {
+func GetCluster(db *gorm.DB, id string) (models.Cluster, error) {
 	ret := &clustersTable{}
 	resDB := db.Where(&clustersTable{ClusterID: id}).First(ret)
 	if resDB.Error != nil {
-		return ClusterStateful{}, resDB.Error
+		return models.Cluster{}, resDB.Error
 	}
 	cluster, err := parseJSONCluster(ret.Data)
 	if err != nil {
-		return ClusterStateful{}, errParsingCluster{origErr: err}
+		return models.Cluster{}, errParsingCluster{origErr: err}
 	}
 	return cluster, nil
 }
 
-func upsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+func upsertCluster(db *gorm.DB, id string, cluster models.Cluster) (models.Cluster, error) {
 	// Check in
 	if err := CheckInCluster(db, id, time.Now(), cluster); err != nil {
-		return ClusterStateful{}, err
+		return models.Cluster{}, err
 	}
 	js, err := json.Marshal(cluster)
 	if err != nil {
-		return ClusterStateful{}, err
+		return models.Cluster{}, err
 	}
 	var numExisting int
 	query := clustersTable{ClusterID: id}
 	countDB := db.Model(&clustersTable{}).Where(&query).Count(&numExisting)
 	if countDB.Error != nil {
-		return ClusterStateful{}, countDB.Error
+		return models.Cluster{}, countDB.Error
 	}
 	var resDB *gorm.DB
 	if numExisting == 0 {
 		// no existing clusters, so create one
 		createDB := db.Create(&clustersTable{ClusterID: id, Data: js})
 		if createDB.Error != nil {
-			return ClusterStateful{}, createDB.Error
+			return models.Cluster{}, createDB.Error
 		}
 		resDB = createDB
 	} else {
 		updateDB := db.Save(&clustersTable{ClusterID: id, Data: js})
 		if updateDB.Error != nil {
-			return ClusterStateful{}, updateDB.Error
+			return models.Cluster{}, updateDB.Error
 		}
 		resDB = updateDB
 	}
 	if resDB.RowsAffected != 1 {
-		return ClusterStateful{}, fmt.Errorf("%d rows were affected, but expected only 1", resDB.RowsAffected)
+		return models.Cluster{}, fmt.Errorf("%d rows were affected, but expected only 1", resDB.RowsAffected)
 	}
 	retCluster, err := GetCluster(db, id)
 	if err != nil {
-		return ClusterStateful{}, err
+		return models.Cluster{}, err
 	}
 	return retCluster, nil
 }
 
 // UpsertCluster creates or updates the cluster with the given ID.
-func UpsertCluster(db *gorm.DB, id string, cluster ClusterStateful) (ClusterStateful, error) {
+func UpsertCluster(db *gorm.DB, id string, cluster models.Cluster) (models.Cluster, error) {
 	txn := db.Begin()
 	if txn.Error != nil {
-		return ClusterStateful{}, txErr{orig: nil, err: txn.Error, op: "begin"}
+		return models.Cluster{}, txErr{orig: nil, err: txn.Error, op: "begin"}
 	}
 	ret, err := upsertCluster(txn, id, cluster)
 	if err != nil {
 		rbDB := txn.Rollback()
 		if rbDB.Error != nil {
-			return ClusterStateful{}, txErr{orig: err, err: rbDB.Error, op: "rollback"}
+			return models.Cluster{}, txErr{orig: err, err: rbDB.Error, op: "rollback"}
 		}
-		return ClusterStateful{}, err
+		return models.Cluster{}, err
 	}
 	comDB := txn.Commit()
 	if comDB.Error != nil {
-		return ClusterStateful{}, txErr{orig: nil, err: comDB.Error, op: "commit"}
+		return models.Cluster{}, txErr{orig: nil, err: comDB.Error, op: "commit"}
 	}
 	return ret, nil
 }
 
 // CheckInCluster creates a new record in the cluster checkins DB to indicate that the cluster has checked in right now
-func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster ClusterStateful) error {
+func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster models.Cluster) error {
 	js, err := json.Marshal(cluster)
 	if err != nil {
 		fmt.Println("error marshaling data")
@@ -128,7 +117,7 @@ func CheckInCluster(db *gorm.DB, id string, checkinTime time.Time, cluster Clust
 
 // FilterClustersByAge returns a slice of clusters whose various time fields match the requirements
 // in the given filter. Note that the filter's requirements are a conjunction, not a disjunction
-func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]ClusterStateful, error) {
+func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]*models.Cluster, error) {
 	var rows []clustersTable
 	execDB := db.Raw(`SELECT clusters.*
 		FROM clusters, clusters_checkins
@@ -147,13 +136,13 @@ func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]ClusterStatef
 		return nil, execDB.Error
 	}
 
-	clusters := make([]ClusterStateful, len(rows))
+	clusters := make([]*models.Cluster, len(rows))
 	for i, row := range rows {
 		cluster, err := parseJSONCluster(row.Data)
 		if err != nil {
 			return nil, err
 		}
-		clusters[i] = cluster
+		clusters[i] = &cluster
 	}
 	return clusters, nil
 }

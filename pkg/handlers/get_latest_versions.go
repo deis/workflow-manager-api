@@ -1,13 +1,13 @@
 package handlers
 
 import (
-	"encoding/json"
-	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	"github.com/deis/workflow-manager/types"
+	"github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
 )
 
@@ -42,31 +42,21 @@ type ComponentVersionsJSONWrapper struct {
 }
 
 // GetLatestVersions is the handler for the POST /{apiVersion}/versions/latest endpoint
-func GetLatestVersions(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		reqStruct := new(SparseComponentAndTrainInfoJSONWrapper)
-		if err := json.NewDecoder(r.Body).Decode(reqStruct); err != nil {
-			http.Error(w, fmt.Sprintf("error decoding request body (%s)", err), http.StatusBadRequest)
-			return
-		}
+func GetLatestVersions(params operations.GetComponentsByLatestReleaseParams, db *gorm.DB) middleware.Responder {
+	reqStruct := params.Body
 
-		componentAndTrainSlice := make([]data.ComponentAndTrain, len(reqStruct.Data))
-		for i, d := range reqStruct.Data {
-			componentAndTrainSlice[i] = data.ComponentAndTrain{
-				ComponentName: d.Component.Name,
-				Train:         d.Version.Train,
-			}
+	componentAndTrainSlice := make([]data.ComponentAndTrain, len(reqStruct.Data))
+	for i, d := range reqStruct.Data {
+		componentAndTrainSlice[i] = data.ComponentAndTrain{
+			ComponentName: d.Component.Name,
+			Train:         d.Version.Train,
 		}
+	}
 
-		componentVersions, err := data.GetLatestVersions(db, componentAndTrainSlice)
-		if err != nil {
-			http.Error(w, "database error", http.StatusInternalServerError)
-			return
-		}
-
-		ret := ComponentVersionsJSONWrapper{Data: componentVersions}
-		if err := writeJSON(w, ret); err != nil {
-			log.Printf("GetLatestVersions json marshal failed (%s)", err)
-		}
-	})
+	componentVersions, err := data.GetLatestVersions(db, componentAndTrainSlice)
+	if err != nil {
+		return operations.NewGetComponentsByLatestReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: "database error"})
+	}
+	ret := operations.GetComponentsByLatestReleaseOKBodyBody{Data: componentVersions}
+	return operations.NewGetComponentsByLatestReleaseOK().WithPayload(ret)
 }

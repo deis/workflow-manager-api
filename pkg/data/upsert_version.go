@@ -1,11 +1,11 @@
 package data
 
 import (
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/jinzhu/gorm"
 )
 
-func upsertVersion(db *gorm.DB, queryExisting versionsTable, setNew versionsTable) (*types.ComponentVersion, error) {
+func upsertVersion(db *gorm.DB, queryExisting versionsTable, setNew versionsTable) (*models.ComponentVersion, error) {
 	var count int
 	countDB := db.Model(&versionsTable{}).Where(&queryExisting).Count(&count)
 	if countDB.Error != nil {

@@ -10,9 +10,7 @@ import (
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
-	"github.com/deis/workflow-manager/types"
 	"github.com/go-swagger/go-swagger/httpkit/middleware"
-	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )
 
@@ -27,108 +25,72 @@ func ClustersCount(db *gorm.DB) middleware.Responder {
 }
 
 // GetCluster route handler
-func GetCluster(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		cluster, err := data.GetCluster(db, id)
-		if err != nil {
-			log.Printf("data.GetCluster error (%s)", err)
-			http.NotFound(w, r)
-			return
-		}
-		if err := writeJSON(w, cluster); err != nil {
-			log.Printf("GetCluster json marshal failed (%s)", err)
-		}
-	})
+func GetCluster(params operations.GetClusterByIDParams, db *gorm.DB) middleware.Responder {
+	id := params.ID
+	cluster, err := data.GetCluster(db, id)
+	if err != nil {
+		log.Printf("data.GetCluster error (%s)", err)
+		return operations.NewGetClusterByIDDefault(http.StatusNotFound).WithPayload(&models.Error{Code: http.StatusNotFound, Message: "404 cluster not found"})
+	}
+	return operations.NewGetClusterByIDOK().WithPayload(&cluster)
 }
 
 // ClusterCheckin route handler
-func ClusterCheckin(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		id := mux.Vars(r)["id"]
-		cluster := data.ClusterStateful{}
-		err := json.NewDecoder(r.Body).Decode(&cluster)
-		if err != nil {
-			log.Printf("Error decoding POST body JSON data (%s)", err)
-			return
-		}
-		var result data.ClusterStateful
-		result, err = data.UpsertCluster(db, id, cluster)
-		if err != nil {
-			log.Printf("data.SetCluster error (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		if err := writeJSON(w, result); err != nil {
-			log.Printf("ClusterCheckin json marshal error (%s)", err)
-		}
-	})
+func ClusterCheckin(params operations.CreateClusterDetailsParams, db *gorm.DB) middleware.Responder {
+	cluster := *params.Body
+	id := cluster.ID
+	var result models.Cluster
+	result, err := data.UpsertCluster(db, id, cluster)
+	if err != nil {
+		log.Printf("data.SetCluster error (%s)", err)
+		return operations.NewCreateClusterDetailsDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewCreateClusterDetailsOK().WithPayload(&result)
 }
 
 // GetVersion route handler
-func GetVersion(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		routeParams := mux.Vars(r)
-		train := routeParams["train"]
-		component := routeParams["component"]
-		version := routeParams["version"]
-		params := types.ComponentVersion{
-			Component: types.Component{Name: component},
-			Version:   types.Version{Train: train, Version: version},
-		}
-		componentVersion, err := data.GetVersion(db, params)
-		if err != nil {
-			log.Printf("data.GetVersion error (%s)", err)
-			http.NotFound(w, r)
-			return
-		}
-		if err := writeJSON(w, componentVersion); err != nil {
-			log.Printf("GetVersion json marshal failed (%s)", err)
-		}
-	})
+func GetVersion(params operations.GetComponentByReleaseParams, db *gorm.DB) middleware.Responder {
+	train := params.Train
+	component := params.Component
+	version := params.Release
+	componentVersion := models.ComponentVersion{
+		Component: &models.Component{Name: component},
+		Version:   &models.Version{Train: train, Version: version},
+	}
+	componentVersion, err := data.GetVersion(db, componentVersion)
+	if err != nil {
+		log.Printf("data.GetVersion error (%s)", err)
+		return operations.NewGetComponentByReleaseDefault(http.StatusNotFound).WithPayload(&models.Error{Code: http.StatusNotFound, Message: "404 release not found"})
+	}
+	return operations.NewGetComponentByReleaseOK().WithPayload(&componentVersion)
 }
 
 // GetComponentTrainVersions route handler
-func GetComponentTrainVersions(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		routeParams := mux.Vars(r)
-		train := routeParams["train"]
-		component := routeParams["component"]
-		componentVersions, err := data.GetVersionsList(db, train, component)
-		if err != nil {
-			log.Printf("data.GetComponentTrainVersions error (%s)", err)
-			http.NotFound(w, r)
-			return
-		}
-		if err := writeJSON(w, componentVersions); err != nil {
-			log.Printf("GetComponentTrainVersions json marshal failed (%s)", err)
-		}
-	})
+func GetComponentTrainVersions(params operations.GetComponentByNameParams, db *gorm.DB) middleware.Responder {
+	train := params.Train
+	component := params.Component
+	componentVersions, err := data.GetVersionsList(db, train, component)
+	if err != nil {
+		log.Printf("data.GetComponentTrainVersions error (%s)", err)
+		return operations.NewGetComponentByNameDefault(http.StatusNotFound).WithPayload(&models.Error{Code: http.StatusNotFound, Message: "404 component not found"})
+	}
+	return operations.NewGetComponentByNameOK().WithPayload(operations.GetComponentByNameOKBodyBody{Data: componentVersions})
 }
 
 // PublishVersion route handler
-func PublishVersion(db *gorm.DB) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		componentVersion := types.ComponentVersion{}
-		err := json.NewDecoder(r.Body).Decode(&componentVersion)
-		if err != nil {
-			log.Printf("Error decoding POST body JSON data (%s)", err)
-			return
-		}
-		//TODO: validate request body parameter values for "component", "train", and "version"
-		// match the values passed in with the URL
-		routeParams := mux.Vars(r)
-		componentVersion.Component.Name = routeParams["component"]
-		componentVersion.Version.Train = routeParams["train"]
-		componentVersion.Version.Version = routeParams["version"]
-		result, err := data.UpsertVersion(db, componentVersion)
-		if err != nil {
-			log.Printf("data.SetVersion error (%s)", err)
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-		}
-		if err := writeJSON(w, result); err != nil {
-			log.Printf("PublishVersion json marshal error (%s)", err)
-		}
-	})
+func PublishVersion(params operations.PublishComponentReleaseParams, db *gorm.DB) middleware.Responder {
+	componentVersion := *params.Body
+	//TODO: validate request body parameter values for "component", "train", and "version"
+	// match the values passed in with the URL
+	componentVersion.Component.Name = params.Component
+	componentVersion.Version.Train = params.Train
+	componentVersion.Version.Version = params.Release
+	result, err := data.UpsertVersion(db, componentVersion)
+	if err != nil {
+		log.Printf("data.SetVersion error (%s)", err)
+		operations.NewPublishComponentReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewPublishComponentReleaseOK().WithPayload(&result)
 }
 
 // writeJSON is a helper function for writing HTTP JSON data
