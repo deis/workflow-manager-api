@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deis/workflow-manager-api/data"
+	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/rest"
 )
 

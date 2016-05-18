@@ -9,8 +9,8 @@ import (
 	"time"
 
 	"github.com/arschles/assert"
-	"github.com/deis/workflow-manager-api/data"
-	"github.com/deis/workflow-manager-api/handlers"
+	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/handlers"
 	"github.com/deis/workflow-manager/types"
 )
 

@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/deis/workflow-manager-api/data"
+	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/gorilla/mux"
 	"github.com/jinzhu/gorm"
 )
