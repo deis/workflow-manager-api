@@ -1,15 +1,12 @@
 package restapi
 
 import (
-	"crypto/tls"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"time"
 
 	"github.com/go-swagger/go-swagger/swag"
-	flags "github.com/jessevdk/go-flags"
 	graceful "github.com/tylerb/graceful"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
@@ -44,12 +41,6 @@ type Server struct {
 	Port        int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" env:"PORT"`
 	httpServerL net.Listener
 
-	TLSHost           string         `long:"tls-host" description:"the IP to listen on for tls, when not specified it's the same as --host" env:"TLS_HOST"`
-	TLSPort           int            `long:"tls-port" description:"the port to listen on for secure connections, defaults to a random value" env:"TLS_PORT"`
-	TLSCertificate    flags.Filename `long:"tls-certificate" description:"the certificate to use for secure connections" required:"true" env:"TLS_CERTIFICATE"`
-	TLSCertificateKey flags.Filename `long:"tls-key" description:"the private key to use for secure conections" required:"true" env:"TLS_PRIVATE_KEY"`
-	httpsServerL      net.Listener
-
 	api          *operations.WorkflowManagerAPI
 	handler      http.Handler
 	hasListeners bool
@@ -79,27 +70,8 @@ func (s *Server) Serve() (err error) {
 	httpServer.Handler = s.handler
 
 	fmt.Printf("serving workflow manager at http://%s\n", s.httpServerL.Addr())
-	go func(l net.Listener) {
-		if err := httpServer.Serve(tcpKeepAliveListener{l.(*net.TCPListener)}); err != nil {
-			log.Fatalln(err)
-		}
-	}(s.httpServerL)
-
-	httpsServer := &graceful.Server{Server: new(http.Server)}
-	httpsServer.Handler = s.handler
-	httpsServer.TLSConfig = new(tls.Config)
-	httpsServer.TLSConfig.NextProtos = []string{"http/1.1"}
-	// https://www.owasp.org/index.php/Transport_Layer_Protection_Cheat_Sheet#Rule_-_Only_Support_Strong_Protocols
-	httpsServer.TLSConfig.MinVersion = tls.VersionTLS11
-	httpsServer.TLSConfig.Certificates = make([]tls.Certificate, 1)
-	httpsServer.TLSConfig.Certificates[0], err = tls.LoadX509KeyPair(string(s.TLSCertificate), string(s.TLSCertificateKey))
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("serving workflow manager at https://%s\n", s.httpsServerL.Addr())
-	wrapped := tls.NewListener(tcpKeepAliveListener{s.httpsServerL.(*net.TCPListener)}, httpsServer.TLSConfig)
-	if err := httpsServer.Serve(wrapped); err != nil {
+	l := s.httpServerL
+	if err := httpServer.Serve(tcpKeepAliveListener{l.(*net.TCPListener)}); err != nil {
 		return err
 	}
 
@@ -125,21 +97,6 @@ func (s *Server) Listen() error {
 	s.Port = p
 	s.httpServerL = listener
 
-	if s.TLSHost == "" {
-		s.TLSHost = s.Host
-	}
-	tlsListener, err := net.Listen("tcp", fmt.Sprintf("%s:%d", s.TLSHost, s.TLSPort))
-	if err != nil {
-		return err
-	}
-
-	sh, sp, err := swag.SplitHostPort(tlsListener.Addr().String())
-	if err != nil {
-		return err
-	}
-	s.TLSHost = sh
-	s.TLSPort = sp
-	s.httpsServerL = tlsListener
 	s.hasListeners = true
 	return nil
 }
