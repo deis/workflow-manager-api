@@ -53,6 +53,14 @@ func ClusterCheckin(db *gorm.DB) http.Handler {
 			log.Printf("Error decoding POST body JSON data (%s)", err)
 			return
 		}
+		if id != cluster.ID {
+			http.Error(
+				w,
+				fmt.Sprintf("cluster ID from URL path (%s) doesn't match that in the body (%s)", id, cluster.ID),
+				http.StatusBadRequest,
+			)
+			return
+		}
 		var result data.ClusterStateful
 		result, err = data.UpsertCluster(db, id, cluster)
 		if err != nil {
