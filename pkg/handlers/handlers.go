@@ -84,6 +84,30 @@ func GetVersion(db *gorm.DB) http.Handler {
 			Component: types.Component{Name: component},
 			Version:   types.Version{Train: train, Version: version},
 		}
+		if train != params.Version.Train {
+			http.Error(
+				w,
+				fmt.Sprintf("train in path (%s) != train in body (%s)", train, params.Version.Train),
+				http.StatusBadRequest,
+			)
+			return
+		}
+		if component != params.Component.Name {
+			http.Error(
+				w,
+				fmt.Sprintf("component name in path (%s) != component name in body (%s)", component, params.Component.Name),
+				http.StatusBadRequest,
+			)
+			return
+		}
+		if version != params.Version.Version {
+			http.Error(
+				w,
+				fmt.Sprintf("version in path (%s) != version in body (%s)", version, params.Version.Version),
+				http.StatusBadRequest,
+			)
+			return
+		}
 		componentVersion, err := data.GetVersion(db, params)
 		if err != nil {
 			log.Printf("data.GetVersion error (%s)", err)
