@@ -6,22 +6,22 @@ import (
 	"time"
 
 	"github.com/arschles/assert"
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 )
 
-func testComponentVersion() types.ComponentVersion {
-	return types.ComponentVersion{
-		Component: types.Component{
+func testComponentVersion() *models.ComponentVersion {
+	return &models.ComponentVersion{
+		Component: &models.Component{
 			Name:        componentName,
-			Description: componentDescription,
+			Description: &componentDescription,
 		},
-		Version: types.Version{
+		Version: &models.Version{
 			Version:  version,
 			Released: released,
 			Train:    train,
-			Data:     versionData,
+			Data:     &versionData,
 		},
-		UpdateAvailable: updateAvailable,
+		UpdateAvailable: &updateAvailable,
 	}
 }
 
@@ -30,16 +30,16 @@ func TestVersionRoundTrip(t *testing.T) {
 	assert.NoErr(t, err)
 	assert.NoErr(t, VerifyPersistentStorage(sqliteDB))
 	componentVersion := testComponentVersion()
-	cVerNoExist, err := GetVersion(sqliteDB, componentVersion)
+	cVerNoExist, err := GetVersion(sqliteDB, *componentVersion)
 	assert.True(t, err != nil, "error not returned but expected")
-	assert.Equal(t, cVerNoExist, types.ComponentVersion{}, "component version")
-	cVerSet, err := UpsertVersion(sqliteDB, componentVersion)
+	assert.Equal(t, cVerNoExist, models.ComponentVersion{}, "component version")
+	cVerSet, err := UpsertVersion(sqliteDB, *componentVersion)
 	assert.NoErr(t, err)
 	assert.Equal(t, cVerSet.Component.Name, componentVersion.Component.Name, "component name")
 	assert.Equal(t, cVerSet.Version.Version, componentVersion.Version.Version, "version string")
 	assert.Equal(t, cVerSet.Version.Released, componentVersion.Version.Released, "released string")
 	assert.Equal(t, cVerSet.Version.Train, componentVersion.Version.Train, "version train")
-	getCVer, err := GetVersion(sqliteDB, componentVersion)
+	getCVer, err := GetVersion(sqliteDB, *componentVersion)
 	assert.NoErr(t, err)
 	assert.Equal(t, getCVer.Component.Name, componentVersion.Component.Name, "component name")
 	assert.Equal(t, getCVer.Version.Version, componentVersion.Version.Version, "version string")
@@ -54,31 +54,32 @@ func TestGetLatestVersion(t *testing.T) {
 
 	const numCVs = 4
 	const latestCVIdx = 2
-	componentVersions := make([]types.ComponentVersion, numCVs)
+	componentVersions := make([]models.ComponentVersion, numCVs)
 	for i := 0; i < numCVs; i++ {
 		cv := testComponentVersion()
 		cv.Component.Name = componentName
-		cv.Component.Description = fmt.Sprintf("description%d", i)
+		desc := fmt.Sprintf("description%d", i)
+		cv.Component.Description = &desc
 		cv.Version.Train = train
 		cv.Version.Version = fmt.Sprintf("testversion%d", i)
 		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(released)
-		cv.Version.Data = map[string]interface{}{
-			"notes": fmt.Sprintf("data%d", i),
+		cv.Version.Data = &models.Data{
+			Description: fmt.Sprintf("data%d", i),
 		}
 		if i == latestCVIdx {
 			cv.Version.Released = time.Now().Add(time.Duration(numCVs+1) * time.Hour).Format(released)
 		}
-		if _, setErr := UpsertVersion(sqliteDB, cv); setErr != nil {
+		if _, setErr := UpsertVersion(sqliteDB, *cv); setErr != nil {
 			t.Fatalf("error setting component version %d (%s)", i, setErr)
 		}
-		componentVersions[i] = cv
+		componentVersions[i] = *cv
 	}
 	cv, err := GetLatestVersion(sqliteDB, train, componentName)
 	assert.NoErr(t, err)
 	exCV := componentVersions[latestCVIdx]
 	assert.Equal(t, cv.Component.Name, exCV.Component.Name, "component name")
 	// since the versions table doesn't store a description now, make sure it comes back empty
-	assert.Equal(t, cv.Component.Description, "", "component name")
+	assert.Nil(t, cv.Component.Description, "component name")
 
 	assert.Equal(t, cv.Version.Train, exCV.Version.Train, "component version")
 	assert.Equal(t, cv.Version.Version, exCV.Version.Version, "component version")
@@ -121,7 +122,7 @@ func TestGetLatestVersions(t *testing.T) {
 				if releaseTimes[ct.String()].Before(cvReleaseTime) {
 					releaseTimes[ct.String()] = cvReleaseTime
 				}
-				if _, setErr := UpsertVersion(memDB, cv); setErr != nil {
+				if _, setErr := UpsertVersion(memDB, *cv); setErr != nil {
 					t.Fatalf("error setting component version %d (%s)", idx, setErr)
 				}
 			}
@@ -134,7 +135,7 @@ func TestGetLatestVersions(t *testing.T) {
 	cv.Version.Train = "invalid"
 	cv.Version.Version = "invalid"
 	cv.Version.Released = time.Now().Format(released)
-	_, setErr := UpsertVersion(memDB, cv)
+	_, setErr := UpsertVersion(memDB, *cv)
 	assert.NoErr(t, setErr)
 
 	componentVersions, err := GetLatestVersions(memDB, componentAndTrainSlice)

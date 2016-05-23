@@ -3,7 +3,7 @@ package data
 import (
 	"fmt"
 
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 )
 
 // ComponentAndTrain represents a component and its train. It is used in functions such as
@@ -14,7 +14,7 @@ type ComponentAndTrain struct {
 	Train         string
 }
 
-func componentAndTrainFromComponentVersion(cv types.ComponentVersion) *ComponentAndTrain {
+func componentAndTrainFromComponentVersion(cv *models.ComponentVersion) *ComponentAndTrain {
 	return &ComponentAndTrain{
 		ComponentName: cv.Component.Name,
 		Train:         cv.Version.Train,

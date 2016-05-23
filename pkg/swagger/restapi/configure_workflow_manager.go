@@ -10,15 +10,24 @@ import (
 	errors "github.com/go-swagger/go-swagger/errors"
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
+	"github.com/jinzhu/gorm"
 )
 
-// This file is safe to edit. Once it exists it will not be overwritten
-
-func configureFlags(api *operations.WorkflowManagerAPI) {
-	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
+type GormDb struct {
+	db *gorm.DB
 }
 
-func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
+// This file is safe to edit. Once it exists it will not be overwritten
+func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
+	for _, optsGroup := range api.CommandLineOptionsGroups {
+		if optsGroup.ShortDescription == "deisUnitTests" {
+			gormDb, ok := optsGroup.Options.(GormDb)
+			if !ok {
+				log.Fatalf("unable to cast to gorm db\n")
+			}
+			return gormDb.db
+		}
+	}
 	rdsDB, err := data.NewRDSDB()
 	if err != nil {
 		log.Fatalf("unable to create connection to RDS DB (%s)", err)
@@ -26,6 +35,16 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
+	return rdsDB
+}
+
+func configureFlags(api *operations.WorkflowManagerAPI) {
+	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
+}
+
+func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
+
+	rdsDB := getDb(api)
 	// configure the api here
 	api.ServeError = errors.ServeError
 

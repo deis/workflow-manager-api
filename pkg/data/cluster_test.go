@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/arschles/assert"
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/jinzhu/gorm"
 )
 
@@ -35,10 +35,10 @@ func newDB() (*gorm.DB, error) {
 	return db, nil
 }
 
-func testCluster() ClusterStateful {
-	cluster := ClusterStateful{}
+func testCluster() models.Cluster {
+	cluster := models.Cluster{}
 	cluster.ID = clusterID
-	cluster.Components = []types.ComponentVersion{testComponentVersion()}
+	cluster.Components = []*models.ComponentVersion{testComponentVersion()}
 	return cluster
 }
 
@@ -47,7 +47,7 @@ func TestClusterRoundTrip(t *testing.T) {
 	assert.NoErr(t, err)
 	cluster, err := GetCluster(sqliteDB, clusterID)
 	assert.True(t, err != nil, "error not returned when expected")
-	assert.Equal(t, cluster, ClusterStateful{}, "returned cluster")
+	assert.Equal(t, cluster, models.Cluster{}, "returned cluster")
 	expectedCluster := testCluster()
 	// the first time we invoke .CheckInAndSetCluster() it will create a new record
 	newCluster, err := UpsertCluster(sqliteDB, clusterID, expectedCluster)
@@ -55,7 +55,8 @@ func TestClusterRoundTrip(t *testing.T) {
 	assert.Equal(t, newCluster.ID, expectedCluster.ID, "cluster ID property")
 	assert.Equal(t, newCluster.Components[0].Component.Description, expectedCluster.Components[0].Component.Description, "cluster component description property")
 	// modify the cluster object
-	expectedCluster.Components[0].Component.Description = "new description"
+	desc := "new description"
+	expectedCluster.Components[0].Component.Description = &desc
 	// the next time we invoke .CheckInAndSetCluster() it should update the existing record we just created
 	updatedCluster, err := UpsertCluster(sqliteDB, clusterID, expectedCluster)
 	assert.NoErr(t, err)

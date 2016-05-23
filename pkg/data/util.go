@@ -3,15 +3,14 @@ package data
 import (
 	"encoding/json"
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
-	"github.com/deis/workflow-manager/types"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
 	"log"
 )
 
-func parseJSONComponent(jTxt sqlxTypes.JSONText) (types.ComponentVersion, error) {
-	ret := new(types.ComponentVersion)
+func parseJSONComponent(jTxt sqlxTypes.JSONText) (models.ComponentVersion, error) {
+	ret := new(models.ComponentVersion)
 	if err := json.Unmarshal(jTxt, ret); err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 	return *ret, nil
 }
