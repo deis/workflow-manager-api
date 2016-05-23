@@ -53,16 +53,23 @@ func GetVersion(params operations.GetComponentByReleaseParams, db *gorm.DB) midd
 	train := params.Train
 	component := params.Component
 	version := params.Release
-	componentVersion := models.ComponentVersion{
-		Component: &models.Component{Name: component},
-		Version:   &models.Version{Train: train, Version: version},
+	var cv models.ComponentVersion
+	var err error
+	if version == "latest" {
+		cv, err = data.GetLatestVersion(db, train, component)
+	} else {
+		componentVersion := models.ComponentVersion{
+			Component: &models.Component{Name: component},
+			Version:   &models.Version{Train: train, Version: version},
+		}
+		cv, err = data.GetVersion(db, componentVersion)
 	}
-	componentVersion, err := data.GetVersion(db, componentVersion)
+
 	if err != nil {
 		log.Printf("data.GetVersion error (%s)", err)
 		return operations.NewGetComponentByReleaseDefault(http.StatusNotFound).WithPayload(&models.Error{Code: http.StatusNotFound, Message: "404 release not found"})
 	}
-	return operations.NewGetComponentByReleaseOK().WithPayload(&componentVersion)
+	return operations.NewGetComponentByReleaseOK().WithPayload(&cv)
 }
 
 // GetComponentTrainVersions route handler

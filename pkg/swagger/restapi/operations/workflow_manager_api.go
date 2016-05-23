@@ -51,8 +51,6 @@ type WorkflowManagerAPI struct {
 	GetClustersByAgeHandler GetClustersByAgeHandler
 	// GetClustersCountHandler sets the operation handler for the get clusters count operation
 	GetClustersCountHandler GetClustersCountHandler
-	// GetComponentByLatestReleaseHandler sets the operation handler for the get component by latest release operation
-	GetComponentByLatestReleaseHandler GetComponentByLatestReleaseHandler
 	// GetComponentByNameHandler sets the operation handler for the get component by name operation
 	GetComponentByNameHandler GetComponentByNameHandler
 	// GetComponentByReleaseHandler sets the operation handler for the get component by release operation
@@ -130,10 +128,6 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.GetClustersCountHandler == nil {
 		unregistered = append(unregistered, "GetClustersCountHandler")
-	}
-
-	if o.GetComponentByLatestReleaseHandler == nil {
-		unregistered = append(unregistered, "GetComponentByLatestReleaseHandler")
 	}
 
 	if o.GetComponentByNameHandler == nil {
@@ -244,11 +238,6 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/clusters/count"] = NewGetClustersCount(o.context, o.GetClustersCountHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/versions/{train}/{component}/latest"] = NewGetComponentByLatestRelease(o.context, o.GetComponentByLatestReleaseHandler)
 
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)

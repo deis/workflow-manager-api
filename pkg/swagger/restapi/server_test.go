@@ -71,7 +71,7 @@ func TestGetVersion(t *testing.T) {
 	}
 	_, err = data.UpsertVersion(db, componentVer)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath("v2", "versions", componentVer.Version.Train, componentVer.Component.Name, componentVer.Version.Version))
+	resp, err := httpGet(srv, urlPath("v3", "versions", componentVer.Version.Train, componentVer.Component.Name, componentVer.Version.Version))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -107,7 +107,7 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	assert.NoErr(t, err)
 	_, err = data.UpsertVersion(memDB, componentVers[1])
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath("v2", "versions", componentVer1.Version.Train, componentVer1.Component.Name))
+	resp, err := httpGet(srv, urlPath("v3", "versions", componentVer1.Version.Train, componentVer1.Component.Name))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -152,7 +152,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		}
 		componentVersions[i] = cv
 	}
-	path := urlPath("v2", "versions", train, componentName, "latest")
+	path := urlPath("v3", "versions", train, componentName, "latest")
 	resp, err := httpGet(srv, path)
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
@@ -163,7 +163,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 
 	assert.Equal(t, cv.Component.Name, exCV.Component.Name, "component name")
 	// since the versions table doesn't store a description now, make sure it comes back empty
-	assert.Equal(t, cv.Component.Description, "", "component name")
+	assert.Nil(t, cv.Component.Description, "component name")
 
 	assert.Equal(t, cv.Version.Train, exCV.Version.Train, "component version")
 	assert.Equal(t, cv.Version.Version, exCV.Version.Version, "component version")
@@ -189,7 +189,7 @@ func TestPostVersions(t *testing.T) {
 	}
 	body := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(body).Encode(componentVer))
-	resp, err := httpPost(srv, urlPath("v2", "versions", train, componentName, version), string(body.Bytes()))
+	resp, err := httpPost(srv, urlPath("v3", "versions", train, componentName, version), string(body.Bytes()))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -210,7 +210,7 @@ func TestGetClusters(t *testing.T) {
 	srv, err := newServer(memDB)
 	assert.NoErr(t, err)
 	defer srv.Close()
-	resp, err := httpGet(srv, urlPath("v2", "clusters", "count"))
+	resp, err := httpGet(srv, urlPath("v3", "clusters", "count"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -231,11 +231,9 @@ func TestGetClusterByID(t *testing.T) {
 	cluster := models.Cluster{}
 	cluster.ID = clusterID
 	cluster.Components = nil
-	cluster.LastSeen = nil
-	cluster.FirstSeen = nil
 	newCluster, err := data.UpsertCluster(memDB, clusterID, cluster)
 	assert.NoErr(t, err)
-	resp, err := httpGet(srv, urlPath("v2", "clusters", clusterID))
+	resp, err := httpGet(srv, urlPath("v3", "clusters", clusterID))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, 200, "response code")
@@ -253,14 +251,14 @@ func TestPostClusters(t *testing.T) {
 	srv, err := newServer(memDB)
 	assert.NoErr(t, err)
 	defer srv.Close()
-	resp, err := httpPost(srv, urlPath("v2", "clusters"), jsonData)
+	resp, err := httpPost(srv, urlPath("v3", "clusters"), jsonData)
 	if err != nil {
 		t.Fatalf("POSTing to endpoint (%s)", err)
 	}
 	if resp.StatusCode != 200 {
 		t.Fatalf("Received non-200 response: %d", resp.StatusCode)
 	}
-	resp, err = httpGet(srv, urlPath("v2", "clusters", clusterID))
+	resp, err = httpGet(srv, urlPath("v3", "clusters", clusterID))
 	defer resp.Body.Close()
 	if err != nil {
 		t.Fatal(err)
@@ -340,7 +338,7 @@ func TestGetLatestVersions(t *testing.T) {
 	postBodyReader := new(bytes.Buffer)
 	assert.NoErr(t, json.NewEncoder(postBodyReader).Encode(postBody))
 
-	resp, err := httpPost(srv, urlPath("v2", "versions", "latest"), string(postBodyReader.Bytes()))
+	resp, err := httpPost(srv, urlPath("v3", "versions", "latest"), string(postBodyReader.Bytes()))
 	assert.NoErr(t, err)
 	defer resp.Body.Close()
 	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
@@ -387,7 +385,7 @@ func TestFilterByClusterAge(t *testing.T) {
 		i++
 	}
 
-	route := urlPath("v2", "clusters", "age")
+	route := urlPath("v3", "clusters", "age")
 	route += fmt.Sprintf("?%s", strings.Join(queryPairs, "&"))
 	resp, err := httpGet(srv, route)
 	assert.NoErr(t, err)

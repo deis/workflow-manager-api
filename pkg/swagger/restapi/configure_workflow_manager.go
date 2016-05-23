@@ -64,9 +64,6 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.GetClustersCountHandler = operations.GetClustersCountHandlerFunc(func() middleware.Responder {
 		return handlers.ClustersCount(rdsDB)
 	})
-	api.GetComponentByLatestReleaseHandler = operations.GetComponentByLatestReleaseHandlerFunc(func(params operations.GetComponentByLatestReleaseParams) middleware.Responder {
-		return handlers.GetLatestComponentTrainVersion(params, rdsDB)
-	})
 	api.GetComponentByNameHandler = operations.GetComponentByNameHandlerFunc(func(params operations.GetComponentByNameParams) middleware.Responder {
 		return handlers.GetComponentTrainVersions(params, rdsDB)
 	})
