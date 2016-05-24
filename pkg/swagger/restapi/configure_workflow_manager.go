@@ -45,6 +45,7 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 
 	rdsDB := getDb(api)
+	rdsDB.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
 

@@ -114,7 +114,7 @@ func TestGetLatestVersions(t *testing.T) {
 
 				//specify a different version for each component version in this name/train
 				cv.Version.Version = fmt.Sprintf("version%d-%d", idx, n)
-				cvReleaseTime := time.Now().Add(time.Duration(idx*(n+1)) * time.Hour)
+				cvReleaseTime := time.Now().Add(time.Duration((idx+1)*(n+1)) * time.Hour)
 				cv.Version.Released = cvReleaseTime.Format(released)
 
 				// record the latest release time for each component

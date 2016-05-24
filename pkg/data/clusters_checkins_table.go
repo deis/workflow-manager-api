@@ -19,18 +19,18 @@ const (
 
 // ClustersCheckinsTable type that expresses the `clusters_checkins` postgres table schema
 type clustersCheckinsTable struct {
-	CheckinID string         `gorm:"primary_key;type:bigserial;column_name:checkins_id"`
-	ClusterID string         `gorm:"type:uuid;column_name:cluster_id;index"`
-	CreatedAt string         `gorm:"type:timestamp;column_name:created_at;index"`
-	Data      types.JSONText `gorm:"type:json;column_name:data"`
+	CheckinsID string         `gorm:"primary_key;type:bigserial;column_name:checkins_id"`
+	ClusterID  string         `gorm:"type:uuid;column_name:cluster_id;index"`
+	CreatedAt  string         `gorm:"type:timestamp;column_name:created_at;index"`
+	Data       types.JSONText `gorm:"type:json;column_name:data"`
 }
 
 func newClustersCheckinsTable(checkinID, clusterID string, createdAt time.Time, clusterData []byte) clustersCheckinsTable {
 	return clustersCheckinsTable{
-		CheckinID: checkinID,
-		ClusterID: clusterID,
-		CreatedAt: Timestamp{Time: createdAt}.String(),
-		Data:      types.JSONText(clusterData),
+		CheckinsID: checkinID,
+		ClusterID:  clusterID,
+		CreatedAt:  Timestamp{Time: createdAt}.String(),
+		Data:       types.JSONText(clusterData),
 	}
 }
 

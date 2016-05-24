@@ -91,16 +91,12 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]*models.Component
 			listedTrains[c.Train] = struct{}{}
 		}
 	}
-
-	rows, err := db.
-		Table("versions").
-		Select("*, MAX(release_timestamp)").
-		Where("component_name IN (?) AND train IN (?)", componentsList, trainsList).
-		Group("component_name, train").
+	rows, err := db.Raw("select * from versions as ver where ver.component_name IN (?) AND ver.train IN (?) AND release_timestamp = (select MAX(release_timestamp) from versions as ver1 where ver1.component_name = ver.component_name AND ver1.train = ver.train)", componentsList, trainsList).
 		Rows()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	rowsResult := []versionsTable{}
 	for rows.Next() {
 		var row versionsTable
@@ -114,7 +110,6 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]*models.Component
 			&row.Version,
 			&row.ReleaseTimestamp,
 			&row.Data,
-			&sql.NullString{},
 		); err != nil {
 			return nil, err
 		}

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
@@ -55,6 +56,7 @@ func GetLatestVersions(params operations.GetComponentsByLatestReleaseParams, db 
 
 	componentVersions, err := data.GetLatestVersions(db, componentAndTrainSlice)
 	if err != nil {
+		log.Printf("data.GetLatestVersions error (%s)", err)
 		return operations.NewGetComponentsByLatestReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: "database error"})
 	}
 	ret := operations.GetComponentsByLatestReleaseOKBodyBody{Data: componentVersions}
