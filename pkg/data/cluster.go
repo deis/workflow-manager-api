@@ -29,7 +29,7 @@ func GetCluster(db *gorm.DB, id string) (models.Cluster, error) {
 	if resDB.Error != nil {
 		return models.Cluster{}, resDB.Error
 	}
-	cluster, err := parseJSONCluster(ret.Data)
+	cluster, err := parseJSONCluster([]byte(ret.Data))
 	if err != nil {
 		return models.Cluster{}, errParsingCluster{origErr: err}
 	}
@@ -54,13 +54,13 @@ func upsertCluster(db *gorm.DB, id string, cluster models.Cluster) (models.Clust
 	var resDB *gorm.DB
 	if numExisting == 0 {
 		// no existing clusters, so create one
-		createDB := db.Create(&clustersTable{ClusterID: id, Data: js})
+		createDB := db.Create(&clustersTable{ClusterID: id, Data: string(js)})
 		if createDB.Error != nil {
 			return models.Cluster{}, createDB.Error
 		}
 		resDB = createDB
 	} else {
-		updateDB := db.Save(&clustersTable{ClusterID: id, Data: js})
+		updateDB := db.Save(&clustersTable{ClusterID: id, Data: string(js)})
 		if updateDB.Error != nil {
 			return models.Cluster{}, updateDB.Error
 		}
@@ -138,7 +138,7 @@ func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]*models.Clust
 
 	clusters := make([]*models.Cluster, len(rows))
 	for i, row := range rows {
-		cluster, err := parseJSONCluster(row.Data)
+		cluster, err := parseJSONCluster([]byte(row.Data))
 		if err != nil {
 			return nil, err
 		}

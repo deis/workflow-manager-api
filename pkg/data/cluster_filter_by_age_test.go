@@ -130,7 +130,7 @@ func createAndCheckinClusters(db *gorm.DB, totalNumClusters, filterNum int, fca 
 		if marshalErr != nil {
 			return fmt.Errorf("error JSON serializing cluster %d for filter %d (%s)", clusterNum, filterNum, marshalErr)
 		}
-		createDB := db.Model(&clustersTable{}).Create(&clustersTable{ClusterID: cluster.ID, Data: clusterJSON})
+		createDB := db.Model(&clustersTable{}).Create(&clustersTable{ClusterID: cluster.ID, Data: string(clusterJSON)})
 		if createDB.Error != nil {
 			return fmt.Errorf("error creating cluster %s for filter %d in DB (%s)", cluster.ID, filterNum, createDB.Error)
 		}
