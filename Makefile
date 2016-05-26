@@ -47,6 +47,7 @@ build:
 
 swagger-serverstub:
 	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/master/api/swagger-spec/swagger.yml
+	mv pkg/swagger/cmd/workflow-manager-server/main.go .
 
 test:
 	${DEV_ENV_CMD} sh -c 'go test -tags testonly $$(glide nv)'

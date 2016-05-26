@@ -12,7 +12,7 @@ func TestGetClusterCount(t *testing.T) {
 	count, err := GetClusterCount(db)
 	assert.NoErr(t, err)
 	assert.Equal(t, count, 0, "count")
-	d1 := db.Create(&clustersTable{ClusterID: uuid.New(), Data: []byte("{}")})
+	d1 := db.Create(&clustersTable{ClusterID: uuid.New(), Data: "{}"})
 	assert.NoErr(t, d1.Error)
 	count, err = GetClusterCount(d1)
 	assert.NoErr(t, err)

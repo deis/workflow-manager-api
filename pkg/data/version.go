@@ -5,20 +5,20 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/jinzhu/gorm"
 )
 
 // UpsertVersion adds or updates a single version record in the database
-func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.ComponentVersion, error) {
+func UpsertVersion(db *gorm.DB, componentVersion models.ComponentVersion) (models.ComponentVersion, error) {
 	releaseTimestamp, err := newTimestampFromStr(componentVersion.Version.Released)
 	if err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 
 	js, err := json.Marshal(componentVersion.Version.Data)
 	if err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 
 	// the query used to find the original version
@@ -42,30 +42,30 @@ func UpsertVersion(db *gorm.DB, componentVersion types.ComponentVersion) (types.
 	if err != nil {
 		rollbackDB := tx.Rollback()
 		if rollbackDB.Error != nil {
-			return types.ComponentVersion{}, txErr{op: "rollback", orig: err, err: rollbackDB.Error}
+			return models.ComponentVersion{}, txErr{op: "rollback", orig: err, err: rollbackDB.Error}
 		}
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 	commitDB := tx.Commit()
 	if commitDB.Error != nil {
 		log.Println("6")
-		return types.ComponentVersion{}, txErr{op: "commit", orig: nil, err: commitDB.Error}
+		return models.ComponentVersion{}, txErr{op: "commit", orig: nil, err: commitDB.Error}
 	}
 	return *cvPtr, nil
 }
 
 // GetLatestVersion gets the latest version from the DB for the given train & component
-func GetLatestVersion(db *gorm.DB, train string, component string) (types.ComponentVersion, error) {
+func GetLatestVersion(db *gorm.DB, train string, component string) (models.ComponentVersion, error) {
 	resTable := new(versionsTable)
 	query := versionsTable{ComponentName: component, Train: train}
 	resDB := db.Where(query).Order("release_timestamp desc").First(resTable)
 	if resDB.Error != nil {
-		return types.ComponentVersion{}, resDB.Error
+		return models.ComponentVersion{}, resDB.Error
 	}
 
 	componentVersion, err := parseDBVersion(*resTable)
 	if err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 	return componentVersion, nil
 }
@@ -76,7 +76,7 @@ func GetLatestVersion(db *gorm.DB, train string, component string) (types.Compon
 //
 // - Be the same length as ct
 // - Have the same ordering as ct, with respect to the component name
-func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVersion, error) {
+func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]*models.ComponentVersion, error) {
 	componentsList := []string{}
 	listedComponents := make(map[string]struct{})
 	trainsList := []string{}
@@ -91,16 +91,12 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVe
 			listedTrains[c.Train] = struct{}{}
 		}
 	}
-
-	rows, err := db.
-		Table("versions").
-		Select("*, MAX(release_timestamp)").
-		Where("component_name IN (?) AND train IN (?)", componentsList, trainsList).
-		Group("component_name, train").
+	rows, err := db.Raw("select * from versions as ver where ver.component_name IN (?) AND ver.train IN (?) AND release_timestamp = (select MAX(release_timestamp) from versions as ver1 where ver1.component_name = ver.component_name AND ver1.train = ver.train)", componentsList, trainsList).
 		Rows()
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	rowsResult := []versionsTable{}
 	for rows.Next() {
 		var row versionsTable
@@ -114,7 +110,6 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVe
 			&row.Version,
 			&row.ReleaseTimestamp,
 			&row.Data,
-			&sql.NullString{},
 		); err != nil {
 			return nil, err
 		}
@@ -126,13 +121,13 @@ func GetLatestVersions(db *gorm.DB, ct []ComponentAndTrain) ([]types.ComponentVe
 
 	componentVersions, err := parseDBVersions(rowsResult)
 	if err != nil {
-		return []types.ComponentVersion{}, err
+		return []*models.ComponentVersion{}, err
 	}
 	return componentVersions, nil
 }
 
 // GetVersion gets a single version record from a DB matching the unique property values in a ComponentVersion struct
-func GetVersion(db *gorm.DB, cV types.ComponentVersion) (types.ComponentVersion, error) {
+func GetVersion(db *gorm.DB, cV models.ComponentVersion) (models.ComponentVersion, error) {
 	resTable := new(versionsTable)
 	resDB := db.Where(versionsTable{
 		ComponentName: cV.Component.Name,
@@ -140,18 +135,18 @@ func GetVersion(db *gorm.DB, cV types.ComponentVersion) (types.ComponentVersion,
 		Version:       cV.Version.Version,
 	}).First(resTable)
 	if resDB.Error != nil {
-		return types.ComponentVersion{}, resDB.Error
+		return models.ComponentVersion{}, resDB.Error
 	}
 
 	componentVersion, err := parseDBVersion(*resTable)
 	if err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
 	return componentVersion, nil
 }
 
 // GetVersionsList retrieves a list of version records from the DB that match a given train & component
-func GetVersionsList(db *gorm.DB, train string, component string) ([]types.ComponentVersion, error) {
+func GetVersionsList(db *gorm.DB, train string, component string) ([]*models.ComponentVersion, error) {
 	var rowsResult []versionsTable
 	resDB := db.Where(&versionsTable{Train: train, ComponentName: component}).Find(&rowsResult)
 	if resDB.Error != nil {
@@ -165,32 +160,32 @@ func GetVersionsList(db *gorm.DB, train string, component string) ([]types.Compo
 	return componentVersions, nil
 }
 
-func parseDBVersions(versions []versionsTable) ([]types.ComponentVersion, error) {
-	componentVersions := make([]types.ComponentVersion, len(versions))
+func parseDBVersions(versions []versionsTable) ([]*models.ComponentVersion, error) {
+	componentVersions := make([]*models.ComponentVersion, len(versions))
 	for i, version := range versions {
 		cver, err := parseDBVersion(version)
 		if err != nil {
 			return nil, err
 		}
-		componentVersions[i] = cver
+		componentVersions[i] = &cver
 	}
 	return componentVersions, nil
 }
 
-func parseDBVersion(version versionsTable) (types.ComponentVersion, error) {
-	data := make(map[string]interface{})
+func parseDBVersion(version versionsTable) (models.ComponentVersion, error) {
+	data := models.Data{}
 	if err := json.Unmarshal([]byte(version.Data), &data); err != nil {
-		return types.ComponentVersion{}, err
+		return models.ComponentVersion{}, err
 	}
-	return types.ComponentVersion{
-		Component: types.Component{
+	return models.ComponentVersion{
+		Component: &models.Component{
 			Name: version.ComponentName,
 		},
-		Version: types.Version{
+		Version: &models.Version{
 			Train:    version.Train,
 			Version:  version.Version,
 			Released: version.ReleaseTimestamp.String(),
-			Data:     data,
+			Data:     &data,
 		},
 	}, nil
 }

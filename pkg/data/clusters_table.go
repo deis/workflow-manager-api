@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-
-	"github.com/jmoiron/sqlx/types"
 )
 
 const (
@@ -16,8 +14,8 @@ const (
 
 // ClustersTable type that expresses the `clusters` postgres table schema
 type clustersTable struct {
-	ClusterID string         `gorm:"primary_key;type:uuid;column:cluster_id"` // PRIMARY KEY
-	Data      types.JSONText `gorm:"type:json;column:data"`
+	ClusterID string `gorm:"primary_key;type:uuid;column:cluster_id"` // PRIMARY KEY
+	Data      string `gorm:"type:json;column:data"`
 }
 
 func (c clustersTable) TableName() string {

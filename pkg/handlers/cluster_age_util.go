@@ -2,10 +2,10 @@ package handlers
 
 import (
 	"fmt"
-	"net/http"
 	"time"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	"github.com/deis/workflow-manager-api/rest"
 )
 
@@ -18,10 +18,10 @@ func (e errInvalidTimeFmt) Error() string {
 	return fmt.Sprintf("%s is an invalid timestamp (%s)", e.key, e.err)
 }
 
-func parseAgeQueryKeys(r *http.Request) (*data.ClusterAgeFilter, error) {
+func parseAgeQueryKeys(params operations.GetClustersByAgeParams) (*data.ClusterAgeFilter, error) {
 	checkedInBefore, err := time.Parse(
 		data.StdTimestampFmt,
-		r.URL.Query().Get(rest.CheckedInBeforeQueryStringKey),
+		params.CheckedInBefore.String(),
 	)
 	if err != nil {
 		return nil, errInvalidTimeFmt{key: rest.CheckedInBeforeQueryStringKey, err: err}
@@ -29,7 +29,7 @@ func parseAgeQueryKeys(r *http.Request) (*data.ClusterAgeFilter, error) {
 
 	checkedInAfter, err := time.Parse(
 		data.StdTimestampFmt,
-		r.URL.Query().Get(rest.CheckedInAfterQueryStringKey),
+		params.CheckedInAfter.String(),
 	)
 	if err != nil {
 		return nil, errInvalidTimeFmt{key: rest.CheckedInAfterQueryStringKey, err: err}
@@ -37,7 +37,7 @@ func parseAgeQueryKeys(r *http.Request) (*data.ClusterAgeFilter, error) {
 
 	createdBefore, err := time.Parse(
 		data.StdTimestampFmt,
-		r.URL.Query().Get(rest.CreatedBeforeQueryStringKey),
+		params.CreatedBefore.String(),
 	)
 	if err != nil {
 		return nil, errInvalidTimeFmt{key: rest.CreatedBeforeQueryStringKey, err: err}
@@ -45,7 +45,7 @@ func parseAgeQueryKeys(r *http.Request) (*data.ClusterAgeFilter, error) {
 
 	createdAfter, err := time.Parse(
 		data.StdTimestampFmt,
-		r.URL.Query().Get(rest.CreatedAfterQueryStringKey),
+		params.CreatedAfter.String(),
 	)
 	if err != nil {
 		return nil, errInvalidTimeFmt{key: rest.CreatedAfterQueryStringKey, err: err}

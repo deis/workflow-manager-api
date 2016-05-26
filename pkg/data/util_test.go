@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/arschles/assert"
-	"github.com/deis/workflow-manager/types"
+	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
 )
 
@@ -18,10 +18,10 @@ func TestParseJSONComponentFail(t *testing.T) {
 }
 
 func TestParseJSONComponentSucc(t *testing.T) {
-	cVer := types.ComponentVersion{
-		Component:       types.Component{Name: "test name", Description: "test description"},
-		Version:         types.Version{Train: "stable", Version: "test version", Released: "test release", Data: versionData},
-		UpdateAvailable: "test update avail",
+	cVer := models.ComponentVersion{
+		Component:       &models.Component{Name: "test name", Description: &componentDescription},
+		Version:         &models.Version{Train: "stable", Version: "test version", Released: "test release", Data: &versionData},
+		UpdateAvailable: &updateAvailable,
 	}
 	b, err := json.Marshal(cVer)
 	if err != nil {

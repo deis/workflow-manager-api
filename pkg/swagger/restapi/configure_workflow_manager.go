@@ -1,22 +1,51 @@
 package restapi
 
 import (
+	"log"
 	"net/http"
 
+	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/handlers"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	errors "github.com/go-swagger/go-swagger/errors"
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
-
-	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
+	"github.com/jinzhu/gorm"
 )
 
+type GormDb struct {
+	db *gorm.DB
+}
+
 // This file is safe to edit. Once it exists it will not be overwritten
+func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
+	for _, optsGroup := range api.CommandLineOptionsGroups {
+		if optsGroup.ShortDescription == "deisUnitTests" {
+			gormDb, ok := optsGroup.Options.(GormDb)
+			if !ok {
+				log.Fatalf("unable to cast to gorm db\n")
+			}
+			return gormDb.db
+		}
+	}
+	rdsDB, err := data.NewRDSDB()
+	if err != nil {
+		log.Fatalf("unable to create connection to RDS DB (%s)", err)
+	}
+	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+		log.Fatalf("unable to verify persistent storage\n%s", err)
+	}
+	return rdsDB
+}
 
 func configureFlags(api *operations.WorkflowManagerAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
 
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
+
+	rdsDB := getDb(api)
+	rdsDB.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
 
@@ -25,31 +54,28 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.JSONProducer = httpkit.JSONProducer()
 
 	api.CreateClusterDetailsHandler = operations.CreateClusterDetailsHandlerFunc(func(params operations.CreateClusterDetailsParams) middleware.Responder {
-		return middleware.NotImplemented("operation .CreateClusterDetails has not yet been implemented")
+		return handlers.ClusterCheckin(params, rdsDB)
 	})
 	api.GetClusterByIDHandler = operations.GetClusterByIDHandlerFunc(func(params operations.GetClusterByIDParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetClusterByID has not yet been implemented")
+		return handlers.GetCluster(params, rdsDB)
 	})
 	api.GetClustersByAgeHandler = operations.GetClustersByAgeHandlerFunc(func(params operations.GetClustersByAgeParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetClustersByAge has not yet been implemented")
+		return handlers.ClustersAge(params, rdsDB)
 	})
 	api.GetClustersCountHandler = operations.GetClustersCountHandlerFunc(func() middleware.Responder {
-		return middleware.NotImplemented("operation .GetClustersCount has not yet been implemented")
-	})
-	api.GetComponentByLatestReleaseHandler = operations.GetComponentByLatestReleaseHandlerFunc(func(params operations.GetComponentByLatestReleaseParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetComponentByLatestRelease has not yet been implemented")
+		return handlers.ClustersCount(rdsDB)
 	})
 	api.GetComponentByNameHandler = operations.GetComponentByNameHandlerFunc(func(params operations.GetComponentByNameParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetComponentByName has not yet been implemented")
+		return handlers.GetComponentTrainVersions(params, rdsDB)
 	})
 	api.GetComponentByReleaseHandler = operations.GetComponentByReleaseHandlerFunc(func(params operations.GetComponentByReleaseParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetComponentByRelease has not yet been implemented")
+		return handlers.GetVersion(params, rdsDB)
 	})
 	api.GetComponentsByLatestReleaseHandler = operations.GetComponentsByLatestReleaseHandlerFunc(func(params operations.GetComponentsByLatestReleaseParams) middleware.Responder {
-		return middleware.NotImplemented("operation .GetComponentsByLatestRelease has not yet been implemented")
+		return handlers.GetLatestVersions(params, rdsDB)
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
-		return middleware.NotImplemented("operation .PublishComponentRelease has not yet been implemented")
+		return handlers.PublishVersion(params, rdsDB)
 	})
 
 	api.ServerShutdown = func() {}
