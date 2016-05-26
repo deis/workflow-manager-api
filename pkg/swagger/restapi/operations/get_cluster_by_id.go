@@ -27,7 +27,7 @@ func NewGetClusterByID(ctx *middleware.Context, handler GetClusterByIDHandler) *
 	return &GetClusterByID{Context: ctx, Handler: handler}
 }
 
-/*GetClusterByID swagger:route GET /clusters/{id} getClusterById
+/*GetClusterByID swagger:route GET /v3/clusters/{id} getClusterById
 
 read a cluster details
 

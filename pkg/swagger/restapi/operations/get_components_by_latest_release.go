@@ -32,7 +32,7 @@ func NewGetComponentsByLatestRelease(ctx *middleware.Context, handler GetCompone
 	return &GetComponentsByLatestRelease{Context: ctx, Handler: handler}
 }
 
-/*GetComponentsByLatestRelease swagger:route POST /versions/latest getComponentsByLatestRelease
+/*GetComponentsByLatestRelease swagger:route POST /v3/versions/latest getComponentsByLatestRelease
 
 list the latest release version of the components
 

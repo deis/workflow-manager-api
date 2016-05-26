@@ -27,7 +27,7 @@ func NewCreateClusterDetails(ctx *middleware.Context, handler CreateClusterDetai
 	return &CreateClusterDetails{Context: ctx, Handler: handler}
 }
 
-/*CreateClusterDetails swagger:route POST /clusters createClusterDetails
+/*CreateClusterDetails swagger:route POST /v3/clusters createClusterDetails
 
 create a cluster with all components
 

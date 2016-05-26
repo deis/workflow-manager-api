@@ -31,7 +31,7 @@ func NewGetClustersByAge(ctx *middleware.Context, handler GetClustersByAgeHandle
 	return &GetClustersByAge{Context: ctx, Handler: handler}
 }
 
-/*GetClustersByAge swagger:route GET /clusters/age getClustersByAge
+/*GetClustersByAge swagger:route GET /v3/clusters/age getClustersByAge
 
 list clusters
 

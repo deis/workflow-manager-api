@@ -27,7 +27,7 @@ func NewGetComponentByRelease(ctx *middleware.Context, handler GetComponentByRel
 	return &GetComponentByRelease{Context: ctx, Handler: handler}
 }
 
-/*GetComponentByRelease swagger:route GET /versions/{train}/{component}/{release} getComponentByRelease
+/*GetComponentByRelease swagger:route GET /v3/versions/{train}/{component}/{release} getComponentByRelease
 
 read the specified release of a component
 
