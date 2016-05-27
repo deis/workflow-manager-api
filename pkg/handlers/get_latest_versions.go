@@ -62,3 +62,27 @@ func GetLatestVersions(params operations.GetComponentsByLatestReleaseParams, db 
 	ret := operations.GetComponentsByLatestReleaseOKBodyBody{Data: componentVersions}
 	return operations.NewGetComponentsByLatestReleaseOK().WithPayload(ret)
 }
+
+// GetLatestVersionsForV2 is the handler for the POST /v2/versions/latest endpoint
+func GetLatestVersionsForV2(params operations.GetComponentsByLatestReleaseForV2Params, db *gorm.DB) middleware.Responder {
+	reqStruct := params.Body
+	componentAndTrainSlice := make([]data.ComponentAndTrain, len(reqStruct.Data))
+	for i, d := range reqStruct.Data {
+		//this is just to make the existing workflow manager clients out in the beta world to work.
+		if d.Version.Train == "" {
+			d.Version.Train = "beta"
+		}
+		componentAndTrainSlice[i] = data.ComponentAndTrain{
+			ComponentName: d.Component.Name,
+			Train:         d.Version.Train,
+		}
+	}
+
+	componentVersions, err := data.GetLatestVersions(db, componentAndTrainSlice)
+	if err != nil {
+		log.Printf("data.GetLatestVersions error (%s)", err)
+		return operations.NewGetComponentsByLatestReleaseForV2Default(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: "database error"})
+	}
+	ret := operations.GetComponentsByLatestReleaseForV2OKBodyBody{Data: componentVersions}
+	return operations.NewGetComponentsByLatestReleaseForV2OK().WithPayload(ret)
+}

@@ -80,7 +80,7 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 		return handlers.GetLatestVersions(params, rdsDB)
 	})
 	api.GetComponentsByLatestReleaseForV2Handler = operations.GetComponentsByLatestReleaseForV2HandlerFunc(func(params operations.GetComponentsByLatestReleaseForV2Params) middleware.Responder {
-		return handlers.GetLatestVersions(operations.GetComponentsByLatestReleaseParams{Body: operations.GetComponentsByLatestReleaseBody{Data: params.Body.Data}}, rdsDB)
+		return handlers.GetLatestVersionsForV2(params, rdsDB)
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
 		return handlers.PublishVersion(params, rdsDB)
