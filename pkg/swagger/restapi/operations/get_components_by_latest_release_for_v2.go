@@ -34,7 +34,7 @@ func NewGetComponentsByLatestReleaseForV2(ctx *middleware.Context, handler GetCo
 
 /*GetComponentsByLatestReleaseForV2 swagger:route POST /v2/versions/latest getComponentsByLatestReleaseForV2
 
-list the latest release version of the components.This endpoint is to support existing clients
+list the latest release version of the components.This endpoint is to support old clients
 
 */
 type GetComponentsByLatestReleaseForV2 struct {

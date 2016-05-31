@@ -29,7 +29,7 @@ func NewCreateClusterDetailsForV2(ctx *middleware.Context, handler CreateCluster
 
 /*CreateClusterDetailsForV2 swagger:route POST /v2/clusters/{id} createClusterDetailsForV2
 
-create a cluster with all components.This endpoint is to support existing clients
+create a cluster with all components.This endpoint is to support old clients
 
 */
 type CreateClusterDetailsForV2 struct {
