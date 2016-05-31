@@ -27,7 +27,7 @@ func NewGetClustersCount(ctx *middleware.Context, handler GetClustersCountHandle
 	return &GetClustersCount{Context: ctx, Handler: handler}
 }
 
-/*GetClustersCount swagger:route GET /clusters/count getClustersCount
+/*GetClustersCount swagger:route GET /v3/clusters/count getClustersCount
 
 read the count of the known deis clusters
 

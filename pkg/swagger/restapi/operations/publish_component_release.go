@@ -27,7 +27,7 @@ func NewPublishComponentRelease(ctx *middleware.Context, handler PublishComponen
 	return &PublishComponentRelease{Context: ctx, Handler: handler}
 }
 
-/*PublishComponentRelease swagger:route POST /versions/{train}/{component}/{release} publishComponentRelease
+/*PublishComponentRelease swagger:route POST /v3/versions/{train}/{component}/{release} publishComponentRelease
 
 publish a new release for the component
 

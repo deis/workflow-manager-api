@@ -45,6 +45,8 @@ type WorkflowManagerAPI struct {
 
 	// CreateClusterDetailsHandler sets the operation handler for the create cluster details operation
 	CreateClusterDetailsHandler CreateClusterDetailsHandler
+	// CreateClusterDetailsForV2Handler sets the operation handler for the create cluster details for v2 operation
+	CreateClusterDetailsForV2Handler CreateClusterDetailsForV2Handler
 	// GetClusterByIDHandler sets the operation handler for the get cluster by id operation
 	GetClusterByIDHandler GetClusterByIDHandler
 	// GetClustersByAgeHandler sets the operation handler for the get clusters by age operation
@@ -57,6 +59,8 @@ type WorkflowManagerAPI struct {
 	GetComponentByReleaseHandler GetComponentByReleaseHandler
 	// GetComponentsByLatestReleaseHandler sets the operation handler for the get components by latest release operation
 	GetComponentsByLatestReleaseHandler GetComponentsByLatestReleaseHandler
+	// GetComponentsByLatestReleaseForV2Handler sets the operation handler for the get components by latest release for v2 operation
+	GetComponentsByLatestReleaseForV2Handler GetComponentsByLatestReleaseForV2Handler
 	// PublishComponentReleaseHandler sets the operation handler for the publish component release operation
 	PublishComponentReleaseHandler PublishComponentReleaseHandler
 
@@ -118,6 +122,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "CreateClusterDetailsHandler")
 	}
 
+	if o.CreateClusterDetailsForV2Handler == nil {
+		unregistered = append(unregistered, "CreateClusterDetailsForV2Handler")
+	}
+
 	if o.GetClusterByIDHandler == nil {
 		unregistered = append(unregistered, "GetClusterByIDHandler")
 	}
@@ -140,6 +148,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.GetComponentsByLatestReleaseHandler == nil {
 		unregistered = append(unregistered, "GetComponentsByLatestReleaseHandler")
+	}
+
+	if o.GetComponentsByLatestReleaseForV2Handler == nil {
+		unregistered = append(unregistered, "GetComponentsByLatestReleaseForV2Handler")
 	}
 
 	if o.PublishComponentReleaseHandler == nil {
@@ -222,42 +234,52 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 	if o.handlers["POST"] == nil {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
-	o.handlers["POST"]["/clusters"] = NewCreateClusterDetails(o.context, o.CreateClusterDetailsHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/clusters/{id}"] = NewGetClusterByID(o.context, o.GetClusterByIDHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/clusters/age"] = NewGetClustersByAge(o.context, o.GetClustersByAgeHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/clusters/count"] = NewGetClustersCount(o.context, o.GetClustersCountHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/versions/{train}/{component}"] = NewGetComponentByName(o.context, o.GetComponentByNameHandler)
-
-	if o.handlers["GET"] == nil {
-		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
-	}
-	o.handlers["GET"]["/versions/{train}/{component}/{release}"] = NewGetComponentByRelease(o.context, o.GetComponentByReleaseHandler)
+	o.handlers["POST"]["/v3/clusters"] = NewCreateClusterDetails(o.context, o.CreateClusterDetailsHandler)
 
 	if o.handlers["POST"] == nil {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
-	o.handlers["POST"]["/versions/latest"] = NewGetComponentsByLatestRelease(o.context, o.GetComponentsByLatestReleaseHandler)
+	o.handlers["POST"]["/v2/clusters/{id}"] = NewCreateClusterDetailsForV2(o.context, o.CreateClusterDetailsForV2Handler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/clusters/{id}"] = NewGetClusterByID(o.context, o.GetClusterByIDHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/clusters/age"] = NewGetClustersByAge(o.context, o.GetClustersByAgeHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/clusters/count"] = NewGetClustersCount(o.context, o.GetClustersCountHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/versions/{train}/{component}"] = NewGetComponentByName(o.context, o.GetComponentByNameHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/versions/{train}/{component}/{release}"] = NewGetComponentByRelease(o.context, o.GetComponentByReleaseHandler)
 
 	if o.handlers["POST"] == nil {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
-	o.handlers["POST"]["/versions/{train}/{component}/{release}"] = NewPublishComponentRelease(o.context, o.PublishComponentReleaseHandler)
+	o.handlers["POST"]["/v3/versions/latest"] = NewGetComponentsByLatestRelease(o.context, o.GetComponentsByLatestReleaseHandler)
+
+	if o.handlers["POST"] == nil {
+		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v2/versions/latest"] = NewGetComponentsByLatestReleaseForV2(o.context, o.GetComponentsByLatestReleaseForV2Handler)
+
+	if o.handlers["POST"] == nil {
+		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v3/versions/{train}/{component}/{release}"] = NewPublishComponentRelease(o.context, o.PublishComponentReleaseHandler)
 
 }
 

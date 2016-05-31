@@ -31,7 +31,7 @@ func NewGetComponentByName(ctx *middleware.Context, handler GetComponentByNameHa
 	return &GetComponentByName{Context: ctx, Handler: handler}
 }
 
-/*GetComponentByName swagger:route GET /versions/{train}/{component} getComponentByName
+/*GetComponentByName swagger:route GET /v3/versions/{train}/{component} getComponentByName
 
 list the releases of a component
 

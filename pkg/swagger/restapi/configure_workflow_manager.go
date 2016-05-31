@@ -56,6 +56,11 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.CreateClusterDetailsHandler = operations.CreateClusterDetailsHandlerFunc(func(params operations.CreateClusterDetailsParams) middleware.Responder {
 		return handlers.ClusterCheckin(params, rdsDB)
 	})
+
+	api.CreateClusterDetailsForV2Handler = operations.CreateClusterDetailsForV2HandlerFunc(func(params operations.CreateClusterDetailsForV2Params) middleware.Responder {
+		return handlers.ClusterCheckin(operations.CreateClusterDetailsParams{Body: params.Body}, rdsDB)
+	})
+
 	api.GetClusterByIDHandler = operations.GetClusterByIDHandlerFunc(func(params operations.GetClusterByIDParams) middleware.Responder {
 		return handlers.GetCluster(params, rdsDB)
 	})
@@ -73,6 +78,9 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	})
 	api.GetComponentsByLatestReleaseHandler = operations.GetComponentsByLatestReleaseHandlerFunc(func(params operations.GetComponentsByLatestReleaseParams) middleware.Responder {
 		return handlers.GetLatestVersions(params, rdsDB)
+	})
+	api.GetComponentsByLatestReleaseForV2Handler = operations.GetComponentsByLatestReleaseForV2HandlerFunc(func(params operations.GetComponentsByLatestReleaseForV2Params) middleware.Responder {
+		return handlers.GetLatestVersionsForV2(params, rdsDB)
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
 		return handlers.PublishVersion(params, rdsDB)
