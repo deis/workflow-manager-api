@@ -61,6 +61,8 @@ type WorkflowManagerAPI struct {
 	GetComponentsByLatestReleaseHandler GetComponentsByLatestReleaseHandler
 	// GetComponentsByLatestReleaseForV2Handler sets the operation handler for the get components by latest release for v2 operation
 	GetComponentsByLatestReleaseForV2Handler GetComponentsByLatestReleaseForV2Handler
+	// PingHandler sets the operation handler for the ping operation
+	PingHandler PingHandler
 	// PublishComponentReleaseHandler sets the operation handler for the publish component release operation
 	PublishComponentReleaseHandler PublishComponentReleaseHandler
 
@@ -152,6 +154,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.GetComponentsByLatestReleaseForV2Handler == nil {
 		unregistered = append(unregistered, "GetComponentsByLatestReleaseForV2Handler")
+	}
+
+	if o.PingHandler == nil {
+		unregistered = append(unregistered, "PingHandler")
 	}
 
 	if o.PublishComponentReleaseHandler == nil {
@@ -275,6 +281,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v2/versions/latest"] = NewGetComponentsByLatestReleaseForV2(o.context, o.GetComponentsByLatestReleaseForV2Handler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/ping"] = NewPing(o.context, o.PingHandler)
 
 	if o.handlers["POST"] == nil {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)

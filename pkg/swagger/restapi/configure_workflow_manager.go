@@ -86,6 +86,10 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 		return handlers.PublishVersion(params, rdsDB)
 	})
 
+	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
+		return handlers.Ping()
+	})
+
 	api.ServerShutdown = func() {}
 
 	return setupGlobalMiddleware(api.Serve(setupMiddlewares))
