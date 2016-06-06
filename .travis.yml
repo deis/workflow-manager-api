@@ -16,7 +16,11 @@ install:
 script:
   - make test build docker-build
 deploy:
-  provider: script
-  script: _scripts/deploy.sh
-  on:
-    branch: master
+  - provider: script
+    script: _scripts/stage.sh
+    on:
+      branch: master
+  - provider: script
+    script: _scripts/deploy.sh
+    on:
+      tags: true
