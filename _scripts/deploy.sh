@@ -3,6 +3,8 @@
 # Deploy to production
 #
 
+cd "$(dirname "$0")" || exit 1
+
 export IMAGE_PREFIX=deis
 # publish app image to repositories
 source publish.sh
