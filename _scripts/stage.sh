@@ -5,7 +5,6 @@
 
 cd "$(dirname "$0")" || exit 1
 
-export IMAGE_PREFIX=deisci
 # publish app image to repositories
 source publish.sh
 # download deis CLI
