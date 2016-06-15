@@ -7,11 +7,7 @@ import (
 	"net/http"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
-	"github.com/go-swagger/go-swagger/errors"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
-	"github.com/go-swagger/go-swagger/httpkit/validate"
-	"github.com/go-swagger/go-swagger/strfmt"
-	"github.com/go-swagger/go-swagger/swag"
 )
 
 // GetComponentsByLatestReleaseHandlerFunc turns a function with the right signature into a get components by latest release handler

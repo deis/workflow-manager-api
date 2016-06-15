@@ -100,6 +100,19 @@ func PublishVersion(params operations.PublishComponentReleaseParams, db *gorm.DB
 	return operations.NewPublishComponentReleaseOK().WithPayload(&result)
 }
 
+//PublishDoctor write doctorInfo to database
+func PublishDoctor(params operations.PublishDoctorInfoParams, db *gorm.DB)middleware.Responder middleware.Responder {
+	doctorInfo := *params.Body
+	Train := params.Train
+	uuid := params.UUID
+	version := params.Release
+	result, err := data.AddDoctorInfo(db,doctorInfo)
+	if err != nil {
+		log.Printf("data.doctorInfo error (%s)", err)
+	}
+	return nil
+}
+
 // writeJSON is a helper function for writing HTTP JSON data
 func writeJSON(w http.ResponseWriter, data interface{}) error {
 	w.Header().Set("Content-Type", "application/json")

@@ -13,27 +13,22 @@ import (
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 )
 
-// NewPublishComponentReleaseParams creates a new PublishComponentReleaseParams object
+// NewPublishDoctorInfoParams creates a new PublishDoctorInfoParams object
 // with the default values initialized.
-func NewPublishComponentReleaseParams() PublishComponentReleaseParams {
+func NewPublishDoctorInfoParams() PublishDoctorInfoParams {
 	var ()
-	return PublishComponentReleaseParams{}
+	return PublishDoctorInfoParams{}
 }
 
-// PublishComponentReleaseParams contains all the bound params for the publish component release operation
+// PublishDoctorInfoParams contains all the bound params for the publish doctor info operation
 // typically these are obtained from a http.Request
 //
-// swagger:parameters publishComponentRelease
-type PublishComponentReleaseParams struct {
+// swagger:parameters publishDoctorInfo
+type PublishDoctorInfoParams struct {
 	/*
 	  In: body
 	*/
-	Body *models.ComponentVersion
-	/*A component is a single deis component, e.g., deis-router
-	  Required: true
-	  In: path
-	*/
-	Component string
+	Body *models.DoctorInfo
 	/*The release version of the deis component, eg., 2.0.0-beta2
 	  Required: true
 	  In: path
@@ -44,15 +39,20 @@ type PublishComponentReleaseParams struct {
 	  In: path
 	*/
 	Train string
+	/*A universal Id to represent a sepcific request or report
+	  Required: true
+	  In: path
+	*/
+	UUID string
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
 // for simple values it will use straight method calls
-func (o *PublishComponentReleaseParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
+func (o *PublishDoctorInfoParams) BindRequest(r *http.Request, route *middleware.MatchedRoute) error {
 	var res []error
 
 	defer r.Body.Close()
-	var body models.ComponentVersion
+	var body models.DoctorInfo
 	if err := route.Consumer.Consume(r.Body, &body); err != nil {
 		res = append(res, errors.NewParseError("body", "body", "", err))
 	} else {
@@ -65,11 +65,6 @@ func (o *PublishComponentReleaseParams) BindRequest(r *http.Request, route *midd
 		}
 	}
 
-	rComponent, rhkComponent, _ := route.Params.GetOK("component")
-	if err := o.bindComponent(rComponent, rhkComponent, route.Formats); err != nil {
-		res = append(res, err)
-	}
-
 	rRelease, rhkRelease, _ := route.Params.GetOK("release")
 	if err := o.bindRelease(rRelease, rhkRelease, route.Formats); err != nil {
 		res = append(res, err)
@@ -80,24 +75,18 @@ func (o *PublishComponentReleaseParams) BindRequest(r *http.Request, route *midd
 		res = append(res, err)
 	}
 
+	rUUID, rhkUUID, _ := route.Params.GetOK("uuid")
+	if err := o.bindUUID(rUUID, rhkUUID, route.Formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
 	return nil
 }
 
-func (o *PublishComponentReleaseParams) bindComponent(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	o.Component = raw
-
-	return nil
-}
-
-func (o *PublishComponentReleaseParams) bindRelease(rawData []string, hasKey bool, formats strfmt.Registry) error {
+func (o *PublishDoctorInfoParams) bindRelease(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
@@ -108,13 +97,24 @@ func (o *PublishComponentReleaseParams) bindRelease(rawData []string, hasKey boo
 	return nil
 }
 
-func (o *PublishComponentReleaseParams) bindTrain(rawData []string, hasKey bool, formats strfmt.Registry) error {
+func (o *PublishDoctorInfoParams) bindTrain(rawData []string, hasKey bool, formats strfmt.Registry) error {
 	var raw string
 	if len(rawData) > 0 {
 		raw = rawData[len(rawData)-1]
 	}
 
 	o.Train = raw
+
+	return nil
+}
+
+func (o *PublishDoctorInfoParams) bindUUID(rawData []string, hasKey bool, formats strfmt.Registry) error {
+	var raw string
+	if len(rawData) > 0 {
+		raw = rawData[len(rawData)-1]
+	}
+
+	o.UUID = raw
 
 	return nil
 }

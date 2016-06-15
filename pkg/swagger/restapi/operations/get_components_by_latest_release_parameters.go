@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/go-swagger/go-swagger/errors"
-	"github.com/go-swagger/go-swagger/httpkit/middleware"
 )
 
 // NewGetComponentsByLatestReleaseParams creates a new GetComponentsByLatestReleaseParams object

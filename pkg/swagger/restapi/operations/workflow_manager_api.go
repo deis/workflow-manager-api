@@ -12,7 +12,6 @@ import (
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
 	spec "github.com/go-swagger/go-swagger/spec"
 	strfmt "github.com/go-swagger/go-swagger/strfmt"
-	"github.com/go-swagger/go-swagger/swag"
 )
 
 // NewWorkflowManagerAPI creates a new WorkflowManager instance
@@ -65,6 +64,8 @@ type WorkflowManagerAPI struct {
 	PingHandler PingHandler
 	// PublishComponentReleaseHandler sets the operation handler for the publish component release operation
 	PublishComponentReleaseHandler PublishComponentReleaseHandler
+	// PublishDoctorInfoHandler sets the operation handler for the publish doctor info operation
+	PublishDoctorInfoHandler PublishDoctorInfoHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -162,6 +163,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.PublishComponentReleaseHandler == nil {
 		unregistered = append(unregistered, "PublishComponentReleaseHandler")
+	}
+
+	if o.PublishDoctorInfoHandler == nil {
+		unregistered = append(unregistered, "PublishDoctorInfoHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -291,6 +296,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v3/versions/{train}/{component}/{release}"] = NewPublishComponentRelease(o.context, o.PublishComponentReleaseHandler)
+
+	if o.handlers["POST"] == nil {
+		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
+	}
+	o.handlers["POST"]["/v3/doctor/{train}/{release}/{uuid}"] = NewPublishDoctorInfo(o.context, o.PublishDoctorInfoHandler)
 
 }
 

@@ -85,7 +85,9 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
 		return handlers.PublishVersion(params, rdsDB)
 	})
-
+	api.PublishDoctorInfoHandler = operations.PublishDoctorInfoHandlerFunc(func(params operations.PublishDoctorInfoParams) middleware.Responder {
+		return handlers.PublishDoctor(params, rdsDB)
+	})
 	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
 		return handlers.Ping()
 	})
