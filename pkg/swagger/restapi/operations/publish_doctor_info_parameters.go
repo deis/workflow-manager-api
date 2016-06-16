@@ -29,16 +29,6 @@ type PublishDoctorInfoParams struct {
 	  In: body
 	*/
 	Body *models.DoctorInfo
-	/*The release version of the deis component, eg., 2.0.0-beta2
-	  Required: true
-	  In: path
-	*/
-	Release string
-	/*A train is a release cadence type, e.g., "beta" or "stable"
-	  Required: true
-	  In: path
-	*/
-	Train string
 	/*A universal Id to represent a sepcific request or report
 	  Required: true
 	  In: path
@@ -65,16 +55,6 @@ func (o *PublishDoctorInfoParams) BindRequest(r *http.Request, route *middleware
 		}
 	}
 
-	rRelease, rhkRelease, _ := route.Params.GetOK("release")
-	if err := o.bindRelease(rRelease, rhkRelease, route.Formats); err != nil {
-		res = append(res, err)
-	}
-
-	rTrain, rhkTrain, _ := route.Params.GetOK("train")
-	if err := o.bindTrain(rTrain, rhkTrain, route.Formats); err != nil {
-		res = append(res, err)
-	}
-
 	rUUID, rhkUUID, _ := route.Params.GetOK("uuid")
 	if err := o.bindUUID(rUUID, rhkUUID, route.Formats); err != nil {
 		res = append(res, err)
@@ -83,28 +63,6 @@ func (o *PublishDoctorInfoParams) BindRequest(r *http.Request, route *middleware
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (o *PublishDoctorInfoParams) bindRelease(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	o.Release = raw
-
-	return nil
-}
-
-func (o *PublishDoctorInfoParams) bindTrain(rawData []string, hasKey bool, formats strfmt.Registry) error {
-	var raw string
-	if len(rawData) > 0 {
-		raw = rawData[len(rawData)-1]
-	}
-
-	o.Train = raw
-
 	return nil
 }
 

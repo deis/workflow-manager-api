@@ -62,6 +62,11 @@ func VerifyPersistentStorage(db *gorm.DB) error {
 		log.Println("unable to get record count for " + clustersCheckinsTableName + " table")
 		return err
 	}
+	count, err = getTableCount(db.DB(), doctorTableName)
+	if err != nil {
+		log.Println("unable to get record count for " + doctorTableName + " table")
+		return err
+	}
 	log.Println("counted " + strconv.Itoa(count) + " records for " + clustersCheckinsTableName + " table")
 	return nil
 }

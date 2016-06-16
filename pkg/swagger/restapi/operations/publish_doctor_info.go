@@ -27,7 +27,7 @@ func NewPublishDoctorInfo(ctx *middleware.Context, handler PublishDoctorInfoHand
 	return &PublishDoctorInfo{Context: ctx, Handler: handler}
 }
 
-/*PublishDoctorInfo swagger:route POST /v3/doctor/{train}/{release}/{uuid} publishDoctorInfo
+/*PublishDoctorInfo swagger:route POST /v3/doctor/{uuid} publishDoctorInfo
 
 publish doctor info to Workflow Manager API
 

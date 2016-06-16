@@ -300,7 +300,7 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 	if o.handlers["POST"] == nil {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
-	o.handlers["POST"]["/v3/doctor/{train}/{release}/{uuid}"] = NewPublishDoctorInfo(o.context, o.PublishDoctorInfoHandler)
+	o.handlers["POST"]["/v3/doctor/{uuid}"] = NewPublishDoctorInfo(o.context, o.PublishDoctorInfoHandler)
 
 }
 

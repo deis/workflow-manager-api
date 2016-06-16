@@ -53,52 +53,6 @@ func (o *GetComponentsByLatestRelease) ServeHTTP(rw http.ResponseWriter, r *http
 
 }
 
-/*GetComponentsByLatestReleaseBody get components by latest release body
-
-swagger:model GetComponentsByLatestReleaseBody
-*/
-type GetComponentsByLatestReleaseBody struct {
-
-	/* data
-	 */
-	Data []*models.ComponentVersion `json:"data,omitempty"`
-}
-
-// Validate validates this get components by latest release body
-func (o *GetComponentsByLatestReleaseBody) Validate(formats strfmt.Registry) error {
-	var res []error
-
-	if err := o.validateData(formats); err != nil {
-		// prop
-		res = append(res, err)
-	}
-
-	if len(res) > 0 {
-		return errors.CompositeValidationError(res...)
-	}
-	return nil
-}
-
-func (o *GetComponentsByLatestReleaseBody) validateData(formats strfmt.Registry) error {
-
-	if swag.IsZero(o.Data) { // not required
-		return nil
-	}
-
-	for i := 0; i < len(o.Data); i++ {
-
-		if o.Data[i] != nil {
-
-			if err := o.Data[i].Validate(formats); err != nil {
-				return err
-			}
-		}
-
-	}
-
-	return nil
-}
-
 /*GetComponentsByLatestReleaseOKBodyBody get components by latest release o k body body
 
 swagger:model GetComponentsByLatestReleaseOKBodyBody
@@ -131,6 +85,52 @@ func (o *GetComponentsByLatestReleaseOKBodyBody) validateData(formats strfmt.Reg
 
 	if err := validate.Required("getComponentsByLatestReleaseOK"+"."+"data", "body", o.Data); err != nil {
 		return err
+	}
+
+	for i := 0; i < len(o.Data); i++ {
+
+		if o.Data[i] != nil {
+
+			if err := o.Data[i].Validate(formats); err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+/*GetComponentsByLatestReleaseBody get components by latest release body
+
+swagger:model GetComponentsByLatestReleaseBody
+*/
+type GetComponentsByLatestReleaseBody struct {
+
+	/* data
+	 */
+	Data []*models.ComponentVersion `json:"data,omitempty"`
+}
+
+// Validate validates this get components by latest release body
+func (o *GetComponentsByLatestReleaseBody) Validate(formats strfmt.Registry) error {
+	var res []error
+
+	if err := o.validateData(formats); err != nil {
+		// prop
+		res = append(res, err)
+	}
+
+	if len(res) > 0 {
+		return errors.CompositeValidationError(res...)
+	}
+	return nil
+}
+
+func (o *GetComponentsByLatestReleaseBody) validateData(formats strfmt.Registry) error {
+
+	if swag.IsZero(o.Data) { // not required
+		return nil
 	}
 
 	for i := 0; i < len(o.Data); i++ {
