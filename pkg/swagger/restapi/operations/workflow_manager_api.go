@@ -12,6 +12,7 @@ import (
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
 	spec "github.com/go-swagger/go-swagger/spec"
 	strfmt "github.com/go-swagger/go-swagger/strfmt"
+	"github.com/go-swagger/go-swagger/swag"
 )
 
 // NewWorkflowManagerAPI creates a new WorkflowManager instance
@@ -60,6 +61,8 @@ type WorkflowManagerAPI struct {
 	GetComponentsByLatestReleaseHandler GetComponentsByLatestReleaseHandler
 	// GetComponentsByLatestReleaseForV2Handler sets the operation handler for the get components by latest release for v2 operation
 	GetComponentsByLatestReleaseForV2Handler GetComponentsByLatestReleaseForV2Handler
+	// GetDoctorInfoHandler sets the operation handler for the get doctor info operation
+	GetDoctorInfoHandler GetDoctorInfoHandler
 	// PingHandler sets the operation handler for the ping operation
 	PingHandler PingHandler
 	// PublishComponentReleaseHandler sets the operation handler for the publish component release operation
@@ -155,6 +158,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.GetComponentsByLatestReleaseForV2Handler == nil {
 		unregistered = append(unregistered, "GetComponentsByLatestReleaseForV2Handler")
+	}
+
+	if o.GetDoctorInfoHandler == nil {
+		unregistered = append(unregistered, "GetDoctorInfoHandler")
 	}
 
 	if o.PingHandler == nil {
@@ -286,6 +293,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v2/versions/latest"] = NewGetComponentsByLatestReleaseForV2(o.context, o.GetComponentsByLatestReleaseForV2Handler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/doctor/{uuid}"] = NewGetDoctorInfo(o.context, o.GetDoctorInfoHandler)
 
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)

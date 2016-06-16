@@ -2,24 +2,11 @@ package data
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/jinzhu/gorm"
 )
-
-var (
-	errNoRowsAffected = errors.New("No rows affected")
-)
-
-type errParsingCluster struct {
-	origErr error
-}
-
-func (e errParsingCluster) Error() string {
-	return fmt.Sprintf("Error parsing cluster (%s)", e.origErr)
-}
 
 // GetDoctor gets the doctorInfo from the DB with the given report ID
 func GetDoctor(db *gorm.DB, id string) (models.DoctorInfo, error) {
@@ -28,7 +15,7 @@ func GetDoctor(db *gorm.DB, id string) (models.DoctorInfo, error) {
 	if resDB.Error != nil {
 		return models.DoctorInfo{}, resDB.Error
 	}
-	doctor, err := parseJSONCluster([]byte(ret.Data))
+	doctor, err := parseJSONDoctor([]byte(ret.Data))
 	if err != nil {
 		return models.DoctorInfo{}, errParsingCluster{origErr: err}
 	}
@@ -36,13 +23,12 @@ func GetDoctor(db *gorm.DB, id string) (models.DoctorInfo, error) {
 }
 
 func upsertDoctor(db *gorm.DB, id string, doctor models.DoctorInfo) (models.DoctorInfo, error) {
-
 	js, err := json.Marshal(doctor)
 	if err != nil {
 		return models.DoctorInfo{}, err
 	}
 	var numExisting int
-	query := doctroTable{ReportID: id}
+	query := doctorTable{ReportID: id}
 	countDB := db.Model(&doctorTable{}).Where(&query).Count(&numExisting)
 	if countDB.Error != nil {
 		return models.DoctorInfo{}, countDB.Error

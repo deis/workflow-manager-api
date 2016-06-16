@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-swagger/go-swagger/swag"
 	graceful "github.com/tylerb/graceful"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
