@@ -95,9 +95,31 @@ func PublishVersion(params operations.PublishComponentReleaseParams, db *gorm.DB
 	result, err := data.UpsertVersion(db, componentVersion)
 	if err != nil {
 		log.Printf("data.SetVersion error (%s)", err)
-		operations.NewPublishComponentReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+		return operations.NewPublishComponentReleaseDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 	}
 	return operations.NewPublishComponentReleaseOK().WithPayload(&result)
+}
+
+// PublishDoctor writes doctorInfo to database
+func PublishDoctor(params operations.PublishDoctorInfoParams, db *gorm.DB) middleware.Responder {
+	doctorInfo := *params.Body
+	uuid := params.UUID
+	_, err := data.UpsertDoctor(db, uuid, doctorInfo)
+	if err != nil {
+		log.Printf("data.PublishDoctor error (%s)", err)
+		return operations.NewPublishDoctorInfoDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewPublishDoctorInfoOK()
+}
+
+// GetDoctor gets doctorInfo related to UUID
+func GetDoctor(params operations.GetDoctorInfoParams, db *gorm.DB) middleware.Responder {
+	result, err := data.GetDoctor(db, params.UUID)
+	if err != nil {
+		log.Printf("data.GetDoctor error (%s)", err)
+		return operations.NewGetDoctorInfoDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
+	}
+	return operations.NewGetDoctorInfoOK().WithPayload(&result)
 }
 
 // writeJSON is a helper function for writing HTTP JSON data

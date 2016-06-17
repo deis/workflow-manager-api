@@ -2,9 +2,9 @@ package data
 
 import (
 	"encoding/json"
+
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	sqlxTypes "github.com/jmoiron/sqlx/types"
-	"log"
 )
 
 func parseJSONComponent(jTxt sqlxTypes.JSONText) (models.ComponentVersion, error) {
@@ -20,8 +20,15 @@ func parseJSONComponent(jTxt sqlxTypes.JSONText) (models.ComponentVersion, error
 func parseJSONCluster(rawJSON []byte) (models.Cluster, error) {
 	var cluster models.Cluster
 	if err := json.Unmarshal(rawJSON, &cluster); err != nil {
-		log.Print(err)
 		return models.Cluster{}, err
 	}
 	return cluster, nil
+}
+
+func parseJSONDoctor(rawJSON []byte) (models.DoctorInfo, error) {
+	var doctor models.DoctorInfo
+	if err := json.Unmarshal(rawJSON, &doctor); err != nil {
+		return models.DoctorInfo{}, err
+	}
+	return doctor, nil
 }
