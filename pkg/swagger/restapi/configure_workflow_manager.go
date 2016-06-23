@@ -3,6 +3,7 @@ package restapi
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/handlers"
@@ -11,6 +12,21 @@ import (
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
+)
+
+const (
+	rDSRegionKey  = "WORKFLOW_MANAGER_API_RDS_REGION"
+	dBUserKey     = "WORKFLOW_MANAGER_API_DBUSER"
+	dBPassKey     = "WORKFLOW_MANAGER_API_DBPASS"
+	dBInstanceKey = "WORKFLOW_MANAGER_API_DBINSTANCE"
+	dBFlavor      = "postgres"
+)
+
+var (
+	rdsRegion  = os.Getenv(rDSRegionKey)
+	dBInstance = os.Getenv(dBInstanceKey)
+	dBUser     = os.Getenv(dBUserKey)
+	dBPass     = os.Getenv(dBPassKey)
 )
 
 type GormDb struct {
@@ -28,14 +44,14 @@ func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
 			return gormDb.db
 		}
 	}
-	rdsDB, err := data.NewRDSDB()
+	db, err := data.NewRDSDB(rdsRegion, dBUser, dBPass, dBFlavor, dBInstance).Get()
 	if err != nil {
 		log.Fatalf("unable to create connection to RDS DB (%s)", err)
 	}
-	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	return rdsDB
+	return db
 }
 
 func configureFlags(api *operations.WorkflowManagerAPI) {
