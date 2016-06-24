@@ -34,7 +34,7 @@ type GormDb struct {
 }
 
 // This file is safe to edit. Once it exists it will not be overwritten
-func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
+func getDb(api *operations.WorkflowManagerAPI, d data.DB) *gorm.DB {
 	for _, optsGroup := range api.CommandLineOptionsGroups {
 		if optsGroup.ShortDescription == "deisUnitTests" {
 			gormDb, ok := optsGroup.Options.(GormDb)
@@ -44,7 +44,7 @@ func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
 			return gormDb.db
 		}
 	}
-	db, err := data.NewRDSDB(rdsRegion, dBUser, dBPass, dBFlavor, dBInstance).Get()
+	db, err := d.Get()
 	if err != nil {
 		log.Fatalf("unable to create connection to RDS DB (%s)", err)
 	}
@@ -59,8 +59,8 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 }
 
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
-
-	rdsDB := getDb(api)
+	db := data.NewRDSDB(rdsRegion, dBUser, dBPass, dBFlavor, dBInstance)
+	rdsDB := getDb(api, db)
 	rdsDB.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
