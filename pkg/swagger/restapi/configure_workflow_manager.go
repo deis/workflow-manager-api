@@ -58,6 +58,7 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
 
+// extend the arity of this function to accept as a 2nd arg a *sql.DB
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	db := data.NewRDSDB(rdsRegion, dBUser, dBPass, dBFlavor, dBInstance)
 	rdsDB := getDb(api, db)
