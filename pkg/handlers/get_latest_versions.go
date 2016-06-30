@@ -7,7 +7,6 @@ import (
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
-	"github.com/deis/workflow-manager/types"
 	"github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
 )
@@ -39,7 +38,7 @@ type SparseComponentAndTrainInfoJSONWrapper struct {
 // ComponentVersionsJSONWrapper is the JSON compatible struct that holds a slice of
 // types.ComponentVersion structs
 type ComponentVersionsJSONWrapper struct {
-	Data []types.ComponentVersion `json:"data"`
+	Data []models.ComponentVersion `json:"data"`
 }
 
 // GetLatestVersions is the handler for the POST /{apiVersion}/versions/latest endpoint
