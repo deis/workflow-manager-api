@@ -10,7 +10,7 @@ The API's "publish version" business logic responds to this `HTTP POST` URL rout
 
 It accepts as request body data with media type "application/json" a JSON representation of the `ComponentVersion` type defined here:
 
-* https://github.com/deis/workflow-manager/blob/master/types/types.go
+* https://raw.githubusercontent.com/deis/workflow-manager/master/pkg/swagger/models/component_version.go
 
 Here is an example against an instance of the API in the real world:
 

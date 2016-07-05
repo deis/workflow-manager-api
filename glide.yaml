@@ -5,10 +5,6 @@ import:
   - aws
   - aws/session
   - service/rds
-- package: github.com/deis/workflow-manager
-  subpackages:
-  - components
-  - types
 - package: github.com/gorilla/mux
 - package: github.com/jmoiron/sqlx
   subpackages:
