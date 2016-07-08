@@ -14,7 +14,7 @@ sudo: required
 install:
   - make bootstrap
 script:
-  - make test build docker-build
+  - make test docker-build
 deploy:
   provider: script
   script: _scripts/deploy.sh
