@@ -12,6 +12,10 @@ import (
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 )
 
+const (
+	DefaultRDSType
+)
+
 //go:generate swagger generate server -t ../.. -A WorkflowManager -f ./swagger.yml
 
 // NewServer creates a new api workflow manager server but does not configure it
@@ -37,9 +41,11 @@ func (s *Server) ConfigureFlags() {
 
 // Server for the workflow manager API
 type Server struct {
-	Host        string `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
-	Port        int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" env:"PORT"`
-	httpServerL net.Listener
+	Host         string `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
+	Port         int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" env:"PORT"`
+	RDSRegion    string `long:"rds-region" description:"The region of the RDS postgres server"`
+	PostgresType string `long:"postgres-type" required description:"The type of the postgres server (either 'incluster' or 'rds')"`
+	httpServerL  net.Listener
 
 	api          *operations.WorkflowManagerAPI
 	handler      http.Handler
