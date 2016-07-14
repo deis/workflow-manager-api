@@ -18,7 +18,7 @@ type GormDb struct {
 }
 
 // This file is safe to edit. Once it exists it will not be overwritten
-func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
+func getDb(api *operations.WorkflowManagerAPI, dbType data.DBType) *gorm.DB {
 	for _, optsGroup := range api.CommandLineOptionsGroups {
 		if optsGroup.ShortDescription == "deisUnitTests" {
 			gormDb, ok := optsGroup.Options.(GormDb)
@@ -28,10 +28,18 @@ func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
 			return gormDb.db
 		}
 	}
-	rdsDB, err := data.NewRDSDB()
-	if err != nil {
-		log.Fatalf("unable to create connection to RDS DB (%s)", err)
+	var db *gorm.DB
+	switch dbType {
+	case data.RDSDBType:
+		rdsDB, err := data.NewRDSDB()
+		if err != nil {
+			log.Fatalf("unable to create connection to RDS DB (%s)", err)
+		}
+		db = rdsDB
+	default:
+		log.Fatalf("Unknown DB type %s", dbType)
 	}
+
 	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
