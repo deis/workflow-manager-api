@@ -2,18 +2,16 @@ package restapi
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/go-swagger/go-swagger/swag"
 	graceful "github.com/tylerb/graceful"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
-)
-
-const (
-	DefaultRDSType
 )
 
 //go:generate swagger generate server -t ../.. -A WorkflowManager -f ./swagger.yml
@@ -28,7 +26,11 @@ func NewServer(api *operations.WorkflowManagerAPI) *Server {
 // ConfigureAPI configures the API and handlers. Needs to be called before Serve
 func (s *Server) ConfigureAPI() {
 	if s.api != nil {
-		s.handler = configureAPI(s.api)
+		dbType, err := data.DBTypeFromString(s.PostgresType)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		s.handler = configureAPI(s.api, dbType)
 	}
 }
 
@@ -61,7 +63,11 @@ func (s *Server) SetAPI(api *operations.WorkflowManagerAPI) {
 	}
 
 	s.api = api
-	s.handler = configureAPI(api)
+	dbType, err := data.DBTypeFromString(s.PostgresType)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.handler = configureAPI(api, dbType)
 }
 
 // Serve the api

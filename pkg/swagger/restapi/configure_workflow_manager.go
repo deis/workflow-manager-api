@@ -40,19 +40,19 @@ func getDb(api *operations.WorkflowManagerAPI, dbType data.DBType) *gorm.DB {
 		log.Fatalf("Unknown DB type %s", dbType)
 	}
 
-	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	return rdsDB
+	return db
 }
 
 func configureFlags(api *operations.WorkflowManagerAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
 
-func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
+func configureAPI(api *operations.WorkflowManagerAPI, dbType data.DBType) http.Handler {
 
-	rdsDB := getDb(api)
+	rdsDB := getDb(api, dbType)
 	rdsDB.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
