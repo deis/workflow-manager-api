@@ -1,13 +1,13 @@
-hash: ec3e310bb07ab83208953a2031de07eba4b8b7c8621439535e01670bf8e1188b
-updated: 2016-07-05T11:55:03.019502152-07:00
+hash: f0783298d32c89b5b109e13602b6c7a3ffab9298494b6de652bf6aebccbed860
+updated: 2016-07-18T11:21:38.188096966-07:00
 imports:
 - name: github.com/arschles/assert
-  version: fc2da9844984ce5093111298174706e14d4c0c47
+  version: 5c22e2eba944d89ddd5c81b2c4175e64ee828503
 - name: github.com/asaskevich/govalidator
   version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
   repo: https://github.com/asaskevich/govalidator
 - name: github.com/aws/aws-sdk-go
-  version: caee6e866bf437a6bef0777a3bf141cdd3aa022d
+  version: d85fa529a99a833067e11c0a838b9db7a5d5ea71
   subpackages:
   - aws
   - aws/session
@@ -21,17 +21,17 @@ imports:
   - private/endpoints
   - aws/awsutil
   - aws/client/metadata
-  - aws/signer/v4
   - private/protocol
   - private/protocol/query
+  - private/signer/v4
   - private/waiter
   - aws/credentials/ec2rolecreds
   - aws/ec2metadata
-  - private/protocol/rest
   - private/protocol/query/queryutil
   - private/protocol/xml/xmlutil
+  - private/protocol/rest
 - name: github.com/go-ini/ini
-  version: 927d8d7ced542ab92df77ac1637b6e56336ee0dd
+  version: 12f418cc7edc5a618a51407b7ac1f1f512139df3
 - name: github.com/go-swagger/go-swagger
   version: ff42df2bf231f6a12383b36332f8364254ea86d6
   subpackages:
@@ -51,22 +51,23 @@ imports:
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
   repo: https://github.com/gorilla/context
 - name: github.com/gorilla/mux
-  version: 9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e
+  version: 9c19ed558d5df4da88e2ade9c8940d742aef0e7e
 - name: github.com/jessevdk/go-flags
   version: 6b9493b3cb60367edd942144879646604089e3f7
-  repo: https://github.com/jessevdk/go-flags
 - name: github.com/jinzhu/gorm
-  version: 3324ab20633e8c7ec6d6b1f7a714a1a6e06fec08
+  version: bf413d67d3a25d4eeddb28541283fa6434d1cdb5
 - name: github.com/jinzhu/inflection
-  version: 8f4d3a0d04ce0b7c0cf3126fb98524246d00d102
+  version: 3272df6c21d04180007eb3349844c89a3856bc25
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/jmoiron/sqlx
-  version: bdae0c3219c3bdb92f3d7c70825018712787c933
+  version: 398dd5876282499cdfd4cb8ea0f31a672abe9495
   subpackages:
   - types
+- name: github.com/kelseyhightower/envconfig
+  version: 91921eb4cf999321cdbeebdba5a03555800d493b
 - name: github.com/lib/pq
-  version: 4dd446efc17690bc53e154025146f73203b18309
+  version: dd3290b2f71a8b30bee8e4e75a337a825263d26f
   subpackages:
   - oid
 - name: github.com/mxk/go-sqlite
@@ -85,8 +86,7 @@ imports:
   version: d69616f51cdfcd7514d6a380847a152dfc2a749d
   repo: https://github.com/PuerkitoBio/purell
 - name: github.com/tylerb/graceful
-  version: c78c8d9dded2ad16ad81b1fa526a81b2bb8049f6
-  repo: https://github.com/tylerb/graceful
+  version: 9a3d4236b03bb5d26f7951134d248f9d5510d599
 - name: golang.org/x/net
   version: e7da8edaa52631091740908acaf2c2d4c9b3ce90
   repo: https://go.googlesource.com/net
