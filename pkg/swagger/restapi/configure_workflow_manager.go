@@ -1,11 +1,8 @@
 package restapi
 
 import (
-	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/handlers"
@@ -33,12 +30,6 @@ func getDb(api *operations.WorkflowManagerAPI, dbType data.DBType) *gorm.DB {
 	}
 	var db *gorm.DB
 	switch dbType {
-	case data.RDSDBType:
-		rdsDB, err := data.NewRDSDB()
-		if err != nil {
-			log.Fatalf("unable to create connection to RDS DB (%s)", err)
-		}
-		db = rdsDB
 	case data.InClusterPostgresDBType:
 		cfg, err := data.GetInClusterPostgresConfig()
 		if err != nil {
@@ -54,11 +45,15 @@ func getDb(api *operations.WorkflowManagerAPI, dbType data.DBType) *gorm.DB {
 		}
 		pgDB, err := data.NewPostgresDB(cfg.Host, cfg.Port, username, password, cfg.DBName)
 		if err != nil {
-			log.Fatalf("unable to create connection to in-cluster postgres DB (%s@%s:%d)", username, host, port)
+			log.Fatalf("unable to create connection to in-cluster postgres DB (%s@%s:%d)", username, cfg.Host, cfg.Port)
 		}
 		db = pgDB
 	default:
-		log.Fatalf("Unknown DB type %s", dbType)
+		rdsDB, err := data.NewRDSDB()
+		if err != nil {
+			log.Fatalf("unable to create connection to RDS DB (%s)", err)
+		}
+		db = rdsDB
 	}
 
 	if err := data.VerifyPersistentStorage(db); err != nil {
