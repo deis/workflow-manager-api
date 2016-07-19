@@ -8,7 +8,7 @@ export GO15VENDOREXPERIMENT=1
 
 # dockerized development environment variables
 REPO_PATH := github.com/deis/${SHORT_NAME}
-DEV_ENV_IMAGE := quay.io/deis/go-dev:0.9.1
+DEV_ENV_IMAGE := quay.io/deis/go-dev:0.14.0
 SWAGGER_IMAGE := quay.io/goswagger/swagger:0.5.0
 DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
 DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
