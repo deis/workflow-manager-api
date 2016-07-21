@@ -2,10 +2,12 @@ package restapi
 
 import (
 	"fmt"
+	"log"
 	"net"
 	"net/http"
 	"time"
 
+	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/go-swagger/go-swagger/swag"
 	graceful "github.com/tylerb/graceful"
 
@@ -24,7 +26,11 @@ func NewServer(api *operations.WorkflowManagerAPI) *Server {
 // ConfigureAPI configures the API and handlers. Needs to be called before Serve
 func (s *Server) ConfigureAPI() {
 	if s.api != nil {
-		s.handler = configureAPI(s.api)
+		dbType, err := data.DBTypeFromString(s.PostgresType)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		s.handler = configureAPI(s.api, dbType)
 	}
 }
 
@@ -37,9 +43,11 @@ func (s *Server) ConfigureFlags() {
 
 // Server for the workflow manager API
 type Server struct {
-	Host        string `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
-	Port        int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" env:"PORT"`
-	httpServerL net.Listener
+	Host         string `long:"host" description:"the IP to listen on" default:"localhost" env:"HOST"`
+	Port         int    `long:"port" description:"the port to listen on for insecure connections, defaults to a random value" env:"PORT"`
+	RDSRegion    string `long:"rds-region" description:"The region of the RDS postgres server"`
+	PostgresType string `long:"postgres-type" required description:"The type of the postgres server (either 'incluster' or 'rds')"`
+	httpServerL  net.Listener
 
 	api          *operations.WorkflowManagerAPI
 	handler      http.Handler
@@ -55,7 +63,11 @@ func (s *Server) SetAPI(api *operations.WorkflowManagerAPI) {
 	}
 
 	s.api = api
-	s.handler = configureAPI(api)
+	dbType, err := data.DBTypeFromString(s.PostgresType)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	s.handler = configureAPI(api, dbType)
 }
 
 // Serve the api
