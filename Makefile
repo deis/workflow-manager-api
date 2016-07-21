@@ -8,7 +8,7 @@ export GO15VENDOREXPERIMENT=1
 
 # dockerized development environment variables
 REPO_PATH := github.com/deis/${SHORT_NAME}
-DEV_ENV_IMAGE := quay.io/deis/go-dev:0.9.1
+DEV_ENV_IMAGE := quay.io/deis/go-dev:0.14.0
 SWAGGER_IMAGE := quay.io/goswagger/swagger:0.5.0
 DEV_ENV_WORK_DIR := /go/src/${REPO_PATH}
 DEV_ENV_PREFIX := docker run --rm -e GO15VENDOREXPERIMENT=1 -v ${CURDIR}:${DEV_ENV_WORK_DIR} -w ${DEV_ENV_WORK_DIR}
@@ -43,7 +43,7 @@ glideup:
 build:
 	${DEV_ENV_PREFIX} -e CGO_ENABLED=0 ${DEV_ENV_IMAGE} go build -a -installsuffix cgo -ldflags ${LDFLAGS} -o ${BINARY_DEST_DIR}/${SHORT_NAME} *.go || exit 1
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/${SHORT_NAME})
-	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} goupx --strip-binary -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
+	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} upx -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
 
 swagger-serverstub:
 	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/master/api/swagger-spec/swagger.yml
