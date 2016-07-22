@@ -2,7 +2,6 @@ package data
 
 import (
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -12,43 +11,41 @@ import (
 	_ "github.com/lib/pq" // Pure Go Postgres driver for database/sql
 )
 
-const (
-	rDSRegionKey = "WORKFLOW_MANAGER_API_RDS_REGION"
-)
+// rdsDB is an implementation of the DB interface
+type rdsDB struct {
+	config   *aws.Config
+	user     string
+	pass     string
+	flavor   string
+	instance *string
+}
 
-var (
-	rDSRegion = os.Getenv(rDSRegionKey)
-)
-
-// NewRDSDB attempts to discover and connect to a postgres database managed by Amazon RDS
-func NewRDSDB() (*gorm.DB, error) {
-	db, err := getRDSDB()
-	if err != nil {
-		return nil, err
+// NewRDSDB is a constructor that returns an instance of a DB
+// that can connect to an Amazon RDS instance
+func NewRDSDB(region string, user string, pass string, flavor string, instance string) DB {
+	return &rdsDB{
+		config:   &aws.Config{Region: aws.String(region)},
+		user:     user,
+		pass:     pass,
+		flavor:   flavor,
+		instance: &instance,
 	}
-	return db, nil
 }
 
-func getRDSSession() *rds.RDS {
-	return rds.New(session.New(), &aws.Config{Region: aws.String(rDSRegion)})
-}
-
-func getRDSDB() (*gorm.DB, error) {
-	svc := getRDSSession()
-	dbInstanceIdentifier := new(string)
-	dbInstanceIdentifier = &dBInstance
-	params := rds.DescribeDBInstancesInput{DBInstanceIdentifier: dbInstanceIdentifier}
+func (r rdsDB) Get() (*gorm.DB, error) {
+	svc := rds.New(session.New(), r.config)
+	params := rds.DescribeDBInstancesInput{DBInstanceIdentifier: r.instance}
 	resp, err := svc.DescribeDBInstances(&params)
 	if err != nil {
 		return nil, err
 	}
 	if len(resp.DBInstances) > 1 {
-		log.Printf("more than one database instance returned for %s, using the 1st one", dBInstance)
+		log.Printf("more than one database instance returned for %s, using the 1st one", *r.instance)
 	}
 	instance := resp.DBInstances[0]
 	url := *instance.Endpoint.Address + ":" + strconv.FormatInt(*instance.Endpoint.Port, 10)
-	dataSourceName := "postgres://" + dBUser + ":" + dBPass + "@" + url + "/" + *instance.DBName + "?sslmode=require"
-	db, err := gorm.Open("postgres", dataSourceName)
+	dataSourceName := r.flavor + "://" + r.user + ":" + r.pass + "@" + url + "/" + *instance.DBName + "?sslmode=require"
+	db, err := gorm.Open(r.flavor, dataSourceName)
 	if err != nil {
 		log.Println("couldn't get a db connection!")
 		return nil, err

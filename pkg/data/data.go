@@ -3,22 +3,9 @@ package data
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/jinzhu/gorm"
-)
-
-const (
-	dBInstanceKey = "WORKFLOW_MANAGER_API_DBINSTANCE"
-	dBUserKey     = "WORKFLOW_MANAGER_API_DBUSER"
-	dBPassKey     = "WORKFLOW_MANAGER_API_DBPASS"
-)
-
-var (
-	dBInstance = os.Getenv(dBInstanceKey)
-	dBUser     = os.Getenv(dBUserKey)
-	dBPass     = os.Getenv(dBPassKey)
 )
 
 type errNoMoreRows struct {

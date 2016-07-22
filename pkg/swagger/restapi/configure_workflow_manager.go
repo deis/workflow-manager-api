@@ -3,6 +3,7 @@ package restapi
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/handlers"
@@ -13,12 +14,27 @@ import (
 	"github.com/jinzhu/gorm"
 )
 
+const (
+	rDSRegionKey  = "WORKFLOW_MANAGER_API_RDS_REGION"
+	dBUserKey     = "WORKFLOW_MANAGER_API_DBUSER"
+	dBPassKey     = "WORKFLOW_MANAGER_API_DBPASS"
+	dBInstanceKey = "WORKFLOW_MANAGER_API_DBINSTANCE"
+	dBFlavor      = "postgres"
+)
+
+var (
+	rdsRegion  = os.Getenv(rDSRegionKey)
+	dBInstance = os.Getenv(dBInstanceKey)
+	dBUser     = os.Getenv(dBUserKey)
+	dBPass     = os.Getenv(dBPassKey)
+)
+
 type GormDb struct {
 	db *gorm.DB
 }
 
 // This file is safe to edit. Once it exists it will not be overwritten
-func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
+func getDb(api *operations.WorkflowManagerAPI, d data.DB) *gorm.DB {
 	for _, optsGroup := range api.CommandLineOptionsGroups {
 		if optsGroup.ShortDescription == "deisUnitTests" {
 			gormDb, ok := optsGroup.Options.(GormDb)
@@ -28,23 +44,24 @@ func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
 			return gormDb.db
 		}
 	}
-	rdsDB, err := data.NewRDSDB()
+	db, err := d.Get()
 	if err != nil {
 		log.Fatalf("unable to create connection to RDS DB (%s)", err)
 	}
-	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	return rdsDB
+	return db
 }
 
 func configureFlags(api *operations.WorkflowManagerAPI) {
 	// api.CommandLineOptionsGroups = []swag.CommandLineOptionsGroup{ ... }
 }
 
+// extend the arity of this function to accept as a 2nd arg a *sql.DB
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
-
-	rdsDB := getDb(api)
+	db := data.NewRDSDB(rdsRegion, dBUser, dBPass, dBFlavor, dBInstance)
+	rdsDB := getDb(api, db)
 	rdsDB.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
