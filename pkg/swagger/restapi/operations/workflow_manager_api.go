@@ -42,11 +42,15 @@ type WorkflowManagerAPI struct {
 
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer httpkit.Producer
+	// HTMLProducer registers a producer for a "text/html" mime type
+	HTMLProducer httpkit.Producer
 
 	// CreateClusterDetailsHandler sets the operation handler for the create cluster details operation
 	CreateClusterDetailsHandler CreateClusterDetailsHandler
 	// CreateClusterDetailsForV2Handler sets the operation handler for the create cluster details for v2 operation
 	CreateClusterDetailsForV2Handler CreateClusterDetailsForV2Handler
+	// GetAuthHandler sets the operation handler for the get auth operation
+	GetAuthHandler GetAuthHandler
 	// GetClusterByIDHandler sets the operation handler for the get cluster by id operation
 	GetClusterByIDHandler GetClusterByIDHandler
 	// GetClustersByAgeHandler sets the operation handler for the get clusters by age operation
@@ -124,12 +128,20 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.HTMLProducer == nil {
+		unregistered = append(unregistered, "HTMLProducer")
+	}
+
 	if o.CreateClusterDetailsHandler == nil {
 		unregistered = append(unregistered, "CreateClusterDetailsHandler")
 	}
 
 	if o.CreateClusterDetailsForV2Handler == nil {
 		unregistered = append(unregistered, "CreateClusterDetailsForV2Handler")
+	}
+
+	if o.GetAuthHandler == nil {
+		unregistered = append(unregistered, "GetAuthHandler")
 	}
 
 	if o.GetClusterByIDHandler == nil {
@@ -221,6 +233,9 @@ func (o *WorkflowManagerAPI) ProducersFor(mediaTypes []string) map[string]httpki
 		case "application/json":
 			result["application/json"] = o.JSONProducer
 
+		case "text/html":
+			result["text/html"] = o.HTMLProducer
+
 		}
 	}
 	return result
@@ -258,6 +273,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v2/clusters/{id}"] = NewCreateClusterDetailsForV2(o.context, o.CreateClusterDetailsForV2Handler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/auth"] = NewGetAuth(o.context, o.GetAuthHandler)
 
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)

@@ -94,6 +94,9 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
 		return handlers.Ping()
 	})
+	api.GetAuthHandler = operations.GetAuthHandlerFunc(func() middleware.Responder {
+		return handlers.GetAuth()
+	})
 
 	api.ServerShutdown = func() {}
 

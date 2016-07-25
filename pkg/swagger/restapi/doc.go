@@ -13,6 +13,8 @@
     Produces:
     - application/json
 
+    - text/html
+
 
 swagger:meta
 */
