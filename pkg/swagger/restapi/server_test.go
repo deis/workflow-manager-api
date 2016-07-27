@@ -29,9 +29,10 @@ const (
 )
 
 var (
-	nowTime    = time.Now()
-	futureTime = nowTime.Add(1 * time.Hour)
-	pastTime   = nowTime.Add(-1 * time.Hour)
+	nowTime          = time.Now()
+	futureTime       = nowTime.Add(1 * time.Hour)
+	pastTime         = nowTime.Add(-1 * time.Hour)
+	doctorReportUUID = uuid.New()
 )
 
 func newServer(db *gorm.DB) (*httptest.Server, error) {
@@ -399,6 +400,38 @@ func TestFilterByClusterAge(t *testing.T) {
 	assert.Equal(t, respEnvelope.Data[0].ID, cluster.ID, "returned cluster ID")
 }
 
+// tests the POST /{apiVersion}/doctor/{id} endpoint
+func TestPostDoctor(t *testing.T) {
+	memDB, err := data.NewMemDB()
+	assert.NoErr(t, err)
+	assert.NoErr(t, data.VerifyPersistentStorage(memDB))
+	srv, err := newServer(memDB)
+	assert.NoErr(t, err)
+	defer srv.Close()
+	jsonData := `{"cluster":{"components":[{"component":{"description":"Deis Workflow","name":"deis-builder"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-controller"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-database"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-logger"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-minio"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-grafana"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-influxdb"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-stdout"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-registry"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-router"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-workflow-manager"},"version":{"train":"","version":"v2.0.0"}}],"id":"6cd6539e-4225-43a1-89e7-0155b8ea1de6"}}`
+	resp, err := httpPost(srv, urlPath("v3", "doctor", doctorReportUUID), jsonData)
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+}
+
+// tests the GET /{apiVersion}/doctor/{id} endpoint
+func TestGetDoctor(t *testing.T) {
+	db, err := data.NewMemDB()
+	assert.NoErr(t, err)
+	assert.NoErr(t, data.VerifyPersistentStorage(db))
+	srv, err := newServer(db)
+	assert.NoErr(t, err)
+	defer srv.Close()
+	jsonData := `{"cluster":{"components":[{"component":{"description":"Deis Workflow","name":"deis-builder"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-controller"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-database"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-logger"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-minio"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-grafana"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-influxdb"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-monitor-stdout"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-registry"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-router"},"version":{"train":"","version":"v2.0.0"}},{"component":{"description":"Deis Workflow","name":"deis-workflow-manager"},"version":{"train":"","version":"v2.0.0"}}],"id":"6cd6539e-4225-43a1-89e7-0155b8ea1de6"}}`
+	_, err = httpPost(srv, urlPath("v3", "doctor", doctorReportUUID), jsonData)
+	assert.NoErr(t, err)
+	resp, err := httpGetBasicAuth(srv, urlPath("v3", "doctor", doctorReportUUID), "admin", "deis")
+	assert.NoErr(t, err)
+	defer resp.Body.Close()
+	assert.Equal(t, resp.StatusCode, http.StatusOK, "response code")
+}
+
 func timeFuture() time.Time {
 	return futureTime
 }
@@ -418,4 +451,25 @@ func httpGet(s *httptest.Server, route string) (*http.Response, error) {
 func httpPost(s *httptest.Server, route string, json string) (*http.Response, error) {
 	fullURL := s.URL + "/" + route
 	return http.Post(fullURL, "application/json", bytes.NewBuffer([]byte(json)))
+}
+
+func httpGetBasicAuth(s *httptest.Server, route, user, pass string) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("GET", s.URL+"/"+route, nil)
+	if err != nil {
+		return nil, err
+	}
+	req.SetBasicAuth(user, pass)
+	return client.Do(req)
+}
+
+func httpPostBasicAuth(s *httptest.Server, route, json, user, pass string) (*http.Response, error) {
+	client := &http.Client{}
+	req, err := http.NewRequest("POST", s.URL+"/"+route, bytes.NewBuffer([]byte(json)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.SetBasicAuth(user, pass)
+	return client.Do(req)
 }

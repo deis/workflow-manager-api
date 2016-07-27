@@ -1,17 +1,21 @@
 package restapi
 
 import (
+	"io"
 	"log"
 	"net/http"
 
-	"github.com/deis/workflow-manager-api/pkg/data"
-	"github.com/deis/workflow-manager-api/pkg/handlers"
-	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 	errors "github.com/go-swagger/go-swagger/errors"
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
 	"github.com/jinzhu/gorm"
+
+	"github.com/deis/workflow-manager-api/pkg/data"
+	"github.com/deis/workflow-manager-api/pkg/handlers"
+	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
 )
+
+// This file is safe to edit. Once it exists it will not be overwritten
 
 type GormDb struct {
 	db *gorm.DB
@@ -43,7 +47,6 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 }
 
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
-
 	rdsDB := getDb(api)
 	rdsDB.LogMode(true)
 	// configure the api here
@@ -53,14 +56,26 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 
 	api.JSONProducer = httpkit.JSONProducer()
 
+	api.HTMLProducer = httpkit.ProducerFunc(func(w io.Writer, data interface{}) error {
+		return errors.NotImplemented("html producer has not yet been implemented")
+	})
+
+	api.BasicAuthAuth = func(user string, pass string) (interface{}, error) {
+		if user == "admin" && pass == "deis" {
+			return "admin", nil
+		}
+		return nil, errors.Unauthenticated("basic auth")
+	}
+
 	api.CreateClusterDetailsHandler = operations.CreateClusterDetailsHandlerFunc(func(params operations.CreateClusterDetailsParams) middleware.Responder {
 		return handlers.ClusterCheckin(params, rdsDB)
 	})
-
 	api.CreateClusterDetailsForV2Handler = operations.CreateClusterDetailsForV2HandlerFunc(func(params operations.CreateClusterDetailsForV2Params) middleware.Responder {
 		return handlers.ClusterCheckin(operations.CreateClusterDetailsParams{Body: params.Body}, rdsDB)
 	})
-
+	api.GetAuthHandler = operations.GetAuthHandlerFunc(func() middleware.Responder {
+		return handlers.GetAuth()
+	})
 	api.GetClusterByIDHandler = operations.GetClusterByIDHandlerFunc(func(params operations.GetClusterByIDParams) middleware.Responder {
 		return handlers.GetCluster(params, rdsDB)
 	})
@@ -82,20 +97,17 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.GetComponentsByLatestReleaseForV2Handler = operations.GetComponentsByLatestReleaseForV2HandlerFunc(func(params operations.GetComponentsByLatestReleaseForV2Params) middleware.Responder {
 		return handlers.GetLatestVersionsForV2(params, rdsDB)
 	})
-	api.GetDoctorInfoHandler = operations.GetDoctorInfoHandlerFunc(func(params operations.GetDoctorInfoParams) middleware.Responder {
+	api.GetDoctorInfoHandler = operations.GetDoctorInfoHandlerFunc(func(params operations.GetDoctorInfoParams, principal interface{}) middleware.Responder {
 		return handlers.GetDoctor(params, rdsDB)
+	})
+	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
+		return handlers.Ping()
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
 		return handlers.PublishVersion(params, rdsDB)
 	})
 	api.PublishDoctorInfoHandler = operations.PublishDoctorInfoHandlerFunc(func(params operations.PublishDoctorInfoParams) middleware.Responder {
 		return handlers.PublishDoctor(params, rdsDB)
-	})
-	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
-		return handlers.Ping()
-	})
-	api.GetAuthHandler = operations.GetAuthHandlerFunc(func() middleware.Responder {
-		return handlers.GetAuth()
 	})
 
 	api.ServerShutdown = func() {}

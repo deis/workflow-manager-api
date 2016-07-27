@@ -10,6 +10,7 @@ import (
 
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
+	security "github.com/go-swagger/go-swagger/httpkit/security"
 	spec "github.com/go-swagger/go-swagger/spec"
 	strfmt "github.com/go-swagger/go-swagger/strfmt"
 	"github.com/go-swagger/go-swagger/swag"
@@ -40,10 +41,14 @@ type WorkflowManagerAPI struct {
 	// JSONConsumer registers a consumer for a "application/json" mime type
 	JSONConsumer httpkit.Consumer
 
-	// JSONProducer registers a producer for a "application/json" mime type
-	JSONProducer httpkit.Producer
 	// HTMLProducer registers a producer for a "text/html" mime type
 	HTMLProducer httpkit.Producer
+	// JSONProducer registers a producer for a "application/json" mime type
+	JSONProducer httpkit.Producer
+
+	// BasicAuthAuth registers a function that takes username and password and returns a principal
+	// it performs authentication with basic auth
+	BasicAuthAuth func(string, string) (interface{}, error)
 
 	// CreateClusterDetailsHandler sets the operation handler for the create cluster details operation
 	CreateClusterDetailsHandler CreateClusterDetailsHandler
@@ -124,12 +129,16 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "JSONConsumer")
 	}
 
+	if o.HTMLProducer == nil {
+		unregistered = append(unregistered, "HTMLProducer")
+	}
+
 	if o.JSONProducer == nil {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
-	if o.HTMLProducer == nil {
-		unregistered = append(unregistered, "HTMLProducer")
+	if o.BasicAuthAuth == nil {
+		unregistered = append(unregistered, "Auth")
 	}
 
 	if o.CreateClusterDetailsHandler == nil {
@@ -203,7 +212,17 @@ func (o *WorkflowManagerAPI) ServeErrorFor(operationID string) func(http.Respons
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *WorkflowManagerAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]httpkit.Authenticator {
 
-	return nil
+	result := make(map[string]httpkit.Authenticator)
+	for name, scheme := range schemes {
+		switch name {
+
+		case "basicAuth":
+			_ = scheme
+			result[name] = security.BasicAuth(func(u, p string) (interface{}, error) { return o.BasicAuthAuth(u, p) })
+
+		}
+	}
+	return result
 
 }
 
@@ -230,11 +249,11 @@ func (o *WorkflowManagerAPI) ProducersFor(mediaTypes []string) map[string]httpki
 	for _, mt := range mediaTypes {
 		switch mt {
 
-		case "application/json":
-			result["application/json"] = o.JSONProducer
-
 		case "text/html":
 			result["text/html"] = o.HTMLProducer
+
+		case "application/json":
+			result["application/json"] = o.JSONProducer
 
 		}
 	}

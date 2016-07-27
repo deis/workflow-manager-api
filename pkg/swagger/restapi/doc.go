@@ -11,9 +11,9 @@
 
 
     Produces:
-    - application/json
-
     - text/html
+
+    - application/json
 
 
 swagger:meta
