@@ -45,8 +45,11 @@ build:
 	@$(call check-static-binary,$(BINARY_DEST_DIR)/${SHORT_NAME})
 	${DEV_ENV_PREFIX} ${DEV_ENV_IMAGE} upx -9 ${BINARY_DEST_DIR}/${SHORT_NAME} || exit 1
 
+static-html:
+	${DEV_ENV_CMD} sh -c 'cp -R static_html ${BINDIR}'
+
 swagger-serverstub:
-	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/deis/workflow-manager/master/api/swagger-spec/swagger.yml
+	${SWAGGER_CMD} generate server -A WorkflowManager -t pkg/swagger -f https://raw.githubusercontent.com/jackfrancis/workflow-manager/oauth/api/swagger-spec/swagger.yml
 	mv pkg/swagger/cmd/workflow-manager-server/main.go .
 
 test:
@@ -55,7 +58,7 @@ test:
 test-native:
 	go test -tags=testonly $$(glide nv)
 
-docker-build: build
+docker-build: build static-html
 	docker build --rm -t ${IMAGE} rootfs
 	docker tag ${IMAGE} ${MUTABLE_IMAGE}
 

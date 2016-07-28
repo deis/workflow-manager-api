@@ -10,6 +10,7 @@ import (
 
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
+	security "github.com/go-swagger/go-swagger/httpkit/security"
 	spec "github.com/go-swagger/go-swagger/spec"
 	strfmt "github.com/go-swagger/go-swagger/strfmt"
 	"github.com/go-swagger/go-swagger/swag"
@@ -40,13 +41,21 @@ type WorkflowManagerAPI struct {
 	// JSONConsumer registers a consumer for a "application/json" mime type
 	JSONConsumer httpkit.Consumer
 
+	// HTMLProducer registers a producer for a "text/html" mime type
+	HTMLProducer httpkit.Producer
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer httpkit.Producer
+
+	// BasicAuthAuth registers a function that takes username and password and returns a principal
+	// it performs authentication with basic auth
+	BasicAuthAuth func(string, string) (interface{}, error)
 
 	// CreateClusterDetailsHandler sets the operation handler for the create cluster details operation
 	CreateClusterDetailsHandler CreateClusterDetailsHandler
 	// CreateClusterDetailsForV2Handler sets the operation handler for the create cluster details for v2 operation
 	CreateClusterDetailsForV2Handler CreateClusterDetailsForV2Handler
+	// GetAuthHandler sets the operation handler for the get auth operation
+	GetAuthHandler GetAuthHandler
 	// GetClusterByIDHandler sets the operation handler for the get cluster by id operation
 	GetClusterByIDHandler GetClusterByIDHandler
 	// GetClustersByAgeHandler sets the operation handler for the get clusters by age operation
@@ -120,8 +129,16 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "JSONConsumer")
 	}
 
+	if o.HTMLProducer == nil {
+		unregistered = append(unregistered, "HTMLProducer")
+	}
+
 	if o.JSONProducer == nil {
 		unregistered = append(unregistered, "JSONProducer")
+	}
+
+	if o.BasicAuthAuth == nil {
+		unregistered = append(unregistered, "Auth")
 	}
 
 	if o.CreateClusterDetailsHandler == nil {
@@ -130,6 +147,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.CreateClusterDetailsForV2Handler == nil {
 		unregistered = append(unregistered, "CreateClusterDetailsForV2Handler")
+	}
+
+	if o.GetAuthHandler == nil {
+		unregistered = append(unregistered, "GetAuthHandler")
 	}
 
 	if o.GetClusterByIDHandler == nil {
@@ -191,7 +212,17 @@ func (o *WorkflowManagerAPI) ServeErrorFor(operationID string) func(http.Respons
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *WorkflowManagerAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]httpkit.Authenticator {
 
-	return nil
+	result := make(map[string]httpkit.Authenticator)
+	for name, scheme := range schemes {
+		switch name {
+
+		case "basicAuth":
+			_ = scheme
+			result[name] = security.BasicAuth(func(u, p string) (interface{}, error) { return o.BasicAuthAuth(u, p) })
+
+		}
+	}
+	return result
 
 }
 
@@ -217,6 +248,9 @@ func (o *WorkflowManagerAPI) ProducersFor(mediaTypes []string) map[string]httpki
 	result := make(map[string]httpkit.Producer)
 	for _, mt := range mediaTypes {
 		switch mt {
+
+		case "text/html":
+			result["text/html"] = o.HTMLProducer
 
 		case "application/json":
 			result["application/json"] = o.JSONProducer
@@ -258,6 +292,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("POST")] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v2/clusters/{id}"] = NewCreateClusterDetailsForV2(o.context, o.CreateClusterDetailsForV2Handler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/auth"] = NewGetAuth(o.context, o.GetAuthHandler)
 
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)

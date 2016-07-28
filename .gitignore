@@ -1,2 +1,3 @@
 vendor/
 workflow-manager-api
+rootfs/static_html

@@ -11,6 +11,8 @@
 
 
     Produces:
+    - text/html
+
     - application/json
 
 
