@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/deis/workflow-manager-api/config"
 	"github.com/deis/workflow-manager-api/pkg/data"
 	"github.com/deis/workflow-manager-api/pkg/handlers"
 	"github.com/deis/workflow-manager-api/pkg/swagger/restapi/operations"
@@ -53,6 +54,15 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 
 	api.JSONProducer = httpkit.JSONProducer()
 
+	api.BasicAuth = func(user string, pass string) (interface{}, error) {
+		expectedUser := config.Spec.DoctorAuthUser
+		expectedPass := config.Spec.DoctorAuthPass
+		if user == expectedUser && pass == expectedPass {
+			return user, nil
+		}
+		return nil, errors.Unauthenticated("basic auth")
+	}
+
 	api.CreateClusterDetailsHandler = operations.CreateClusterDetailsHandlerFunc(func(params operations.CreateClusterDetailsParams) middleware.Responder {
 		return handlers.ClusterCheckin(params, rdsDB)
 	})
@@ -82,7 +92,7 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.GetComponentsByLatestReleaseForV2Handler = operations.GetComponentsByLatestReleaseForV2HandlerFunc(func(params operations.GetComponentsByLatestReleaseForV2Params) middleware.Responder {
 		return handlers.GetLatestVersionsForV2(params, rdsDB)
 	})
-	api.GetDoctorInfoHandler = operations.GetDoctorInfoHandlerFunc(func(params operations.GetDoctorInfoParams) middleware.Responder {
+	api.GetDoctorInfoHandler = operations.GetDoctorInfoHandlerFunc(func(params operations.GetDoctorInfoParams, principal interface{}) middleware.Responder {
 		return handlers.GetDoctor(params, rdsDB)
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {

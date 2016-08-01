@@ -10,6 +10,7 @@ import (
 
 	httpkit "github.com/go-swagger/go-swagger/httpkit"
 	middleware "github.com/go-swagger/go-swagger/httpkit/middleware"
+	security "github.com/go-swagger/go-swagger/httpkit/security"
 	spec "github.com/go-swagger/go-swagger/spec"
 	strfmt "github.com/go-swagger/go-swagger/strfmt"
 	"github.com/go-swagger/go-swagger/swag"
@@ -42,6 +43,10 @@ type WorkflowManagerAPI struct {
 
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer httpkit.Producer
+
+	// BasicAuth registers a function that takes username and password and returns a principal
+	// it performs authentication with basic auth
+	BasicAuth func(string, string) (interface{}, error)
 
 	// CreateClusterDetailsHandler sets the operation handler for the create cluster details operation
 	CreateClusterDetailsHandler CreateClusterDetailsHandler
@@ -124,6 +129,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.BasicAuth == nil {
+		unregistered = append(unregistered, "Auth")
+	}
+
 	if o.CreateClusterDetailsHandler == nil {
 		unregistered = append(unregistered, "CreateClusterDetailsHandler")
 	}
@@ -191,7 +200,17 @@ func (o *WorkflowManagerAPI) ServeErrorFor(operationID string) func(http.Respons
 // AuthenticatorsFor gets the authenticators for the specified security schemes
 func (o *WorkflowManagerAPI) AuthenticatorsFor(schemes map[string]spec.SecurityScheme) map[string]httpkit.Authenticator {
 
-	return nil
+	result := make(map[string]httpkit.Authenticator)
+	for name, scheme := range schemes {
+		switch name {
+
+		case "basic":
+			_ = scheme
+			result[name] = security.BasicAuth(func(u, p string) (interface{}, error) { return o.BasicAuth(u, p) })
+
+		}
+	}
+	return result
 
 }
 

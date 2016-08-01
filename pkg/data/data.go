@@ -3,22 +3,16 @@ package data
 import (
 	"fmt"
 	"log"
-	"os"
 	"strconv"
 
+	"github.com/deis/workflow-manager-api/config"
 	"github.com/jinzhu/gorm"
 )
 
-const (
-	dBInstanceKey = "WORKFLOW_MANAGER_API_DBINSTANCE"
-	dBUserKey     = "WORKFLOW_MANAGER_API_DBUSER"
-	dBPassKey     = "WORKFLOW_MANAGER_API_DBPASS"
-)
-
 var (
-	dBInstance = os.Getenv(dBInstanceKey)
-	dBUser     = os.Getenv(dBUserKey)
-	dBPass     = os.Getenv(dBPassKey)
+	dBInstance = config.Spec.DBInstance
+	dBUser     = config.Spec.DBUser
+	dBPass     = config.Spec.DBPass
 )
 
 type errNoMoreRows struct {

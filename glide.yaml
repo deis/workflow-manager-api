@@ -9,6 +9,7 @@ import:
 - package: github.com/jmoiron/sqlx
   subpackages:
   - types
+- package: github.com/kelseyhightower/envconfig
 - package: github.com/lib/pq
 - package: github.com/arschles/assert
 - package: github.com/mxk/go-sqlite
