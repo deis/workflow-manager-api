@@ -1,5 +1,5 @@
-hash: ec3e310bb07ab83208953a2031de07eba4b8b7c8621439535e01670bf8e1188b
-updated: 2016-07-05T11:55:03.019502152-07:00
+hash: eadb6c0e28259560006baa4cf0fa091ed15363d4cbcc031c7d153414e061520d
+updated: 2016-08-01T12:03:55.438728115-07:00
 imports:
 - name: github.com/arschles/assert
   version: fc2da9844984ce5093111298174706e14d4c0c47
@@ -7,7 +7,7 @@ imports:
   version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
   repo: https://github.com/asaskevich/govalidator
 - name: github.com/aws/aws-sdk-go
-  version: caee6e866bf437a6bef0777a3bf141cdd3aa022d
+  version: 3b8c171554fc7d4fc53b87e25d4926a9e7495c2e
   subpackages:
   - aws
   - aws/session
@@ -26,12 +26,13 @@ imports:
   - private/protocol/query
   - private/waiter
   - aws/credentials/ec2rolecreds
+  - aws/credentials/endpointcreds
   - aws/ec2metadata
   - private/protocol/rest
   - private/protocol/query/queryutil
   - private/protocol/xml/xmlutil
 - name: github.com/go-ini/ini
-  version: 927d8d7ced542ab92df77ac1637b6e56336ee0dd
+  version: cf53f9204df4fbdd7ec4164b57fa6184ba168292
 - name: github.com/go-swagger/go-swagger
   version: ff42df2bf231f6a12383b36332f8364254ea86d6
   subpackages:
@@ -42,6 +43,7 @@ imports:
   - strfmt
   - swag
   - httpkit
+  - httpkit/security
   - jsonpointer
   - jsonreference
   - httpkit/middleware/header
@@ -51,20 +53,22 @@ imports:
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
   repo: https://github.com/gorilla/context
 - name: github.com/gorilla/mux
-  version: 9fa818a44c2bf1396a17f9d5a3c0f6dd39d2ff8e
+  version: 780415097119f6f61c55475fe59b66f3c3e9ea53
 - name: github.com/jessevdk/go-flags
   version: 6b9493b3cb60367edd942144879646604089e3f7
   repo: https://github.com/jessevdk/go-flags
 - name: github.com/jinzhu/gorm
-  version: 3324ab20633e8c7ec6d6b1f7a714a1a6e06fec08
+  version: a646b13548ec0aa812fe805b2780f460dd2771b6
 - name: github.com/jinzhu/inflection
   version: 8f4d3a0d04ce0b7c0cf3126fb98524246d00d102
 - name: github.com/jmespath/go-jmespath
   version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
 - name: github.com/jmoiron/sqlx
-  version: bdae0c3219c3bdb92f3d7c70825018712787c933
+  version: 7396209bbeada6a4fcc28aa9408f89b2e71cac39
   subpackages:
   - types
+- name: github.com/kelseyhightower/envconfig
+  version: 91921eb4cf999321cdbeebdba5a03555800d493b
 - name: github.com/lib/pq
   version: 4dd446efc17690bc53e154025146f73203b18309
   subpackages:

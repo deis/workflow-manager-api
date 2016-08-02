@@ -2,22 +2,18 @@ package data
 
 import (
 	"log"
-	"os"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/rds"
+	"github.com/deis/workflow-manager-api/config"
 	"github.com/jinzhu/gorm"
 	_ "github.com/lib/pq" // Pure Go Postgres driver for database/sql
 )
 
-const (
-	rDSRegionKey = "WORKFLOW_MANAGER_API_RDS_REGION"
-)
-
 var (
-	rDSRegion = os.Getenv(rDSRegionKey)
+	rDSRegion = config.Spec.RDSRegion
 )
 
 // NewRDSDB attempts to discover and connect to a postgres database managed by Amazon RDS
