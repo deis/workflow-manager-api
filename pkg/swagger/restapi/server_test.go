@@ -67,7 +67,7 @@ func TestGetVersion(t *testing.T) {
 	defer srv.Close()
 	componentVer := models.ComponentVersion{
 		Component: &models.Component{Name: componentName},
-		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: &models.Data{
+		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: &models.VersionData{
 			Description: "release notes",
 		}},
 	}
@@ -93,13 +93,13 @@ func TestGetComponentTrainVersions(t *testing.T) {
 	componentVers := []models.ComponentVersion{}
 	componentVer1 := models.ComponentVersion{
 		Component: &models.Component{Name: componentName},
-		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-1", Released: "2016-03-30T23:54:39Z", Data: &models.Data{
+		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-1", Released: "2016-03-30T23:54:39Z", Data: &models.VersionData{
 			Description: "release notes",
 		}},
 	}
 	componentVer2 := models.ComponentVersion{
 		Component: &models.Component{Name: componentName},
-		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: &models.Data{
+		Version: &models.Version{Train: "beta", Version: "2.0.0-beta-2", Released: "2016-03-31T23:54:39Z", Data: &models.VersionData{
 			Description: "release notes",
 		}},
 	}
@@ -143,7 +143,7 @@ func TestGetLatestComponentTrainVersion(t *testing.T) {
 		cv.Version.Train = train
 		cv.Version.Version = fmt.Sprintf("testversion%d", i)
 		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(releaseTimeFormat)
-		cv.Version.Data = &models.Data{
+		cv.Version.Data = &models.VersionData{
 			Description: fmt.Sprintf("data%d", i),
 		}
 		if i == latestCVIdx {
@@ -185,7 +185,7 @@ func TestPostVersions(t *testing.T) {
 	version := "2.0.0-beta-2"
 	componentVer := models.ComponentVersion{
 		Component: &models.Component{Name: componentName},
-		Version: &models.Version{Train: train, Version: version, Released: "2016-03-31T23:54:39Z", Data: &models.Data{
+		Version: &models.Version{Train: train, Version: version, Released: "2016-03-31T23:54:39Z", Data: &models.VersionData{
 			Description: "release notes",
 		}},
 	}
