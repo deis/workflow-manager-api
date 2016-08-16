@@ -173,7 +173,7 @@ func parseDBVersions(versions []versionsTable) ([]*models.ComponentVersion, erro
 }
 
 func parseDBVersion(version versionsTable) (models.ComponentVersion, error) {
-	data := models.Data{}
+	data := models.VersionData{}
 	if err := json.Unmarshal([]byte(version.Data), &data); err != nil {
 		return models.ComponentVersion{}, err
 	}

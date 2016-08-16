@@ -63,7 +63,7 @@ func TestGetLatestVersion(t *testing.T) {
 		cv.Version.Train = train
 		cv.Version.Version = fmt.Sprintf("testversion%d", i)
 		cv.Version.Released = time.Now().Add(time.Duration(i) * time.Hour).Format(released)
-		cv.Version.Data = &models.Data{
+		cv.Version.Data = &models.VersionData{
 			Description: fmt.Sprintf("data%d", i),
 		}
 		if i == latestCVIdx {

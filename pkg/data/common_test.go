@@ -13,7 +13,7 @@ const (
 )
 
 var (
-	versionData = models.Data{
+	versionData = models.VersionData{
 		Description: "release notes",
 	}
 	componentDescription = "this is a component"
