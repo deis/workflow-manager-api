@@ -54,6 +54,8 @@ type WorkflowManagerAPI struct {
 	CreateClusterDetailsForV2Handler CreateClusterDetailsForV2Handler
 	// GetClusterByIDHandler sets the operation handler for the get cluster by id operation
 	GetClusterByIDHandler GetClusterByIDHandler
+	// GetClusterCheckinsHandler sets the operation handler for the get cluster checkins operation
+	GetClusterCheckinsHandler GetClusterCheckinsHandler
 	// GetClustersByAgeHandler sets the operation handler for the get clusters by age operation
 	GetClustersByAgeHandler GetClustersByAgeHandler
 	// GetClustersCountHandler sets the operation handler for the get clusters count operation
@@ -68,6 +70,8 @@ type WorkflowManagerAPI struct {
 	GetComponentsByLatestReleaseForV2Handler GetComponentsByLatestReleaseForV2Handler
 	// GetDoctorInfoHandler sets the operation handler for the get doctor info operation
 	GetDoctorInfoHandler GetDoctorInfoHandler
+	// GetPersistentClustersHandler sets the operation handler for the get persistent clusters operation
+	GetPersistentClustersHandler GetPersistentClustersHandler
 	// PingHandler sets the operation handler for the ping operation
 	PingHandler PingHandler
 	// PublishComponentReleaseHandler sets the operation handler for the publish component release operation
@@ -145,6 +149,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 		unregistered = append(unregistered, "GetClusterByIDHandler")
 	}
 
+	if o.GetClusterCheckinsHandler == nil {
+		unregistered = append(unregistered, "GetClusterCheckinsHandler")
+	}
+
 	if o.GetClustersByAgeHandler == nil {
 		unregistered = append(unregistered, "GetClustersByAgeHandler")
 	}
@@ -171,6 +179,10 @@ func (o *WorkflowManagerAPI) Validate() error {
 
 	if o.GetDoctorInfoHandler == nil {
 		unregistered = append(unregistered, "GetDoctorInfoHandler")
+	}
+
+	if o.GetPersistentClustersHandler == nil {
+		unregistered = append(unregistered, "GetPersistentClustersHandler")
 	}
 
 	if o.PingHandler == nil {
@@ -286,6 +298,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
 	}
+	o.handlers["GET"]["/v3/clusters/checkins"] = NewGetClusterCheckins(o.context, o.GetClusterCheckinsHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
 	o.handlers["GET"]["/v3/clusters/age"] = NewGetClustersByAge(o.context, o.GetClustersByAgeHandler)
 
 	if o.handlers["GET"] == nil {
@@ -317,6 +334,11 @@ func (o *WorkflowManagerAPI) initHandlerCache() {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
 	}
 	o.handlers["GET"]["/v3/doctor/{uuid}"] = NewGetDoctorInfo(o.context, o.GetDoctorInfoHandler)
+
+	if o.handlers["GET"] == nil {
+		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v3/clusters/persistent"] = NewGetPersistentClusters(o.context, o.GetPersistentClustersHandler)
 
 	if o.handlers["GET"] == nil {
 		o.handlers[strings.ToUpper("GET")] = make(map[string]http.Handler)

@@ -80,6 +80,12 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	api.GetClustersCountHandler = operations.GetClustersCountHandlerFunc(func() middleware.Responder {
 		return handlers.ClustersCount(rdsDB)
 	})
+	api.GetClusterCheckinsHandler = operations.GetClusterCheckinsHandlerFunc(func(params operations.GetClusterCheckinsParams) middleware.Responder {
+		return handlers.ClusterCheckins(params, rdsDB)
+	})
+	api.GetPersistentClustersHandler = operations.GetPersistentClustersHandlerFunc(func(params operations.GetPersistentClustersParams) middleware.Responder {
+		return handlers.PersistentClusters(params, rdsDB)
+	})
 	api.GetComponentByNameHandler = operations.GetComponentByNameHandlerFunc(func(params operations.GetComponentByNameParams) middleware.Responder {
 		return handlers.GetComponentTrainVersions(params, rdsDB)
 	})
