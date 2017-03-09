@@ -18,6 +18,16 @@ type ClusterCheckinsFilter struct {
 	CreatedBefore time.Time
 }
 
+// clustersCheckinsFilterResponse type that represents a `clusters_checkins` filter result
+type clustersCheckinsFilterResponse struct {
+	ClusterID   string `gorm:"type:uuid;column_name:cluster_id;index"`
+	FirstSeen   string `gorm:"type:timestamp;column_name:first_seen"`
+	LastSeen    string `gorm:"type:timestamp;column_name:last_seen"`
+	ClusterAge  string `gorm:"type:interval;column_name:cluster_age"`
+	LastCheckin string `gorm:"type:interval;column_name:last_checkin"`
+	Checkins    string `gorm:"type:int;column_name:checkins"`
+}
+
 // NewClusterCheckinsFilter returns a new ClusterCheckinsFilter if the given times can result in a valid
 // query that would return clusters. If not, returns nil and an ErrImpossibleFilter error
 func NewClusterCheckinsFilter(

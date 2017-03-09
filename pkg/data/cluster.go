@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/deis/workflow-manager-api/pkg/swagger/models"
@@ -146,45 +147,47 @@ func FilterClustersByAge(db *gorm.DB, filter *ClusterAgeFilter) ([]*models.Clust
 
 // FilterClusterCheckins returns a slice of clusters whose various time fields match the requirements
 // in the given filter.
-func FilterClusterCheckins(db *gorm.DB, filter *ClusterCheckinsFilter) ([]*models.Cluster, error) {
-	var rows []clustersTable
+func FilterClusterCheckins(db *gorm.DB, filter *ClusterCheckinsFilter) ([]*models.ClusterCheckin, error) {
+	var rows []clustersCheckinsFilterResponse
 	execDB := db.Raw(`SELECT cluster_id,
-        MIN(created_at) AS first,
-        MAX(created_at) AS last,
-        AGE(MAX(created_at), MIN(created_at)) AS cluster_age,
-        AGE(MAX(created_at), NOW()) AS last_checkin,
-        COUNT(1) AS checkins
-        FROM   clusters_checkins
-        GROUP  BY cluster_id
-        HAVING MIN(created_at) > ? AND MIN(created_at) < ?
-        ORDER  BY first DESC`,
+		MIN(created_at) AS first_seen,
+		MAX(created_at) AS last_seen,
+		AGE(MAX(created_at), MIN(created_at)) AS cluster_age,
+		AGE(MAX(created_at), NOW()) AS last_checkin,
+		COUNT(1) AS checkins
+		FROM   clusters_checkins
+		GROUP  BY cluster_id
+		HAVING MIN(created_at) > ? AND MIN(created_at) < ?
+		ORDER  BY first_seen DESC;`,
 		Timestamp{Time: filter.CreatedAfter},
 		Timestamp{Time: filter.CreatedBefore},
 	).Find(&rows)
+
 	if execDB.Error != nil {
 		return nil, execDB.Error
 	}
 
-	clusters, err := makeClusters(rows)
+	checkins, err := makeClusterCheckins(rows)
 	if err != nil {
 		return nil, err
 	}
-	return clusters, nil
+	return checkins, nil
 }
 
 // FilterPersistentClusters returns a slice of clusters whose various time fields match the requirements
 // in the given filter.
-func FilterPersistentClusters(db *gorm.DB, filter *PersistentClustersFilter) ([]*models.Cluster, error) {
-	var rows []clustersTable
+func FilterPersistentClusters(db *gorm.DB, filter *PersistentClustersFilter) ([]*models.ClusterCheckin, error) {
+	var rows []clustersCheckinsFilterResponse
 	execDB := db.Raw(`SELECT cluster_id,
-        MIN(created_at) AS first,
-        MAX(created_at) AS last,
+        MIN(created_at) AS first_seen,
+        MAX(created_at) AS last_seen,
         AGE(MAX(created_at), MIN(created_at)) AS cluster_age,
         COUNT(1) AS checkins
         FROM clusters_checkins
         GROUP  BY cluster_id
         HAVING MIN(created_at) > ? AND MIN(created_at) < ?
-        AND COUNT(1) > 1 AND MAX(created_at) > ? ORDER  BY first ASC`,
+        AND COUNT(1) > 1 AND MAX(created_at) > ?
+		ORDER  BY first_seen ASC`,
 		Timestamp{Time: filter.Epoch},
 		Timestamp{Time: filter.Timestamp},
 		Timestamp{Time: filter.RelativeYesterday},
@@ -193,11 +196,11 @@ func FilterPersistentClusters(db *gorm.DB, filter *PersistentClustersFilter) ([]
 		return nil, execDB.Error
 	}
 
-	clusters, err := makeClusters(rows)
+	checkins, err := makeClusterCheckins(rows)
 	if err != nil {
 		return nil, err
 	}
-	return clusters, nil
+	return checkins, nil
 }
 
 func makeClusters(rows []clustersTable) ([]*models.Cluster, error) {
@@ -210,4 +213,27 @@ func makeClusters(rows []clustersTable) ([]*models.Cluster, error) {
 		clusters[i] = &cluster
 	}
 	return clusters, nil
+}
+
+func makeClusterCheckins(rows []clustersCheckinsFilterResponse) ([]*models.ClusterCheckin, error) {
+	clusterCheckins := make([]*models.ClusterCheckin, len(rows))
+	for i, row := range rows {
+		c, err := strconv.ParseInt(row.Checkins, 10, 64)
+		if err != nil {
+			return nil, err
+		}
+		clusterCheckin := models.ClusterCheckin{
+			ClusterID:  row.ClusterID,
+			FirstSeen:  row.FirstSeen,
+			LastSeen:   row.LastSeen,
+			ClusterAge: row.ClusterAge,
+			Checkins:   c,
+		}
+		if row.LastCheckin != "" {
+			clusterCheckin.LastCheckin = row.LastCheckin
+		}
+
+		clusterCheckins[i] = &clusterCheckin
+	}
+	return clusterCheckins, nil
 }

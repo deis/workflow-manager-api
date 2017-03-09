@@ -22,7 +22,7 @@ type ClustersCount struct {
 
 	/* data
 	 */
-	Data []*Cluster `json:"data,omitempty"`
+	Data []*ClusterCheckin `json:"data,omitempty"`
 }
 
 // Validate validates this clusters count

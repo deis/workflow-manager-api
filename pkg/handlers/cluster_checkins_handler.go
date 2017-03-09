@@ -18,12 +18,12 @@ func ClusterCheckins(params operations.GetClusterCheckinsParams, db *gorm.DB) mi
 		return operations.NewGetClusterCheckinsDefault(http.StatusBadRequest).WithPayload(&models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 	}
 
-	clusters, err := data.FilterClusterCheckins(db, clusterCheckinsFilter)
+	checkins, err := data.FilterClusterCheckins(db, clusterCheckinsFilter)
 	if err != nil {
 		log.Printf("Error filtering cluster checkins (%s)", err)
 		return operations.NewGetClusterCheckinsDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 	}
-	numResults := int64(len(clusters))
-	clustersCount := models.ClustersCount{Count: &numResults, Data: clusters}
+	numResults := int64(len(checkins))
+	clustersCount := models.ClustersCount{Count: &numResults, Data: checkins}
 	return operations.NewGetClusterCheckinsOK().WithPayload(&clustersCount)
 }

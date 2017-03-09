@@ -18,12 +18,12 @@ func PersistentClusters(params operations.GetPersistentClustersParams, db *gorm.
 		return operations.NewGetPersistentClustersDefault(http.StatusBadRequest).WithPayload(&models.Error{Code: http.StatusBadRequest, Message: err.Error()})
 	}
 
-	clusters, err := data.FilterPersistentClusters(db, persistentClustersFilter)
+	checkins, err := data.FilterPersistentClusters(db, persistentClustersFilter)
 	if err != nil {
 		log.Printf("Error filtering persistent clusters (%s)", err)
 		return operations.NewGetPersistentClustersDefault(http.StatusInternalServerError).WithPayload(&models.Error{Code: http.StatusInternalServerError, Message: err.Error()})
 	}
-	numResults := int64(len(clusters))
-	clustersCount := models.ClustersCount{Count: &numResults, Data: clusters}
+	numResults := int64(len(checkins))
+	clustersCount := models.ClustersCount{Count: &numResults, Data: checkins}
 	return operations.NewGetClusterCheckinsOK().WithPayload(&clustersCount)
 }
