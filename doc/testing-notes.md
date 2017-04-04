@@ -6,23 +6,13 @@
 
 ## Dependencies
 
-  - [AWS][aws] credentials/ability to launch a (free tier) [RDS instance][rds]
   - [psql](https://www.postgresql.org/docs/9.2/static/app-psql.html)
   - a running [Deis Workflow](https://github.com/deis/workflow/blob/master/src/installing-workflow/index.md) cluster...
   - installed on a [Kubernetes](http://kubernetes.io/) cluster
 
 ## Steps
 
-  1. Create a `Dev/Test` [RDS instance][rds] using PostgreSQL 9.4.7 in [AWS][aws].  The Free Tier type of `db.t2.micro` is fine.  You will specify:
-
-    - RDS instance name: `rdsinstance`
-    - db name `dbname`*
-    - db user name `dbuser`
-    - db password `dbpass`
-
-    Under `Configure Advanced Settings`, select `rds-launch-wizard (VPC)` for `VPC Security Group(s)`.  This sets up the rule for `Inbound` traffic to allow all (`0.0.0.0/0`). Otherwise, the provided defaults can be used.
-
-    \**AWS will let you create an instance with db name blank, so don't forget to populate it with a value.*
+  1. TODO: outline postgres setup steps here
 
 
   2. Once the instance status is `Available`, we can seed `dbname` with test data:
@@ -30,7 +20,7 @@
     ```console
     psql \
       -f /path/to/test_data.sql \
-      --host <rds endpoint> \
+      --host <postgres endpoint> \
       --port 5432 \
       --username dbuser \
       --dbname dbname
@@ -44,10 +34,6 @@
     deis auth:register $DEIS_CONTROLLER_URL
     deis apps:create --no-remote wfm-api
     deis config:set \
-      AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
-      AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
-      WORKFLOW_MANAGER_API_RDS_REGION=“${RDS_REGION}" \
-      WORKFLOW_MANAGER_API_DBINSTANCE=“${RDS_INSTANCE_NAME}" \
       WORKFLOW_MANAGER_API_DBUSER=“${DBUSER}" \
       WORKFLOW_MANAGER_API_DBPASS=“${DBPASS}" \
       WORKFLOW_MANAGER_API_PORT=8081 \
@@ -77,6 +63,3 @@
     The following should now return the previous cluster count incremented by 1 thanks to our newly reporting `deis-workflow-manager` pod:
 
     `curl http://wfm-api.${ROUTABLE_IP}.nip.io/v3/clusters/count`
-
-[aws]: https://aws.amazon.com/
-[rds]: https://aws.amazon.com/rds/

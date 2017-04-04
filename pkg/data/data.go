@@ -10,9 +10,10 @@ import (
 )
 
 var (
-	dBInstance = config.Spec.DBInstance
-	dBUser     = config.Spec.DBUser
-	dBPass     = config.Spec.DBPass
+	dBUser = config.Spec.DBUser
+	dBPass = config.Spec.DBPass
+	dBURL  = config.Spec.DBURL
+	dBName = config.Spec.DBName
 )
 
 type errNoMoreRows struct {

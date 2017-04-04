@@ -6,10 +6,10 @@ import "github.com/kelseyhightower/envconfig"
 type Specification struct {
 	DoctorAuthUser string `envconfig:"DOCTOR_AUTH_USER" required:"true"`
 	DoctorAuthPass string `envconfig:"DOCTOR_AUTH_PASS" required:"true"`
-	DBInstance     string `envconfig:"DBINSTANCE"`
-	DBUser         string `envconfig:"DBUSER"`
-	DBPass         string `envconfig:"DBPASS"`
-	RDSRegion      string `envconfig:"RDS_REGION"`
+	DBUser         string `envconfig:"DBUSER" required:"true"`
+	DBPass         string `envconfig:"DBPASS" required:"true"`
+	DBURL          string `envconfig:"DBURL" required:"true"`
+	DBName         string `envconfig:"DBNAME" required:"true"`
 }
 
 // Spec is an exportable variable that contains workflow manager config data
