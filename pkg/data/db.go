@@ -9,7 +9,7 @@ import (
 
 // NewDB attempts to discover and connect to a postgres database
 func NewDB() (*gorm.DB, error) {
-	dataSourceName := "postgres://" + dBUser + ":" + dBPass + "@" + dBURL + "/" + dBName + "?sslmode=require"
+	dataSourceName := "postgres://" + dBUser + ":" + dBPass + "@" + dBURL + "/" + dBName + "?sslmode=disable"
 	db, err := gorm.Open("postgres", dataSourceName)
 	if err != nil {
 		log.Println("couldn't get a db connection!")
