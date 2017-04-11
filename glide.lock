@@ -1,76 +1,47 @@
-hash: eadb6c0e28259560006baa4cf0fa091ed15363d4cbcc031c7d153414e061520d
-updated: 2016-08-01T12:03:55.438728115-07:00
+hash: d113751d1aa0f73471e4c71810d6a84d01b2f9dc60a9ca651307732397ca081a
+updated: 2017-04-04T22:04:25.415266386Z
 imports:
 - name: github.com/arschles/assert
-  version: fc2da9844984ce5093111298174706e14d4c0c47
+  version: bb58b908265b5931732079df03f2818bf2167ba0
 - name: github.com/asaskevich/govalidator
   version: 9699ab6b38bee2e02cd3fe8b99ecf67665395c96
   repo: https://github.com/asaskevich/govalidator
-- name: github.com/aws/aws-sdk-go
-  version: 3b8c171554fc7d4fc53b87e25d4926a9e7495c2e
-  subpackages:
-  - aws
-  - aws/session
-  - service/rds
-  - aws/awserr
-  - aws/credentials
-  - aws/client
-  - aws/corehandlers
-  - aws/defaults
-  - aws/request
-  - private/endpoints
-  - aws/awsutil
-  - aws/client/metadata
-  - aws/signer/v4
-  - private/protocol
-  - private/protocol/query
-  - private/waiter
-  - aws/credentials/ec2rolecreds
-  - aws/credentials/endpointcreds
-  - aws/ec2metadata
-  - private/protocol/rest
-  - private/protocol/query/queryutil
-  - private/protocol/xml/xmlutil
-- name: github.com/go-ini/ini
-  version: cf53f9204df4fbdd7ec4164b57fa6184ba168292
 - name: github.com/go-swagger/go-swagger
   version: ff42df2bf231f6a12383b36332f8364254ea86d6
   subpackages:
-  - spec
-  - httpkit/middleware
   - errors
-  - httpkit/validate
-  - strfmt
-  - swag
   - httpkit
-  - httpkit/security
-  - jsonpointer
-  - jsonreference
+  - httpkit/middleware
   - httpkit/middleware/header
   - httpkit/middleware/untyped
+  - httpkit/security
+  - httpkit/validate
   - internal/validate
+  - jsonpointer
+  - jsonreference
+  - spec
+  - strfmt
+  - swag
 - name: github.com/gorilla/context
   version: 1ea25387ff6f684839d82767c1733ff4d4d15d0a
   repo: https://github.com/gorilla/context
 - name: github.com/gorilla/mux
-  version: 780415097119f6f61c55475fe59b66f3c3e9ea53
+  version: 599cba5e7b6137d46ddf58fb1765f5d928e69604
 - name: github.com/jessevdk/go-flags
   version: 6b9493b3cb60367edd942144879646604089e3f7
   repo: https://github.com/jessevdk/go-flags
 - name: github.com/jinzhu/gorm
-  version: a646b13548ec0aa812fe805b2780f460dd2771b6
+  version: 45ccb134373e7d9fa76d5987a6fed6cd5a5adfd4
 - name: github.com/jinzhu/inflection
-  version: 8f4d3a0d04ce0b7c0cf3126fb98524246d00d102
-- name: github.com/jmespath/go-jmespath
-  version: 0b12d6b521d83fc7f755e7cfc1b1fbdd35a01a74
+  version: 1c35d901db3da928c72a72d8458480cc9ade058f
 - name: github.com/jmoiron/sqlx
-  version: 7396209bbeada6a4fcc28aa9408f89b2e71cac39
+  version: 8ed836a8adb659e8492bcaa49e0880bb84075fe2
   subpackages:
   - types
 - name: github.com/kelseyhightower/envconfig
-  version: 91921eb4cf999321cdbeebdba5a03555800d493b
+  version: 8bf4bbfc795e2c7c8a5ea47b707453ed019e2ad4
 - name: github.com/lib/pq
-  version: 4dd446efc17690bc53e154025146f73203b18309
+  version: 2704adc878c21e1329f46f6e56a1c387d788ff94
   subpackages:
   - oid
 - name: github.com/mxk/go-sqlite
@@ -84,7 +55,7 @@ imports:
   version: 5fa9ff0392746aeae1c4b37fcc42c65afa7a9587
   repo: https://github.com/opennota/urlesc
 - name: github.com/pborman/uuid
-  version: c55201b036063326c5b1b89ccfe45a184973d073
+  version: 1b00554d822231195d1babd97ff4a781231955c9
 - name: github.com/PuerkitoBio/purell
   version: d69616f51cdfcd7514d6a380847a152dfc2a749d
   repo: https://github.com/PuerkitoBio/purell
@@ -100,4 +71,4 @@ imports:
 - name: gopkg.in/yaml.v2
   version: a83829b6f1293c91addabc89d0571c246397bbf4
   repo: https://gopkg.in/yaml.v2
-devImports: []
+testImports: []

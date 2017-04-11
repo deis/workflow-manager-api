@@ -1,11 +1,10 @@
 # API Persistent Data Architecture
 
-The Workflow Manager Service API stores persistent data via an AWS RDS+postgres instance. We use the [AWS SDK for go](https://github.com/aws/aws-sdk-go/wiki) to connect to the RDS service.
+The Workflow Manager Service API stores persistent data via a postgres database.
 
 ## Prerequisites
 
-* Environment-aware AWS configuration (e.g., runtime access to working `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables)
-* Existing RDS instance using the `PostgreSQL 9.4.5` engine
+* Existing DB using the `PostgreSQL 9.4.5` engine
 
 ## Bootstrapping
 

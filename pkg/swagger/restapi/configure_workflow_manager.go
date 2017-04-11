@@ -29,14 +29,14 @@ func getDb(api *operations.WorkflowManagerAPI) *gorm.DB {
 			return gormDb.db
 		}
 	}
-	rdsDB, err := data.NewRDSDB()
+	db, err := data.NewDB()
 	if err != nil {
-		log.Fatalf("unable to create connection to RDS DB (%s)", err)
+		log.Fatalf("unable to create connection to DB (%s)", err)
 	}
-	if err := data.VerifyPersistentStorage(rdsDB); err != nil {
+	if err := data.VerifyPersistentStorage(db); err != nil {
 		log.Fatalf("unable to verify persistent storage\n%s", err)
 	}
-	return rdsDB
+	return db
 }
 
 func configureFlags(api *operations.WorkflowManagerAPI) {
@@ -45,8 +45,8 @@ func configureFlags(api *operations.WorkflowManagerAPI) {
 
 func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 
-	rdsDB := getDb(api)
-	rdsDB.LogMode(true)
+	db := getDb(api)
+	db.LogMode(true)
 	// configure the api here
 	api.ServeError = errors.ServeError
 
@@ -64,48 +64,48 @@ func configureAPI(api *operations.WorkflowManagerAPI) http.Handler {
 	}
 
 	api.CreateClusterDetailsHandler = operations.CreateClusterDetailsHandlerFunc(func(params operations.CreateClusterDetailsParams) middleware.Responder {
-		return handlers.ClusterCheckin(params, rdsDB)
+		return handlers.ClusterCheckin(params, db)
 	})
 
 	api.CreateClusterDetailsForV2Handler = operations.CreateClusterDetailsForV2HandlerFunc(func(params operations.CreateClusterDetailsForV2Params) middleware.Responder {
-		return handlers.ClusterCheckin(operations.CreateClusterDetailsParams{Body: params.Body}, rdsDB)
+		return handlers.ClusterCheckin(operations.CreateClusterDetailsParams{Body: params.Body}, db)
 	})
 
 	api.GetClusterByIDHandler = operations.GetClusterByIDHandlerFunc(func(params operations.GetClusterByIDParams) middleware.Responder {
-		return handlers.GetCluster(params, rdsDB)
+		return handlers.GetCluster(params, db)
 	})
 	api.GetClustersByAgeHandler = operations.GetClustersByAgeHandlerFunc(func(params operations.GetClustersByAgeParams) middleware.Responder {
-		return handlers.ClustersAge(params, rdsDB)
+		return handlers.ClustersAge(params, db)
 	})
 	api.GetClustersCountHandler = operations.GetClustersCountHandlerFunc(func() middleware.Responder {
-		return handlers.ClustersCount(rdsDB)
+		return handlers.ClustersCount(db)
 	})
 	api.GetClusterCheckinsHandler = operations.GetClusterCheckinsHandlerFunc(func(params operations.GetClusterCheckinsParams) middleware.Responder {
-		return handlers.ClusterCheckins(params, rdsDB)
+		return handlers.ClusterCheckins(params, db)
 	})
 	api.GetPersistentClustersHandler = operations.GetPersistentClustersHandlerFunc(func(params operations.GetPersistentClustersParams) middleware.Responder {
-		return handlers.PersistentClusters(params, rdsDB)
+		return handlers.PersistentClusters(params, db)
 	})
 	api.GetComponentByNameHandler = operations.GetComponentByNameHandlerFunc(func(params operations.GetComponentByNameParams) middleware.Responder {
-		return handlers.GetComponentTrainVersions(params, rdsDB)
+		return handlers.GetComponentTrainVersions(params, db)
 	})
 	api.GetComponentByReleaseHandler = operations.GetComponentByReleaseHandlerFunc(func(params operations.GetComponentByReleaseParams) middleware.Responder {
-		return handlers.GetVersion(params, rdsDB)
+		return handlers.GetVersion(params, db)
 	})
 	api.GetComponentsByLatestReleaseHandler = operations.GetComponentsByLatestReleaseHandlerFunc(func(params operations.GetComponentsByLatestReleaseParams) middleware.Responder {
-		return handlers.GetLatestVersions(params, rdsDB)
+		return handlers.GetLatestVersions(params, db)
 	})
 	api.GetComponentsByLatestReleaseForV2Handler = operations.GetComponentsByLatestReleaseForV2HandlerFunc(func(params operations.GetComponentsByLatestReleaseForV2Params) middleware.Responder {
-		return handlers.GetLatestVersionsForV2(params, rdsDB)
+		return handlers.GetLatestVersionsForV2(params, db)
 	})
 	api.GetDoctorInfoHandler = operations.GetDoctorInfoHandlerFunc(func(params operations.GetDoctorInfoParams, principal interface{}) middleware.Responder {
-		return handlers.GetDoctor(params, rdsDB)
+		return handlers.GetDoctor(params, db)
 	})
 	api.PublishComponentReleaseHandler = operations.PublishComponentReleaseHandlerFunc(func(params operations.PublishComponentReleaseParams) middleware.Responder {
-		return handlers.PublishVersion(params, rdsDB)
+		return handlers.PublishVersion(params, db)
 	})
 	api.PublishDoctorInfoHandler = operations.PublishDoctorInfoHandlerFunc(func(params operations.PublishDoctorInfoParams) middleware.Responder {
-		return handlers.PublishDoctor(params, rdsDB)
+		return handlers.PublishDoctor(params, db)
 	})
 	api.PingHandler = operations.PingHandlerFunc(func() middleware.Responder {
 		return handlers.Ping()

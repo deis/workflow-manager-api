@@ -1,10 +1,5 @@
 package: github.com/deis/workflow-manager-api
 import:
-- package: github.com/aws/aws-sdk-go
-  subpackages:
-  - aws
-  - aws/session
-  - service/rds
 - package: github.com/gorilla/mux
 - package: github.com/jmoiron/sqlx
   subpackages:
